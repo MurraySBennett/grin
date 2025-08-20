@@ -1,0 +1,78 @@
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+from src.utils.get_covariance_matrices import get_covariance_matrices
+
+def build_cascaded_weighted_uncertainty_model(input_shape, num_models, num_params, dropout_rate=0.3, activation='tanh'):
+    """
+    Builds a cascaded model where the classification head takes the regression 
+    predictions and their uncertainty (e.g., stddev) as input features.
+    This version is updated to accept the number of trials as an additional input.
+
+    NOTE: The uncertainty is calculated post-training during inference using 
+    MC Dropout or Bayesian layers, then a new classification-only model is
+    trained on the original features plus the uncertainty features.
+    """
+    model_input = keras.Input(shape=(input_shape,), name='model_input')
+    
+    # --- Shared Feature Backbone ---
+    shared_backbone = layers.Dense(512, activation=activation, name='shared_dense1')(model_input)
+    shared_backbone = layers.BatchNormalization()(shared_backbone)
+    shared_backbone = layers.Dropout(dropout_rate)(shared_backbone)
+    shared_backbone = layers.Dense(256, activation=activation, name='shared_dense2')(shared_backbone)
+    shared_backbone = layers.BatchNormalization()(shared_backbone)
+    shared_backbone = layers.Dropout(dropout_rate)(shared_backbone)
+    
+    # Classification head for training (doesn't use uncertainty during training)
+    cls_head = layers.Dense(256, activation=activation, name='cls_dense1')(shared_backbone)
+    cls_output = layers.Dense(num_models, activation='softmax', name='classification_output')(cls_head)
+
+    # Regression head for training (now predicts valid covariance matrices)
+    num_cov_params = 12
+    chol_params_output = layers.Dense(num_cov_params, activation='linear', name='chol_params_output')(shared_backbone)
+    cov_matrices_output = layers.Lambda(
+        lambda chol_params: get_covariance_matrices(chol_params),
+        name='cov_matrices_output'
+    )(chol_params_output) 
+ 
+    # --- Output Head for Means (8 parameters) ---
+    # The first 8 parameters in your target data correspond to the means
+    means_output = layers.Dense(8, activation='linear', name='means_output')(shared_backbone)
+
+    # --- Output Head for Critical Values (2 parameters) ---
+    # The last 2 parameters in your target data correspond to the 'crit' values
+    crit_output = layers.Dense(2, activation='linear', name='crit_output')(shared_backbone)
+
+    # --- Concatenate all outputs ---
+    # Combine all three output heads into a single tensor of shape (batch_size, 26)
+    regression_output = layers.Concatenate(name='regression_output')(
+        [means_output, cov_matrices_output, crit_output]
+    )
+
+    model = keras.Model(
+        inputs=model_input,
+        outputs=[cls_output, regression_output]
+    )
+    return model
+
+
+
+CASCADED_WEIGHTED_UNCERTAINTY_CONFIG = {
+    'losses': {
+        'classification_output': 'categorical_crossentropy',
+        'regression_output': 'mean_squared_error'
+    },
+    'metrics': {
+        'classification_output': 'accuracy',
+        'regression_output': 'mae'
+    },
+    'is_multi_task': True,
+    'mc_dropout': True,
+    'model_name': 'CascadedWeightedUncertainty',
+    'output_names': ['classification_output', 'regression_output']
+}
+
+def get_cascaded_weighted_uncertainty_model_config():
+    """Returns the model builder and config."""
+    return build_cascaded_weighted_uncertainty_model, CASCADED_WEIGHTED_UNCERTAINTY_CONFIG
+

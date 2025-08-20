@@ -2,6 +2,9 @@
 __pycache__/
 *.pyc
 
+# virtual environment
+grin_venv/
+
 # IDE files
 .vscode/
 .idea/
@@ -11,6 +14,7 @@ __pycache__/
 
 # Data
 data/raw/
+data/simulated_grt/
 
 # Results and artifacts
 /results/

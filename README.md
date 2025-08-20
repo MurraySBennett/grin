@@ -1,3 +1,5 @@
+**_This is still a work in progress. That is, none of it will work if you try running it in it's current form. Everything below is a hope, not a promise, but feel free to follow along with the mayhem._**
+
 # GRIN: General Recognition Inference Network
 
 General Recognition Inference Network (GRIN) is a project designed to rapidly generate and fit data for General Recognition Theory (GRT) models.
@@ -57,6 +59,13 @@ pip install -r requirements.txt
 **Usage**
 
 something like this:
+
+```
+
+cd grin
+python -m src.train_models
+
+```
 
 - generate_data.py
 - train_models.py
