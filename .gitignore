@@ -1,0 +1,18 @@
+# Python-specific
+__pycache__/
+*.pyc
+
+# IDE files
+.vscode/
+.idea/
+
+# Jupyter Notebook files
+.ipynb_checkpoints
+
+# Data
+data/raw/
+
+# Results and artifacts
+/results/
+/model/
+/figures/
