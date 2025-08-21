@@ -82,7 +82,7 @@ CASCADED_NON_BAYESIAN_CONFIG = {
         'classification_output': 'accuracy',
         'regression_output': 'mae'
     },
-    'is_bayesian': False,
+    'is_multi_task': True,
     'model_name': 'CascadedNonBayesian',
     'output_names': ['classification_output', 'regression_output']
 }

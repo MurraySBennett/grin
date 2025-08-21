@@ -66,13 +66,13 @@ def build_regression_model(input_shape, num_params, dropout_rate=0.3, activation
 
 
 
-def build_independent_models(input_shape, num_models, num_params, activation='tanh'):
+def build_independent_models(input_shape, num_models, num_params, dropout_rate=0.3, activation='tanh'):
     """
     This function is a placeholder for your generalized training script.
     It returns the two separate models.
     """
-    cls_model = build_classification_model(input_shape, num_models, activation=activation)
-    reg_model = build_regression_model(input_shape, num_params, activation=activation)
+    cls_model = build_classification_model(input_shape, num_models, dropout_rate=dropout_rate, activation=activation)
+    reg_model = build_regression_model(input_shape, num_params, dropout_rate=dropout_rate, activation=activation)
     return cls_model, reg_model
 
 INDEPENDENT_CONFIG = {
@@ -85,7 +85,7 @@ INDEPENDENT_CONFIG = {
         'regression_output': 'mae'
     },
     'is_multi_task': False, # Flag to indicate independent training
-    'model_name': 'Independent'
+    'model_name': 'GPT_Independent'
 }
 
 def get_independent_models_config():

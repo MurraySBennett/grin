@@ -3,17 +3,17 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from src.utils.get_covariance_matrices import get_covariance_matrices
 
-def build_parallel_multi_task_model(input_shape, num_models, num_params, activation='tanh'):
+def build_parallel_multi_task_model(input_shape, num_models, num_params, dropout_rate=0.3, activation='tanh'):
     """Builds a multi-task learning model with separate feature backbones."""
     model_input = keras.Input(shape=(input_shape,), name='model_input')
 
     # --- Classification Feature Backbone ---
     cls_backbone = layers.Dense(512, activation=activation, name='cls_dense1')(model_input)
     cls_backbone = layers.BatchNormalization()(cls_backbone)
-    cls_backbone = layers.Dropout(0.3)(cls_backbone)
+    cls_backbone = layers.Dropout(dropout_rate)(cls_backbone)
     cls_backbone = layers.Dense(256, activation=activation, name='cls_dense2')(cls_backbone)
     cls_backbone = layers.BatchNormalization()(cls_backbone)
-    cls_backbone = layers.Dropout(0.3)(cls_backbone)
+    cls_backbone = layers.Dropout(dropout_rate)(cls_backbone)
     cls_backbone = layers.Dense(128, activation=activation, name='cls_dense3')(cls_backbone)
 
     # --- Classification Head ---
@@ -24,11 +24,15 @@ def build_parallel_multi_task_model(input_shape, num_models, num_params, activat
     # --- Regression Feature Backbone ---
     reg_backbone = layers.Dense(512, activation=activation, name='reg_dense1')(model_input)
     reg_backbone = layers.BatchNormalization()(reg_backbone)
-    reg_backbone = layers.Dropout(0.3)(reg_backbone)
+    reg_backbone = layers.Dropout(dropout_rate)(reg_backbone)
     reg_backbone = layers.Dense(256, activation=activation, name='reg_dense2')(reg_backbone)
     reg_backbone = layers.BatchNormalization()(reg_backbone)
-    reg_backbone = layers.Dropout(0.3)(reg_backbone)
+    reg_backbone = layers.Dropout(dropout_rate)(reg_backbone)
     reg_backbone = layers.Dense(128, activation=activation, name='reg_dense3')(reg_backbone)
+
+    # --- Output Head for Means (8 parameters) ---
+    # The first 8 parameters in your target data correspond to the means
+    means_output = layers.Dense(8, activation='linear', name='means_output')(reg_backbone)
 
     num_chol_params = 12
     chol_params_output = layers.Dense(num_chol_params, activation='linear', name='chol_params_output')(reg_backbone)
@@ -37,9 +41,6 @@ def build_parallel_multi_task_model(input_shape, num_models, num_params, activat
         name='cov_matrices_output'
     )(chol_params_output) 
         
-    # --- Output Head for Means (8 parameters) ---
-    # The first 8 parameters in your target data correspond to the means
-    means_output = layers.Dense(8, activation='linear', name='means_output')(reg_backbone)
 
     # --- Output Head for Critical Values (2 parameters) ---
     # The last 2 parameters in your target data correspond to the 'crit' values
@@ -72,7 +73,7 @@ PARALLEL_MULTI_TASK_CONFIG = {
         'classification_output': 'accuracy',
         'regression_output': 'mae'
     },
-    'is_bayesian': False,
+    'is_multi_task': True,
     'model_name': 'ParallelMultiTask',
     'output_names': ['classification_output', 'regression_output']
 }

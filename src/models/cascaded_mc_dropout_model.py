@@ -69,8 +69,8 @@ CASCADED_MC_DROPOUT_CONFIG = {
         'classification_output': 'accuracy',
         'regression_output': 'mae'
     },
-    'is_bayesian': False, # This is a non-Bayesian model
-    'mc_dropout': True,   # Flag to indicate MC Dropout needs to be applied at inference
+    'is_multi_task': True,
+    'mc_dropout': True,
     'model_name': 'CascadedMCDropout',
     'output_names': ['classification_output', 'regression_output']
 }
