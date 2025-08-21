@@ -2,10 +2,10 @@
 
 # GRIN: General Recognition Inference Network
 
-General Recognition Inference Network (GRIN) is a project designed to rapidly generate and fit data for General Recognition Theory (GRT) models.
-The core idea is to use a neural network to bypass the relatively slow process of traditional GRT model fitting.
+General Recognition Inference Network (GRIN) is a project designed to rapidly fit data for General Recognition Theory (GRT) models.
+The core idea is to train a neural network to predict GRT parameters and model classes to then bypass the relatively slow process of traditional GRT model fitting via MLE.
 
-Because it's so fast and efficient (and definitely absolutely most certainly works\*), it's sure to make you grin!
+Because it's so fast and efficient (and definitely absolutely most certainly works\*), thereby facilitating a wealth of practical applications and potential, it's sure to make you grin!
 
 # Table of Contents
 

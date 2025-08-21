@@ -16,6 +16,10 @@ grin_venv/
 data/raw/
 data/simulated_grt/
 
+# Models and simulated data
+*.h5
+*.npz
+
 # Results and artifacts
 /results/
 /model/
