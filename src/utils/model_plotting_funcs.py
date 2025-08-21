@@ -5,6 +5,7 @@ import os
 import sys
 import seaborn as sns
 import pandas as pd
+from sklearn.metrics import mean_absolute_error, accuracy_score
 
 def plot_history(history, save_dir, model_name, is_bayesian, task_name='combined'):
     """Plots training/validation metrics for a given task."""
@@ -228,84 +229,20 @@ def plot_uncertainty_distribution(y_pred_reg_std, save_dir, model_name):
     print(f"Uncertainty distribution plot saved to: {save_path}")
     
 
-def plot_performance_vs_trials(y_pred_cls, y_cls_val, y_pred_reg, y_reg_val, y_trials_val, save_dir, model_name):
-    """
-    Plots classification accuracy and regression MAE as a function of the number of trials.
-    This version uses a pandas DataFrame for robust data alignment.
-    """
-    y_true_cls_labels = np.argmax(y_cls_val, axis=1)
-    y_pred_cls_labels = np.argmax(y_pred_cls, axis=1)
-
-    # Corrected line: First convert the list to a NumPy array, then cast to float
-    if isinstance(y_trials_val, list):
-        y_trials_val = np.array(y_trials_val)
-
-    y_trials_val = y_trials_val.astype(float)
-    
-    # Denormalize trials data and get the max trial count per sample
-    trials_denormalized = np.exp(y_trials_val) - 1e-8
-    
-    trials = np.max(trials_denormalized, axis=1)
-    
-    # Flatten the regression data to align with trials and labels
-    num_params = y_reg_val.shape[1]
-    
-    y_reg_val_flat = y_reg_val.flatten()
-    y_pred_reg_flat = y_pred_reg.flatten()
-    
-    # Repeat the classification labels and trial counts to match the flattened regression data
-    trials_repeated = np.repeat(trials, num_params)
-    y_true_cls_labels_repeated = np.repeat(y_true_cls_labels, num_params)
-    y_pred_cls_labels_repeated = np.repeat(y_pred_cls_labels, num_params)
-
-    # Create a DataFrame to hold all the relevant data
-    df = pd.DataFrame({
-        'trials': trials_repeated,
-        'true_cls': y_true_cls_labels_repeated,
-        'pred_cls': y_pred_cls_labels_repeated,
-        'true_reg': y_reg_val_flat,
-        'pred_reg': y_pred_reg_flat
-    })
-    
-    # Group by trial counts and calculate performance metrics
-    grouped = df.groupby('trials').apply(
-        lambda x: pd.Series({
-            'accuracy': accuracy_score(x['true_cls'], x['pred_cls']),
-            'mae': mean_absolute_error(x['true_reg'], x['pred_reg'])
-        })
-    ).reset_index()
-
-    fig, axs = plt.subplots(1, 2, figsize=(15, 6))
-    fig.suptitle(f'Performance vs. Number of Trials for {model_name}', fontsize=16)
-
-    # Plot Classification Accuracy
-    axs[0].plot(grouped['trials'], grouped['accuracy'], marker='o')
-    axs[0].set_title('Classification Accuracy')
-    axs[0].set_xlabel('Number of Trials')
-    axs[0].set_ylabel('Accuracy')
-    axs[0].set_ylim(0, 1)
-    axs[0].grid(True)
-    axs[0].set_xscale('log')
-
-    # Plot Regression MAE
-    axs[1].plot(grouped['trials'], grouped['mae'], marker='o', color='red')
-    axs[1].set_title('Regression MAE')
-    axs[1].set_xlabel('Number of Trials')
-    axs[1].set_ylabel('MAE')
-    axs[1].grid(True)
-    axs[1].set_xscale('log')
-
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    save_path = os.path.join(save_dir, f'performance_vs_trials_{model_name}.png')
-    plt.savefig(save_path)
-    print(f"Performance vs. trials plot saved to: {save_path}")
-
-
-def evaluate_and_plot(model, history, config, X_val, y_cls_val, y_reg_val, y_reg_min, y_reg_max, model_names, y_trials_val):
+def evaluate_and_plot(model, history, config, X_val, y_cls_val, y_reg_val):
     """
     Handles the evaluation and plotting for a trained model.
-    NOTE: y_trials_val is now a required argument.
     """
+    # Make predictions
+    y_pred = model.predict(X_val, verbose=0)
+    
+    if isinstance(y_pred, list):
+        y_pred_cls = y_pred[0]
+        y_pred_reg = y_pred[1]
+    else:
+        y_pred_reg = y_pred
+        y_pred_cls = None
+
     final_accuracy = accuracy_score(np.argmax(y_cls_val, axis=1), np.argmax(y_pred_cls, axis=1))
     final_mae = mean_absolute_error(y_reg_val, y_pred_reg)
     
@@ -317,9 +254,6 @@ def evaluate_and_plot(model, history, config, X_val, y_cls_val, y_reg_val, y_reg
     plot_confusion_matrix(y_cls_val, y_pred_cls, model_names, FIGURES_DIR, config['model_name'])
     plot_regression_performance(y_reg_val, y_pred_reg, y_cls_val, model_names, FIGURES_DIR, config['model_name'])
     
-    # Pass y_trials_val to the plotting function
-    # plot_performance_vs_trials(y_pred_cls, y_cls_val, y_pred_reg, y_reg_val, y_trials_val, FIGURES_DIR, config['model_name'])
-    
     plot_regression_error_per_class(y_reg_val, y_pred_reg, y_pred_cls, model_names, FIGURES_DIR, config['model_name'])
     plot_parameter_distributions(y_reg_val, y_pred_reg, FIGURES_DIR, config['model_name'])
 
@@ -327,9 +261,6 @@ def evaluate_and_plot(model, history, config, X_val, y_cls_val, y_reg_val, y_reg
         plot_uncertainty_vs_error(y_reg_val, y_pred_reg, y_pred_reg_std, FIGURES_DIR, config['model_name'])
         plot_uncertainty_distribution(y_pred_reg_std, FIGURES_DIR, config['model_name'])
     
-    np.save(os.path.join(MODELS_DIR, f"{config['model_name']}_y_reg_min.npy"), y_reg_min)
-    np.save(os.path.join(MODELS_DIR, f"{config['model_name']}_y_reg_max.npy"), y_reg_max)
-    print("Normalization values saved")
     
     save_path = os.path.join(MODELS_DIR, f"{config['model_name']}_predictions.npz")
     save_data = {
@@ -340,5 +271,3 @@ def evaluate_and_plot(model, history, config, X_val, y_cls_val, y_reg_val, y_reg
         save_data['y_pred_reg_std'] = y_pred_reg_std
     np.savez(save_path, **save_data)
     print(f"Model predictions saved to: {save_path}")
-    
- 
