@@ -255,19 +255,62 @@ class GRTDataGenerator:
             params.append(flat_params)
         return np.array(cms), np.array(params), np.array(trial_counts)
 
+    def generate_trial_data(self, model_name, n_trials=1000):
+        """
+        Intended to be used for training an LSTM.
+        Generates trial-by-trial data for a single subject, given a ground-truth model.
+        Args:
+            model_name (str): The name of the GRT model to use for data generation.
+            n_trials (int): The total number of trials to simulate.
+        Returns:
+            tuple: A tuple containing:
+                - trials (np.array): An array of shape (n_trials, 2) where each row is
+                  [stimulus_index, response_index].
+                - flat_params (np.array): A flattened array of the ground-truth parameters.
+                - model_name (str): The model name for this dataset.
+        """
+        # Get the ground truth parameters for the specified model
+        means, cov_mat, c = self.random_model_params(model_name)
+        flat_params = np.concatenate([means.flatten(), np.array([m.flatten() for m in cov_mat]).flatten(), c])
+
+        # Generate a list of stimuli to be presented, in random order
+        # ensuring a balanced presentation of stimuli across trials
+        stimulus_sequence = np.random.choice(self.num_stimuli, size=n_trials, replace=True)
+
+        trials = []
+        for trial_num in tqdm(range(n_trials), desc=f"Generating trials for {model_name}"):
+            stimulus_idx = stimulus_sequence[trial_num]
+            sample = multivariate_normal.rvs(
+                mean=means[stimulus_idx*2 : stimulus_idx*2+2],
+                cov=cov_mat[stimulus_idx],
+                size=1
+            )
+            if sample[0] < c[0]:
+                if sample[1] < c[1]:
+                    response_idx = 0
+                else:
+                    response_idx = 1
+            else:
+                if sample[1] < c[1]:
+                    response_idx = 2
+                else:
+                    response_idx = 3
+            trials.append([stimulus_idx, response_idx])
+        return np.array(trials), flat_params, model_name
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate datasets for GRT modeling.")
     parser.add_argument("--full", action="store_true", help="Generate the full dataset with all model constraints.")
     parser.add_argument("--pretraining", action="store_true", help="Generate the parameter-controlled pre-training datasets.")
-    parser.add_argument("--both", action="store_true", help="Generate both the full and pre-training datasets.")
+    parser.add_argument("--tbt", action="store_true", help="Generate trial-by-trial data for LSTM training (or for whatever purpose you might want trial-by-trial data).")
+    parser.add_argument("--all", action="store_true", help="We'll take the lot! Generate the full, pre-training, and trial-by-trial datasets.")
 
     args = parser.parse_args()
-    if not (args.full or args.pretraining or args.both):
+    if not (args.full or args.pretraining or args.all or args.tbt):
         parser.error("At least one argument (--full, --pretraining, or --both) is required.")
 
-    if args.both or args.pretraining:
+    if args.all or args.pretraining:
         # Stage 1: Vary only means, keep everything else fixed
         print("Stage 1: Varying only means...")
         cms_stage1, params_stage1, trials_stage1 = GRTDataGenerator(num_matrices=NUM_PRETRAINING_MATRICES).generate_parameter_controlled_cms(
@@ -316,9 +359,35 @@ if __name__ == "__main__":
         print(f"Generated {cms_stage4.shape[0]} and saved matrices for Stage 4 to {save_file_name}.")
         np.savez(save_file_name, X=cms_stage4, X_trials=trials_stage4, y_params=params_stage4)
 
-    if args.both or args.full:
+    if args.all or args.full:
         # --- Existing data generation logic (unmodified for comparison) ---
         print("\n--- Generating data for all model constraints ---")
         gen = GRTDataGenerator(num_matrices=NUM_MATRICES_PER_MODEL, num_dimensions=2, num_levels=2, trial_range=TRIALS_RANGE)
         cms, parameters, trial_counts, y_cls, y_cls_label = gen.generate_all_model_cms()
         np.savez(DATASET_FILE, X=cms, X_trials=trial_counts, y_params=parameters, y_model_cls=y_cls, y_cls_label=y_cls_label)
+
+    if args.tbt:
+        print("\n--- Generating trial-by-trial data ---")
+        gen = GRTDataGenerator(num_matrices=NUM_MATRICES_PER_MODEL, num_dimensions=2, num_levels=2, trial_range=TRIALS_RANGE)
+        
+        all_trials = []
+        all_params = []
+        all_labels = []
+        
+        num_sequences_per_model = 500
+        
+        for model_label in gen.model_names:
+            print(f"Generating {num_sequences_per_model} trial sequences for model: {model_label}")
+            for _ in tqdm(range(num_sequences_per_model)):
+                trials, params, label = gen.generate_trial_data(model_label, n_trials=1000)
+                all_trials.append(trials)
+                all_params.append(params)
+                all_labels.append(label)
+                
+        np.savez(
+            TRIAL_BY_TRIAL_FIAL,
+            X=all_trials,
+            y_params=all_params,
+            y_model_labels=all_labels
+        )
+        print(f"Done! Trial-by-trial data saved {TRIAL_BY_TRIAL_FIAL}.")

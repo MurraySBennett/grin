@@ -27,6 +27,7 @@ SIMULATED_DATA_DIR = os.path.join(DATA_DIR, 'simulated_grt')
 # The file path to save/load the simulated dataset.
 DATASET_FILE = os.path.join(SIMULATED_DATA_DIR, 'grt_dataset.npz')
 DATASET_CSV_FILE = os.path.join(SIMULATED_DATA_DIR, 'grt_dataset.csv')
+TRIAL_BY_TRIAL_FIAL = os.path.join(SIMULATED_DATA_DIR, 'trial_by_trial_dataset.npz')
 
 # Ensure all necessary directories exist
 os.makedirs(FIGURES_DIR, exist_ok=True)
@@ -57,6 +58,20 @@ STAGED_CURRICULUM = [
     ['pi_psa_ds', 'pi_psb_ds', 'rho1_psa_ds', 'rho1_psb_ds'],
     ['pi_ds', 'ps_ds', 'rho1_ds'],
     ['psa_ds', 'psb_ds', 'ds']
+]
+
+MODEL_NAMES = [
+    'pi_ps_ds', 'rho1_ps_ds', 
+    'pi_psa_ds', 'pi_psb_ds', 'rho1_psa_ds', 'rho1_psb_ds',
+    'pi_ds', 'ps_ds', 'rho1_ds',
+    'psa_ds', 'psb_ds', 'ds'
+]
+
+LSTM_MODEL_FILES = [
+    'standard_lstm',
+    'bidirectional_lstm',
+    'gru_model',
+    'cnn_lstm'
 ]
 
 PARAM_NAMES = [
