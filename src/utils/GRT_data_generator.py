@@ -18,6 +18,8 @@ class GRTDataGenerator:
         self.min_mean_diff = 0.1 # ensuring means differ when they ought to (e.g., when psa present, b dims should be different) - this is kinda large.. too large for practical purposes? Test this stuff later - for now, just testing to see if the network runs.
         self.var_range = (0.1, 1.5)
         self.crit_range = (self.mean_range[0] * 0.8, self.mean_range[1] * 0.8)
+        self.pi_tolerance = 0.1 # Max off-diagonal value
+        self.rho1_tolerance = 0.1 # Max mean squared difference between matrices
         self.coin_flip = 0.8
         self.sample_loss = 0.1
         self.trial_range = trial_range
@@ -83,6 +85,9 @@ class GRTDataGenerator:
             cov_mat = self._set_pi(cov_mat)
         if 'rho1' in model_name:
             cov_mat = self._set_rho1(cov_mat)
+        else: # For unconstrained models (ds, psa_ds, psb_ds, etc.)
+            while self._is_pi_like(cov_mat) or self._is_rho1_like(cov_mat):
+                cov_mat = self.get_cov_mats()
 
         if 'psa' in model_name:
             means = self._set_psa(means)
@@ -227,7 +232,30 @@ class GRTDataGenerator:
         offset = np.random.uniform(-self.min_mean_diff, self.min_mean_diff)
         means[5] = means[7] + offset
         return means
-
+        
+    def _is_pi_like(self, cov_mat_list):
+        """
+        Check if a set of covariance matrices is "pi-like" (i.e., nearly diagonal)
+        """
+        for cov_mat in cov_mat_list:
+            off_diag_1 = np.abs(cov_mat[0, 1])
+            off_diag_2 = np.abs(cov_mat[1, 0])
+            if off_diag_1 < self.pi_tolerance and off_diag_2 < self.pi_tolerance:
+                return True
+        return False
+        
+    def _is_rho1_like(self, cov_mat_list):
+        """
+        Check if a set of covariance matrices is "rho1-like" (i.e., nearly identical)
+        """
+        first_mat = cov_mat_list[0]
+        for i in range(1, len(cov_mat_list)):
+            current_mat = cov_mat_list[i]
+            if not np.allclose(first_mat, current_mat, atol=self.rho1_tolerance):
+                return False
+        return True
+    
+    
     def generate_parameter_controlled_cms(self, n_matrices, vary_means=True, vary_covariances=True, vary_crits=True):
         fixed_means = np.array([0., 0., 0.5, 0., 0., 0.5, 0.5, 0.5])
         fixed_cov_mat = np.array([np.eye(self.num_dimensions) for _ in range(self.num_stimuli)])
