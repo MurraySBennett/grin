@@ -14,11 +14,11 @@ class GRTDataGenerator:
         
         self.mean_range = (-1, 1)
         self.corr_range = (-0.99, 0.99) # Avoids singular matrices
-        self.min_rho1 = 0.05
+        self.min_rho1 = 0.1
         self.min_mean_diff = 0.1 # ensuring means differ when they ought to (e.g., when psa present, b dims should be different) - this is kinda large.. too large for practical purposes? Test this stuff later - for now, just testing to see if the network runs.
         self.var_range = (0.1, 1.5)
         self.crit_range = (self.mean_range[0] * 0.8, self.mean_range[1] * 0.8)
-        self.pi_tolerance = 0.1 # Max off-diagonal value
+        self.pi_tolerance = 0.1 # Max off-diagonal correlation** value
         self.rho1_tolerance = 0.1 # Max mean squared difference between matrices
         self.coin_flip = 0.8
         self.sample_loss = 0.1
@@ -82,8 +82,8 @@ class GRTDataGenerator:
         cov_mat = self.get_cov_mats()
         
         if 'pi' in model_name:
-            cov_mat = self._set_pi(cov_mat)
-        if 'rho1' in model_name:
+            cov_mat = self._set_pi()
+        elif 'rho1' in model_name:
             cov_mat = self._set_rho1(cov_mat)
         else: # For unconstrained models (ds, psa_ds, psb_ds, etc.)
             while self._is_pi_like(cov_mat) or self._is_rho1_like(cov_mat):
@@ -104,20 +104,13 @@ class GRTDataGenerator:
         if 'ps_ds' == model_name:
             means = self._set_ps(means)
         
-        # Ensure 'pi_ds' doesn't accidentally become 'pi_psa_ds' or 'pi_psb_ds'
-        if model_name == 'pi_ds':
+        # Ensure models sans ps don't accidentally become psa, psb, or both!
+        if model_name == 'pi_ds' or model_name == 'rho1_ds' or model_name == 'ds':
              while (np.abs(means[4] - means[0]) < self.min_mean_diff and
                     np.abs(means[6] - means[2]) < self.min_mean_diff) or \
                    (np.abs(means[3] - means[1]) < self.min_mean_diff and
                     np.abs(means[5] - means[7]) < self.min_mean_diff):
                 means = self.random_means()
-        # Ensure 'rho1_ds' doesn't accidentally become 'rho1_psa_ds' or 'rho1_psb_ds'
-        if model_name == 'rho1_ds':
-             while (np.abs(means[4] - means[0]) < self.min_mean_diff and
-                    np.abs(means[6] - means[2]) < self.min_mean_diff) or \
-                   (np.abs(means[3] - means[1]) < self.min_mean_diff and
-                    np.abs(means[5] - means[7]) < self.min_mean_diff):
-                means = self.random_means() 
             
         c = self.random_crit(means)
 
@@ -194,10 +187,10 @@ class GRTDataGenerator:
         cov_mat = [self.random_cov_mat() for _ in range(self.num_stimuli)]
         return np.array(cov_mat)
     
-    def _set_pi(self, cov_mat):
+    def _set_pi(self):
         new_cov_mat = []
         for _ in range(self.num_stimuli):
-            off_diag_noise = np.random.uniform(-0.01, 0.01)
+            off_diag_noise = np.random.uniform(-0.02, 0.02)
             variances = np.random.uniform(self.var_range[0], self.var_range[1], self.num_dimensions)
             diag_matrix = np.diag(variances)
             diag_matrix[0, 1] = off_diag_noise
@@ -218,43 +211,49 @@ class GRTDataGenerator:
 
     def _set_psa(self, means):
         # x-means of A are same across levels of B.
-        offset = np.random.uniform(-self.min_mean_diff, self.min_mean_diff)
+        offset = np.random.uniform(-self.min_mean_diff/2, self.min_mean_diff/2)
         means[4] = means[0] + offset
-        offset = np.random.uniform(-self.min_mean_diff, self.min_mean_diff)
+        offset = np.random.uniform(-self.min_mean_diff/2, self.min_mean_diff/2)
         means[6] = means[2] + offset
         return means
 
 
     def _set_psb(self, means):
         # y-means of B are same across levels of A
-        offset = np.random.uniform(-self.min_mean_diff, self.min_mean_diff)
+        offset = np.random.uniform(-self.min_mean_diff/2, self.min_mean_diff/2)
         means[3] = means[1] + offset
-        offset = np.random.uniform(-self.min_mean_diff, self.min_mean_diff)
+        offset = np.random.uniform(-self.min_mean_diff/2, self.min_mean_diff/2)
         means[5] = means[7] + offset
         return means
-        
+
+    def _cov_to_corr(self, cov_mat):
+        """
+        Helper function to convert covariance matrix to correlation matrix
+        """
+        std_devs = np.sqrt(np.diag(cov_mat))
+        outer_prod = np.outer(std_devs, std_devs)
+        corr_mat = cov_mat / outer_prod
+        corr_mat[1, 0] = corr_mat[0, 1]
+        np.fill_diagonal(corr_mat, 1)
+        return corr_mat
+    
     def _is_pi_like(self, cov_mat_list):
         """
-        Check if a set of covariance matrices is "pi-like" (i.e., nearly diagonal)
+        Check if all covariance matrices are "pi-like" (i.e., nearly diagonal)
         """
-        for cov_mat in cov_mat_list:
-            off_diag_1 = np.abs(cov_mat[0, 1])
-            off_diag_2 = np.abs(cov_mat[1, 0])
-            if off_diag_1 < self.pi_tolerance and off_diag_2 < self.pi_tolerance:
-                return True
-        return False
+        return all(
+            np.abs(self._cov_to_corr(cov_mat)[0, 1]) < self.pi_tolerance for cov_mat in cov_mat_list
+        )
         
     def _is_rho1_like(self, cov_mat_list):
         """
-        Check if a set of covariance matrices is "rho1-like" (i.e., nearly identical)
+        Check if ALL matrices in a set are "rho1-like" (i.e., nearly identical).
         """
         first_mat = cov_mat_list[0]
-        for i in range(1, len(cov_mat_list)):
-            current_mat = cov_mat_list[i]
-            if not np.allclose(first_mat, current_mat, atol=self.rho1_tolerance):
-                return False
-        return True
-    
+        return all(
+            np.allclose(first_mat, current_mat, atol=self.rho1_tolerance)
+            for current_mat in cov_mat_list[1:]
+        )
     
     def generate_parameter_controlled_cms(self, n_matrices, vary_means=True, vary_covariances=True, vary_crits=True):
         fixed_means = np.array([0., 0., 0.5, 0., 0., 0.5, 0.5, 0.5])
@@ -266,7 +265,7 @@ class GRTDataGenerator:
         for i in tqdm(range(n_matrices), total=n_matrices, desc="Generating parameter controlled data"):
             n_trials = int(np.ceil(np.random.uniform(*self.trial_range)))
             means = self.random_means() if vary_means else fixed_means
-            cov_mat = self._set_pi(self.get_cov_mats()) if vary_covariances else fixed_cov_mat
+            cov_mat = self._set_pi() if vary_covariances else fixed_cov_mat
             c = self.random_crit(means) if vary_crits else fixed_crits
 
             samples = self.get_samples(means, cov_mat, n_trials, sample_loss_factor=self.sample_loss)

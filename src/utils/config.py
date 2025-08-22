@@ -23,6 +23,7 @@ DATA_DIR = os.path.join(PROJECT_ROOT, 'data')
 DATA_RAW_DIR = os.path.join(DATA_DIR, 'raw')
 DATA_PROCESSED_DIR = os.path.join(DATA_DIR, 'processed')
 SIMULATED_DATA_DIR = os.path.join(DATA_DIR, 'simulated_grt')
+SIMULATED_DATA_SPLIT_LOG = os.path.join(SIMULATED_DATA_DIR, "data_splits_log.csv")
 
 # The file path to save/load the simulated dataset.
 DATASET_FILE = os.path.join(SIMULATED_DATA_DIR, 'grt_dataset.npz')

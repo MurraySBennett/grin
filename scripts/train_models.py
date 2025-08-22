@@ -41,6 +41,37 @@ def load_model_from_file(module_name):
         print(f"Error loading model from '{module_name}': {e}")
         return None, None
 
+
+def log_data_splits_to_csv(all_data, train_val_indices, test_indices, filename=SIMULATED_DATA_SPLIT_LOG):
+    """
+    Creates and saves a CSV file logging the data split (train/validation/test) 
+    for each sample in the dataset.
+    
+    Args:
+        all_data (tuple): The tuple containing all dataset arrays before splitting.
+        train_val_indices (np.array): The indices of samples assigned to the
+                                      combined training and validation set.
+        test_indices (np.array): The indices of samples assigned to the test set.
+        filename (str): The name of the output CSV file.
+    """
+    # Unpack the all_data tuple to get the necessary arrays
+    X_combined, X_trials, y_params, y_model_cls, y_cls_label = all_data
+    split_labels = pd.Series(index=np.arange(len(y_cls_label)), dtype='object')
+    split_labels.loc[test_indices] = 'test'
+    split_labels.loc[train_val_indices] = 'train_val' # This will be split further later - but distinction is unnecessary for our analysis. I think..
+
+    # Create the DataFrame
+    data_log = pd.DataFrame({
+        'sample_id': np.arange(len(y_cls_label)),
+        'model_name': y_cls_label,
+        'data_split': split_labels.values
+    })
+    
+    # Save the DataFrame to a CSV file
+    data_log.to_csv(filename, index=False)
+    print(f"Data split log saved to {filename}")
+    
+ 
 def train_and_evaluate_model(model, X_train, train_targets, X_val, val_targets, config):
     """Trains and evaluates a single Keras model, capturing timing and model size."""
     callbacks = [
@@ -114,6 +145,15 @@ if __name__ == '__main__':
     X_combined = np.hstack([X_proportions, X_trials_log])
 
     all_data = (X_combined, X_trials, y_params, y_model_cls, y_cls_label)
+
+    original_indices = np.arange(len(y_cls_label))
+    train_val_indices, test_indices = train_test_split(
+        original_indices,
+        test_size=TEST_SPLIT, 
+        stratify=y_model_cls, 
+        random_state=42
+    )
+    log_data_splits_to_csv(all_data, train_val_indices, test_indices)
 
     # 1. First split: Create a held-out test set (20%)
     (X_train_val, X_test, X_trials_train_val, X_trials_test, 
@@ -243,7 +283,7 @@ if __name__ == '__main__':
                     loss_weights=config.get('loss_weights', None),
                     metrics=config['metrics']
                 )
-
+# 
                 train_targets = {'classification_output': y_cls_train_stage, config['output_names'][1]: y_reg_train}
                 val_targets = {'classification_output': y_cls_val_stage, config['output_names'][1]: y_reg_val}
 
@@ -393,7 +433,4 @@ if __name__ == '__main__':
         plt.subplots_adjust(top=0.95)
         regression_plot_path = os.path.join(FIGURES_DIR, f"{config['model_name']}_regression_performance.png")
         plt.savefig(regression_plot_path)
-        plt.show()
-
-        # Print summary statistics for regression
-        print_summary_statistics(y_reg_test, y_pred_reg, config['model_name'], PARAM_NAMES)
+        # plt.show()
