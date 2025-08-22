@@ -28,7 +28,7 @@ def train_and_evaluate_model(model, X_train, train_targets, X_val, val_targets, 
     callbacks = [
         EarlyStopping(monitor='val_loss', patience=PATIENCE, restore_best_weights=True),
         ReduceLROnPlateau(monitor='val_loss', factor=RLRP_FACTOR, patience=RLRP_PATIENCE, min_lr=RLRP_MIN_LR),
-        ModelCheckpoint(filepath=os.path.join(MODEL_RESULTS_DIR, f"{config['model_name']}_best_model.h5"),
+        ModelCheckpoint(filepath=os.path.join(MODEL_RESULTS_DIR, "lstm", f"{config['model_name']}_best_model.h5"),
                         monitor='val_loss', save_best_only=True, verbose=1)
     ]
     
@@ -49,14 +49,14 @@ def train_and_evaluate_model(model, X_train, train_targets, X_val, val_targets, 
     training_time_sec = end_time - start_time
     
     # Save history
-    history_path = os.path.join(MODEL_RESULTS_DIR, f"{config['model_name']}_history.json")
+    history_path = os.path.join(MODEL_RESULTS_DIR, "lstm", f"{config['model_name']}_history.json")
     serializable_history = {key: [float(val) for val in values] for key, values in history.history.items()}
     with open(history_path, 'w') as f:
         json.dump(serializable_history, f)
     print(f"Training history saved to: {history_path}") 
     
     # Save computational metrics
-    metrics_path = os.path.join(MODEL_RESULTS_DIR, f"{config['model_name']}_computational_metrics.json")
+    metrics_path = os.path.join(MODEL_RESULTS_DIR, "lstm", f"{config['model_name']}_computational_metrics.json")
     trainable_params = np.sum([tf.keras.backend.count_params(w) for w in model.trainable_weights])
     computational_metrics = {
         'training_time_seconds': training_time_sec,

@@ -394,7 +394,7 @@ if __name__ == "__main__":
         cms, parameters, trial_counts, y_cls, y_cls_label = gen.generate_all_model_cms()
         np.savez(DATASET_FILE, X=cms, X_trials=trial_counts, y_params=parameters, y_model_cls=y_cls, y_cls_label=y_cls_label)
 
-    if args.tbt:
+    if args.all or args.tbt:
         print("\n--- Generating trial-by-trial data ---")
         gen = GRTDataGenerator(num_matrices=NUM_MATRICES_PER_MODEL, num_dimensions=2, num_levels=2, trial_range=TRIALS_RANGE)
         
