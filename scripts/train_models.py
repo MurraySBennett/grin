@@ -42,7 +42,7 @@ def load_model_from_file(module_name):
         return None, None
 
 
-def log_data_splits_to_csv(all_data, train_val_indices, test_indices, filename="data_splits_log.csv"):
+def log_data_splits_to_csv(all_data, train_val_indices, test_indices, filename=SIMULATED_DATA_SPLIT_LOG):
     """
     Creates and saves a CSV file logging the data split (train/validation/test) 
     for each sample in the dataset.
@@ -153,7 +153,7 @@ if __name__ == '__main__':
         stratify=y_model_cls, 
         random_state=42
     )
-    log_data_splits_to_csv(all_data, train_val_indices, test_indices, filename=os.path.join(SIMULATED_DATA_DIR, "data_splits_log.csv"))
+    log_data_splits_to_csv(all_data, train_val_indices, test_indices)
 
     # 1. First split: Create a held-out test set (20%)
     (X_train_val, X_test, X_trials_train_val, X_trials_test, 
