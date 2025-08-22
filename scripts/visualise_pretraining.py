@@ -13,6 +13,7 @@ from src.utils.config import *
 # Import the custom layers from the model file
 from src.models.customised_gate_control_model import Expert, Gate
 from src.models.independent_separate_param_loss import scale_corr_loss, convert_scales_corr_to_cov, make_regression_losses
+from src.utils.param_training_funcs import regression_multi_output_loss
 
 def load_model_from_file(module_name):
     """Dynamically loads the model builder and config from a specified Python file."""
@@ -162,7 +163,8 @@ def main():
                 'Expert': Expert,
                 'Gate': Gate,
                 'scale_corr_loss': scale_corr_loss,
-                'make_regression_losses': make_regression_losses
+                'make_regression_losses': make_regression_losses,
+                'regression_multi_output_loss': regression_multi_output_loss
             }
             model = keras.models.load_model(model_path, custom_objects=custom_objects)
         except Exception as e:

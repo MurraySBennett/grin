@@ -3,7 +3,7 @@ from tensorflow import keras
 from tensorflow.keras.layers import Input, Dense, Concatenate, Layer, Lambda, Dropout
 from tensorflow.keras.models import Model
 import numpy as np
-from src.utils.get_covariance_matrices import get_covariance_matrices
+from src.utils.param_training_funcs import get_covariance_matrices, regression_multi_output_loss
 
 # A Keras Layer that implements a single "expert" block
 class Expert(Layer):
@@ -165,7 +165,7 @@ def build_customised_gate_control_model(input_shape, num_models, num_params, num
 CUSTOMISED_GATE_CONTROL_CONFIG = {
     'losses': {
         'classification_output': 'categorical_crossentropy',
-        'regression_output': 'mean_squared_error'
+        'regression_output': regression_multi_output_loss
     },
     'loss_weights': {
         'classification_output': 1.0,

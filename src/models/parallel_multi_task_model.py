@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
-from src.utils.get_covariance_matrices import get_covariance_matrices
+from src.utils.param_training_funcs import get_covariance_matrices, regression_multi_output_loss
 
 def build_parallel_multi_task_model(input_shape, num_models, num_params, dropout_rate=0.3, activation='tanh'):
     """Builds a multi-task learning model with separate feature backbones."""
@@ -63,7 +63,7 @@ def build_parallel_multi_task_model(input_shape, num_models, num_params, dropout
 PARALLEL_MULTI_TASK_CONFIG = {
     'losses': {
         'classification_output': 'categorical_crossentropy',
-        'regression_output': 'mean_squared_error'
+        'regression_output': regression_multi_output_loss
     },
     'loss_weights': {
         'classification_output': 1.0,

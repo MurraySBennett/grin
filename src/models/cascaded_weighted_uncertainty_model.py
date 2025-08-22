@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
-from src.utils.get_covariance_matrices import get_covariance_matrices
+from src.utils.param_training_funcs import get_covariance_matrices, regression_multi_output_loss
 
 def build_cascaded_weighted_uncertainty_model(input_shape, num_models, num_params, dropout_rate=0.3, activation='tanh'):
     """
@@ -60,7 +60,7 @@ def build_cascaded_weighted_uncertainty_model(input_shape, num_models, num_param
 CASCADED_WEIGHTED_UNCERTAINTY_CONFIG = {
     'losses': {
         'classification_output': 'categorical_crossentropy',
-        'regression_output': 'mean_squared_error'
+        'regression_output': regression_multi_output_loss
     },
     'metrics': {
         'classification_output': 'accuracy',
