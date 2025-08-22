@@ -283,7 +283,7 @@ if __name__ == '__main__':
                     loss_weights=config.get('loss_weights', None),
                     metrics=config['metrics']
                 )
-
+# 
                 train_targets = {'classification_output': y_cls_train_stage, config['output_names'][1]: y_reg_train}
                 val_targets = {'classification_output': y_cls_val_stage, config['output_names'][1]: y_reg_val}
 
@@ -433,7 +433,4 @@ if __name__ == '__main__':
         plt.subplots_adjust(top=0.95)
         regression_plot_path = os.path.join(FIGURES_DIR, f"{config['model_name']}_regression_performance.png")
         plt.savefig(regression_plot_path)
-        plt.show()
-
-        # Print summary statistics for regression
-        print_summary_statistics(y_reg_test, y_pred_reg, config['model_name'], PARAM_NAMES)
+        # plt.show()
