@@ -149,7 +149,7 @@ def main():
         plt.tight_layout()
         history_plot_path = os.path.join(output_dir, f"{config['model_name']}_loss_history.png")
         plt.savefig(history_plot_path)
-        plt.show()
+        # plt.show()
 
         # 4. Load the best-trained model
         model_path = os.path.join(PRETRAINED_MODELS_DIR, f"{config['model_name']}_pretrained.h5")
@@ -246,7 +246,7 @@ def main():
         plt.subplots_adjust(top=0.95)
         regression_plot_path = os.path.join(output_dir, f"{config['model_name']}_regression_performance.png")
         plt.savefig(regression_plot_path)
-        plt.show()
+        # plt.show()
 
         # Print summary statistics for all parameters
         print_summary_statistics(y_val, y_pred, config['model_name'], PARAM_NAMES)

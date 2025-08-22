@@ -58,18 +58,36 @@ pip install -r requirements.txt
 
 **Usage**
 
-something like this:
+All configuration content is housed in `src/utils/config.py`.
+The simulated data produces confusion matrices populated with response counts, the generating parameters and model class, and the number of trials (although this can be pulled from the matrices).
+
+<!-- You can try updating things like training hyperparameters, and whether to use pretrained weights or not, as well as others.
+But be careful because this file (and project) still needs a proper review to make clear what content can be or should best not be tampered with. Below is the workflow I followed: -->
+
+Simulate data for the full set of models `--full`, pretraining confusion matrices that only vary particular parameters `--pretraining`, trial-by-trial response data `--tbt`, or all of them `--all`:
 
 ```
-
-cd grin
-python -m src.train_models
-
+python -m src.utils.GRT_data_generator --all
 ```
 
-- generate_data.py
-- train_models.py
-- evalute_models.py
+Pretrain weights on the means, covariance matrices, and decision bounds, then visualise the pretrained state of parameter predictions.
+Figures should save to `results/figures/pretraining` and weights save to `src/models/pretrained`.
+
+```
+python -m scripts.pretrain_parameters
+python -m scripts.visualise_pretraining
+```
+
+Training the models on a curriculum schedule that progressively includes the models with greater complexity (i.e., more free parameters) over 4 stages. This script also saves the train/validation/test splits for the simulated matrices. We need this to run before the next component so that the test data can be identified and exported for model fitting in R (or other software). Models should save to `results/models/`, and training figures should save to `results/figures`.
+
+**TODO**: update npz_to_csv to something informative
+
+```
+python -m scripts.train_models
+python -m src.utils.npz_to_csv
+```
+
+At this point, you now have trained networks capable of making predictions on model classes and their parameters. From here, I shift into an R workspace to fit the simulated test data using [`grtools`](https://github.com/fsotoc/grtools/). This requires the [`grtools`](https://github.com/fsotoc/grtools/), [`here`](https://here.r-lib.org/) and [`tidyverse`](https://www.tidyverse.org/) libraries.
 
 # Contributing
 

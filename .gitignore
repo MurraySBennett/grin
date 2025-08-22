@@ -9,6 +9,11 @@ grin_venv/
 .vscode/
 .idea/
 
+# R files
+.Rhistory
+.Rproj.user
+grin.Rproj
+
 # Jupyter Notebook files
 .ipynb_checkpoints
 
