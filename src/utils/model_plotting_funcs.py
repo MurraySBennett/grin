@@ -6,23 +6,16 @@ import sys
 import seaborn as sns
 import pandas as pd
 from sklearn.metrics import mean_absolute_error, accuracy_score
+from src.utils.config import PARAM_NAMES, MODEL_NAMES
 
-def plot_history(history, save_dir, model_name, is_bayesian, task_name='combined'):
-    """Plots training/validation metrics for a given task."""
+def plot_history(history, save_dir, model_name):
+    """Plots training/validation metrics."""
     fig, axs = plt.subplots(1, 2, figsize=(15, 6))
-    fig.suptitle(f'Training and Validation Metrics for {model_name} ({task_name})', fontsize=16)
-
-    # Loss plot
-    if is_bayesian and task_name == 'regression':
-        axs[0].plot(history.history['loss'], label='Training NLL Loss')
-        axs[0].plot(history.history['val_loss'], label='Validation NLL Loss')
-        axs[0].set_title('Negative Log Likelihood Loss')
-        axs[0].set_ylabel('NLL Loss')
-    else:
-        axs[0].plot(history.history['loss'], label='Training Loss')
-        axs[0].plot(history.history['val_loss'], label='Validation Loss')
-        axs[0].set_title('Loss')
-        axs[0].set_ylabel('Loss')
+    fig.suptitle(f'Training and Validation Metrics for {model_name}', fontsize=16)
+    axs[0].plot(history.history['loss'], label='Training Loss')
+    axs[0].plot(history.history['val_loss'], label='Validation Loss')
+    axs[0].set_title('Loss')
+    axs[0].set_ylabel('Loss')
     axs[0].set_xlabel('Epoch')
     axs[0].legend()
 
@@ -37,20 +30,18 @@ def plot_history(history, save_dir, model_name, is_bayesian, task_name='combined
         axs[1].plot(history.history['val_mae'], label='Validation MAE')
         axs[1].set_title('MAE')
         axs[1].set_ylabel('MAE')
-    elif 'mean_absolute_error' in history.history: # For independent regression model
+    elif 'mean_absolute_error' in history.history:
         axs[1].plot(history.history['mean_absolute_error'], label='Training MAE')
         axs[1].plot(history.history['val_mean_absolute_error'], label='Validation MAE')
         axs[1].set_title('MAE')
         axs[1].set_ylabel('MAE')
-    
     axs[1].set_xlabel('Epoch')
     axs[1].legend()
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    save_path = os.path.join(save_dir, f'training_history_{model_name}_{task_name}.png')
+    save_path = os.path.join(save_dir, f'training_history_{model_name}.png')
     plt.savefig(save_path)
     print(f"Training history plot saved to: {save_path}")
-    # plt.show()
 
 def plot_confusion_matrix(y_true_cls, y_pred_cls, model_names, save_dir, model_name):
     """Plots a confusion matrix for model classifications."""
@@ -68,22 +59,17 @@ def plot_confusion_matrix(y_true_cls, y_pred_cls, model_names, save_dir, model_n
     plt.yticks(rotation=0)
     plt.tight_layout()
     
-    save_path = os.path.join(save_dir, f'classification_confusion_matrix_{model_name}.png')
+    save_path = os.path.join(save_dir, f'class_confusions_{model_name}.png')
     plt.savefig(save_path)
     print(f"Confusion matrix plot saved to: {save_path}")
-    # plt.show()
 
-def plot_regression_performance(y_true_reg, y_pred_reg, y_true_cls, model_names, save_dir, model_name):
+def plot_regression_performance(y_true_reg, y_pred_reg, save_dir, model_name):
     """
     Plots subplots for each parameter, showing true vs. predicted values.
     This provides a more granular view to check for parameter-specific biases.
     """
-    y_true_labels = np.argmax(y_true_cls, axis=1)
-    num_models = len(model_names)
     num_params = y_true_reg.shape[1]
-    
-    # Calculate the number of rows and columns for the subplots
-    cols = min(num_params, 4) # Max 4 columns
+    cols = min(num_params, 4)
     rows = (num_params + cols - 1) // cols
     
     fig, axs = plt.subplots(rows, cols, figsize=(5 * cols, 4 * rows), squeeze=False)
@@ -106,7 +92,7 @@ def plot_regression_performance(y_true_reg, y_pred_reg, y_true_cls, model_names,
         max_val = max(np.max(true_values), np.max(pred_values))
         ax.plot([min_val, max_val], [min_val, max_val], 'k--', lw=2, label='Perfect Prediction')
 
-        ax.set_title(f'Parameter {i+1}')
+        ax.set_title(f'Parameter {PARAM_NAMES[i]}')
         ax.set_xlabel('True Values')
         ax.set_ylabel('Predicted Values')
         ax.legend()
@@ -117,7 +103,7 @@ def plot_regression_performance(y_true_reg, y_pred_reg, y_true_cls, model_names,
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     
-    save_path = os.path.join(save_dir, f'regression_performance_per_param_{model_name}.png')
+    save_path = os.path.join(save_dir, f'param_pred_{model_name}.png')
     plt.savefig(save_path)
     print(f"Regression performance per parameter plot saved to: {save_path}")
     # plt.show()

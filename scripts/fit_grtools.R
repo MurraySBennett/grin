@@ -63,7 +63,18 @@
   
   fit_cm <- function(cmat, idx) {
     start_time <- Sys.time()
-    fit_result <- grt_hm_fit(cmat)
+    fit_result <- tryCatch({
+      grt_hm_fit(cmat)
+    }, error = function(e) {
+      return(list(
+        best_model="ERROR",
+        convergence=NA,
+        message=as.character(e),
+        means=matrix(NA, nrow=4, ncol=2),
+        covmat=list(diag(2), diag(2), diag(2), diag(2)),
+        a1 = NA, a2=NA
+      ))
+    })
     end_time <- Sys.time()
     fit_time_sec <- as.numeric(difftime(end_time, start_time, units = "secs"))
     
@@ -89,6 +100,36 @@
   }
 
   cmats <- create_cm_list(sim_data)
+  
+}
+
+{
+  
+  sim_data$mean_accuracy <- sapply(cmats, function(x) mean(diag(x))) 
+  descriptive_stats <- sim_data %>%
+    group_by(model_name) %>%
+    summarise(
+      mean = mean(mean_accuracy),
+      median = median(mean_accuracy),
+      min = min(mean_accuracy),
+      max = max(mean_accuracy),
+      q1 = quantile(mean_accuracy, 0.25),
+      q3 = quantile(mean_accuracy, 0.75),
+      iqr = IQR(mean_accuracy),
+      sd = sd(mean_accuracy),
+      n = n()
+    )
+  acc_bp <- ggplot(sim_data, aes(x=model_name, y=mean_accuracy)) + 
+    geom_boxplot() + 
+    scale_y_continuous(limits=c(0,1)) + 
+    labs(
+      title="Accuracy Distribution by Model",
+      x="Model",
+      y="Mean Accuracy"
+    ) +
+    theme_minimal() +  theme(axis.text.x = element_text(angle=45, hjust=1))
+  print(acc_bp)
+  
 }
 
 {
@@ -99,9 +140,10 @@
   message("Fitting ", length(cmats), " matrices using ", num_cores, " cores...")
   
   fit_results <- foreach(
-    i = 1:10, # Use length(cmats) for full run
+    i = 1:length(cmats),
     .packages = c("grtools"),
-    .inorder = TRUE#,
+    # .inorder = TRUE,
+    .errorhandling = "pass"#,
     # .export = c("fit_cm", "cmats", "sim_data") 
   ) %dopar% {
     fit_cm(cmats[[i]], sim_data$sample_id[i])
@@ -120,4 +162,14 @@
   
   # print(all_fit_results)
   # View(all_fit_results)
+  
+  param_names <- names(sim_data[22:47])
+  params_tibble <- do.call(rbind, all_fit_results$best_fit_params) %>%
+    as_tibble(.name_repair="minimal") %>%
+    set_names(param_names)%>%
+    mutate(across(everything(), ~round(.x, 3)))
+  final_results <- all_fit_results %>%
+    select(-best_fit_params) %>%
+    bind_cols(params_tibble)
+  write_csv(final_results, here("data", "simulated_grt", "grtools_fit_results.csv"))
 }

@@ -4,6 +4,7 @@ import os
 from tqdm import tqdm
 from src.utils.config import *
 import argparse
+from pprint import pprint as pp
 
 class GRTDataGenerator:
     def __init__(self, num_matrices=10, num_dimensions=2, num_levels=2, trial_range=TRIALS_RANGE):
@@ -12,53 +13,64 @@ class GRTDataGenerator:
         self.num_levels = num_levels
         self.num_stimuli = self.num_dimensions * self.num_levels
         
-        self.mean_range = (-1, 1)
-        self.corr_range = (-0.99, 0.99) # Avoids singular matrices
-        self.min_rho1 = 0.1
-        self.min_mean_diff = 0.1 # ensuring means differ when they ought to (e.g., when psa present, b dims should be different) - this is kinda large.. too large for practical purposes? Test this stuff later - for now, just testing to see if the network runs.
-        self.var_range = (0.1, 1.5)
-        self.crit_range = (self.mean_range[0] * 0.8, self.mean_range[1] * 0.8)
-        self.pi_tolerance = 0.1 # Max off-diagonal correlation** value
-        self.rho1_tolerance = 0.1 # Max mean squared difference between matrices
-        self.coin_flip = 0.8
+        self.mean_range = (-5, 5) # setting an imbalance creates a greater chance of ordered means. Is this the best way of doing it? probably not even remotely.
+        self.mean_sep = 0.2
+        self.pi_tolerance = 0.2
+        self.corr_range = (self.pi_tolerance, 0.99)
+        self.variance = 1.0
+        self.crit_range = (self.mean_range[0] * 0.9, self.mean_range[1] * 0.9)
         self.sample_loss = 0.1
         self.trial_range = trial_range
-
-        # in order of constraints
-        self.model_names = [
-            'pi_ps_ds', # 4
-            'rho1_ps_ds', # 5
-            'pi_psa_ds', 'pi_psb_ds', # 6
-            'rho1_psa_ds', 'rho1_psb_ds', # 7
-            'pi_ds', 'ps_ds', # 8
-            'rho1_ds', # 9
-            'psa_ds', 'psb_ds', # 10
-            'ds', # 12
-        ]
-
-
-    def generate_cm(self, model_name, n_stimulus_trials):
-        means, cov_mat, c = self.random_model_params(model_name)
-        samples = self.get_samples(means, cov_mat, n_stimulus_trials, sample_loss_factor=self.sample_loss)
-        cm_rows = []
-        trial_counts = np.array([])
-        for _, stim_samples in enumerate(samples):
-            response_counts = self.get_response_counts(stim_samples, c)
-            cm_rows.append(response_counts)
-            trial_counts = np.concatenate([trial_counts, [len(stim_samples)]])
-        cm = np.vstack(cm_rows)
+        self.min_accuracy = MIN_MATRIX_ACCURACY
+        self.max_accuracy = MAX_MATRIX_ACCURACY
+        self.n_accuracy_bins = MATRIX_ACCURACY_BINS
         
-        flat_params = np.concatenate([means.flatten(), np.array([m.flatten() for m in cov_mat]).flatten(), c])
-        return cm, trial_counts, flat_params, means, cov_mat, c
+        self.model_names = MODEL_NAMES
+
+    def accuracy_check(self, cm, min_acc, max_acc):
+        correct_counts = np.diag(cm)
+        total_trials = np.sum(cm, axis=1)
+        accuracies = np.divide(
+            correct_counts, total_trials, 
+            out=np.zeros_like(correct_counts, dtype=float), 
+            where=total_trials != 0
+        )
+        grand_mean_accuracy = np.mean(accuracies)
+        return min_acc < grand_mean_accuracy <= max_acc
+
+    def generate_cm(self, model_name, n_stimulus_trials, min_acc, max_acc):
+        max_attempts = 10
+        for n_trial_attempts in range(max_attempts):
+            means, cov_mat = self.random_model_params(model_name, min_acc)
+            cm = np.zeros((self.num_stimuli, self.num_stimuli), dtype=int)
+            for sample_attempts in range(max_attempts):
+                samples = self.get_samples(means, cov_mat, n_stimulus_trials, sample_loss_factor=self.sample_loss)
+                for _ in range(max_attempts):
+                    c = self.random_crit(means)
+                    trial_counts = np.array([])
+                    for i, stim_samples in enumerate(samples):
+                        counts = self.get_response_counts(stim_samples, c)
+                        cm[i, :] = counts
+                        trial_counts = np.concatenate([trial_counts, [len(stim_samples)]])
+                    if self.accuracy_check(cm, min_acc, max_acc):
+                        flat_params = np.concatenate([means.flatten(), np.array([m.flatten() for m in cov_mat]).flatten(), c])
+                        return cm, trial_counts, flat_params, means, cov_mat, c
+            n_stimulus_trials+=1
+        return None, None, None, None, None, None
 
     def generate_cms(self, model_name, n_matrices=1):
         cms, trial_counts, params = [], [], []
-        for i in tqdm(range(n_matrices), total=n_matrices, desc=f"Generating matrices for {model_name}"):
-            n_trials = int(np.ceil(np.random.uniform(*self.trial_range)))
-            cm, trial_count, flat_params, _, _, _ = self.generate_cm(model_name, n_trials)
-            cms.append(cm.flatten())
-            trial_counts.append(trial_count)
-            params.append(flat_params)
+        min_accuracies = np.round(np.linspace(self.min_accuracy, self.max_accuracy, self.n_accuracy_bins) / 100, 3)
+        for idx, min_acc in enumerate(min_accuracies[:-1]):
+            max_acc = min_accuracies[idx+1]
+            for i in tqdm(range(n_matrices), total=n_matrices, desc=f"Generating matrices for {model_name} at {min_acc*100:.1f}-{max_acc*100:.1f}%"):
+                cm = None
+                while cm is None:
+                    n_trials = int(np.ceil(np.random.uniform(*self.trial_range)))
+                    cm, trial_count, flat_params, _, _, _ = self.generate_cm(model_name, n_trials, min_acc, max_acc)
+                cms.append(cm.flatten())
+                trial_counts.append(trial_count)
+                params.append(flat_params)
         return cms, trial_counts, params
 
     def generate_all_model_cms(self):
@@ -72,60 +84,118 @@ class GRTDataGenerator:
             cms.extend(model_cms)
             parameters.extend(model_params)
             trial_counts.extend(model_trial_counts)
-            y_cls.extend([model_class] * self.num_matrices)
-            y_cls_label.extend([model_label] * self.num_matrices)
-        
+            y_cls.extend([model_class]*len(model_cms))
+            y_cls_label.extend([model_label]*len(model_cms))
+         
         return np.array(cms), np.array(parameters), np.array(trial_counts), np.array(y_cls), np.array(y_cls_label)
     
-    def random_model_params(self, model_name="ds"):
-        means = self.random_means()
-        cov_mat = self.get_cov_mats()
-        
-        if 'pi' in model_name:
-            cov_mat = self._set_pi()
-        elif 'rho1' in model_name:
-            cov_mat = self._set_rho1(cov_mat)
-        else: # For unconstrained models (ds, psa_ds, psb_ds, etc.)
-            while self._is_pi_like(cov_mat) or self._is_rho1_like(cov_mat):
-                cov_mat = self.get_cov_mats()
+    def random_model_params(self, model_name="pi_ps_ds", min_acc=0.25):
+        has_pi = 'pi' in model_name
+        has_rho1 = 'rho1' in model_name
+        has_psa = 'psa' in model_name or 'ps_' in model_name
+        has_psb = 'psb' in model_name or 'ps_' in model_name
+        means = self._generate_constrained_means(has_psa, has_psb, min_acc)
+        cov_mat = self._generate_constrained_cov(has_pi, has_rho1)
+        return means, cov_mat#, c
 
-        if 'psa' in model_name:
-            means = self._set_psa(means)
-            while (np.abs(means[3] - means[1]) < self.min_mean_diff or
-                   np.abs(means[5] - means[7]) < self.min_mean_diff):
-                means = self.random_means()
-                means = self._set_psa(means)
-        if 'psb' in model_name:
-            means = self._set_psb(means)
-            while (np.abs(means[4] - means[0]) < self.min_mean_diff or
-                   np.abs(means[6] - means[2]) < self.min_mean_diff):
-                means = self.random_means()
-                means = self._set_psb(means)
-        if 'ps_ds' == model_name:
-            means = self._set_ps(means)
-        
-        # Ensure models sans ps don't accidentally become psa, psb, or both!
-        if model_name == 'pi_ds' or model_name == 'rho1_ds' or model_name == 'ds':
-             while (np.abs(means[4] - means[0]) < self.min_mean_diff and
-                    np.abs(means[6] - means[2]) < self.min_mean_diff) or \
-                   (np.abs(means[3] - means[1]) < self.min_mean_diff and
-                    np.abs(means[5] - means[7]) < self.min_mean_diff):
-                means = self.random_means()
+
+    def _generate_constrained_means(self, has_psa, has_psb, min_acc):
+        while True:
+            means_x = np.hstack([0.0, np.random.uniform(*self.mean_range, self.num_stimuli-1)])
+            means_y = np.hstack([0.0, np.random.uniform(*self.mean_range, self.num_stimuli-1)])
+            if np.random.rand() < min_acc:
+                # order x means
+                means_x[1] = np.random.uniform(0, self.mean_range[1])
+                means_x[3] = np.random.uniform(means_x[2], self.mean_range[1])
+                # order y means
+                means_y[2] = np.random.uniform(0, self.mean_range[1])
+                means_y[3] = np.random.uniform(means_y[1], self.mean_range[1])
+                
+            # Apply PSA constraint
+            if has_psa:
+                means_x[2] = means_x[0]
+                means_x[1] = means_x[3]
+            # Apply PSB constraint
+            if has_psb:
+                means_y[1] = means_y[0]
+                means_y[2] = means_y[3]
             
-        c = self.random_crit(means)
+            # Check for accidental perfect constraints
+            psa_accident = not has_psa and np.abs(means_x[2] - means_x[0]) < self.mean_sep and np.abs(means_x[3] - means_x[1]) < self.mean_sep
+            psb_accident = not has_psb and np.abs(means_y[1] - means_y[0]) < self.mean_sep and np.abs(means_y[3] - means_y[2]) < self.mean_sep
+            
+            if not psa_accident and not psb_accident:
+                means = np.vstack([means_x, means_y]).T.flatten()
+                return np.round(means, 3)
 
-        return means, cov_mat, c
+    
+
+    def _create_cov_mat(self, corr):
+        return np.array([
+            [self.variance, corr*self.variance],
+            [corr*self.variance, self.variance]
+        ])
+
+    def _generate_constrained_cov(self, has_pi, has_rho1):
+        if has_pi:
+            return self._set_pi()
+        elif has_rho1:
+            return self._set_rho1()
+        else: 
+            return self._set_ds()
+
+    def _set_pi(self):
+        pi_matrix = self._create_cov_mat(0.0)
+        return np.array([pi_matrix] * self.num_stimuli)
+
+    def _set_rho1(self):
+        corr = np.random.uniform(*self.corr_range)
+        if np.random.rand() < 0.5:
+            corr = -corr
+        rho1_matrix = self._create_cov_mat(corr)
+        return np.array([rho1_matrix] * self.num_stimuli) 
+
+    def _set_ds(self):
+        correlations = []
+        while True:
+            corrs = np.random.uniform(*self.corr_range, self.num_stimuli)
+            signs = np.random.choice([-1, 1], self.num_stimuli)
+            correlations = corrs * signs
+            
+            # Check for pi-like accident (all near zero) and rho1-like accident (all similar)
+            is_pi_like = np.all(np.abs(correlations) < self.pi_tolerance)
+            is_rho1_like = np.max(correlations) - np.min(correlations) < self.pi_tolerance
+            if not is_pi_like and not is_rho1_like:
+                break
+                
+        cov_mats = [self._create_cov_mat(c) for c in correlations]
+        return np.array(cov_mats)
 
     def random_crit(self, means):
-        means_dim1_range = (min(means[0], means[2]), max(means[0], means[2]))
-        means_dim2_range = (min(means[1], means[3]), max(means[1], means[3]))
-        if np.random.rand() < self.coin_flip:
-            crit1 = np.random.uniform(*means_dim1_range)
-            crit2 = np.random.uniform(*means_dim2_range)
-            return np.round(np.array([crit1, crit2]), 2)
-        else:
-            return np.round(np.random.uniform(*self.crit_range, 2), 2)
+        """
+        Generates critical values from a normal distribution centered on the mean
+        of the stimulus locations for each dimension.
+        """
+        # Get the mean positions for each dimension
+        means_x = means[0::2]
+        means_y = means[1::2]
+        
+        # Calculate the center and standard deviation for the normal distribution
+        # The standard deviation is a fraction of the range of the means.
+        mid_x = np.mean(means_x)
+        mid_y = np.mean(means_y)
+        std_x = (np.max(means_x) - np.min(means_x)) / (len(means_x) + 1)
+        std_y = (np.max(means_y) - np.min(means_y)) / (len(means_y) + 1)
 
+        c_x = np.random.normal(mid_x, std_x)
+        c_y = np.random.normal(mid_y, std_y)
+        
+        c_x = np.clip(c_x, self.crit_range[0], self.crit_range[1])
+        c_y = np.clip(c_y, self.crit_range[0], self.crit_range[1])
+        
+        return np.round(np.array([c_x, c_y]), 2)
+    
+    
     def get_samples(self, means, cov_mat, size, sample_loss_factor=0.1):
         dist_samples = [
             multivariate_normal.rvs(
@@ -141,119 +211,11 @@ class GRTDataGenerator:
         samples = np.atleast_2d(samples)
         counts = np.zeros(4, dtype=int)
         counts[0] = np.sum((samples[:, 0] < c[0]) & (samples[:, 1] < c[1]))
-        counts[1] = np.sum((samples[:, 0] < c[0]) & (samples[:, 1] >= c[1]))
-        counts[2] = np.sum((samples[:, 0] >= c[0]) & (samples[:, 1] < c[1]))
+        counts[1] = np.sum((samples[:, 0] >= c[0]) & (samples[:, 1] < c[1]))
+        counts[2] = np.sum((samples[:, 0] < c[0]) & (samples[:, 1] >= c[1]))
         counts[3] = np.sum((samples[:, 0] >= c[0]) & (samples[:, 1] >= c[1]))
-        
         return counts
-
-
-    def random_means(self):
-        means = np.zeros(self.num_stimuli * self.num_dimensions, dtype=float)
-        means[2:] = np.random.uniform(*self.mean_range, self.num_stimuli * self.num_dimensions - 2)
-
-        if np.random.rand() < self.coin_flip:
-            # Stimulus 1 has a greater x-mean than stimulus 0
-            means[2] = np.random.uniform(0.05, self.mean_range[1]) # Ensure s1 is in positive space
-        if np.random.rand() < self.coin_flip:
-            # stimulus 2 has a greater y-mean than stimulus 0
-            means[5] = np.random.uniform(0.05, self.mean_range[1])
-        if np.random.rand() < self.coin_flip:
-            # stimulus 3 has a greater x-mean than stimulus 2
-            means[4], means[6] = np.sort([means[4], means[6]])
-        if np.random.rand() < self.coin_flip:
-            # stimulus 3 has a greater y-mean than stimulus 1
-            means[3], means[7] = np.sort([means[3], means[7]])
-        return np.round(means, 3)
-
-    def random_cov_mat(self):
-        # Generate random eigenvalues
-        # They must be positive to ensure a positive definite matrix
-        eigenvalues = np.random.uniform(self.var_range[0], self.var_range[1], self.num_dimensions)
-        # Generate a random orthogonal matrix (Q) for eigenvectors
-        # This is a random rotation matrix
-        Q, _ = np.linalg.qr(np.random.rand(self.num_dimensions, self.num_dimensions))
-        # Construct the covariance matrix using the spectral decomposition
-        # Formula: Cov = Q @ Lambda @ Q.T
-        # Where Q is the matrix of eigenvectors and Lambda is the diagonal matrix of eigenvalues
-        diag_eigenvalues = np.diag(eigenvalues)
-        cov_mat = Q @ diag_eigenvalues @ Q.T
-        # Ensure the matrix is perfectly symmetric due to potential floating point errors
-        cov_mat = (cov_mat + cov_mat.T) / 2
-        
-        return np.round(cov_mat, 2)
-    
-    def get_cov_mats(self):
-        cov_mat = [self.random_cov_mat() for _ in range(self.num_stimuli)]
-        return np.array(cov_mat)
-    
-    def _set_pi(self):
-        new_cov_mat = []
-        for _ in range(self.num_stimuli):
-            off_diag_noise = np.random.uniform(-0.02, 0.02)
-            variances = np.random.uniform(self.var_range[0], self.var_range[1], self.num_dimensions)
-            diag_matrix = np.diag(variances)
-            diag_matrix[0, 1] = off_diag_noise
-            diag_matrix[1, 0] = off_diag_noise
-            new_cov_mat.append(diag_matrix)
-        return np.array(new_cov_mat)
-
-    def _set_rho1(self, cov_mat):
-        rho1_cov_mat = self.random_cov_mat()
-        while np.abs(rho1_cov_mat[0, 1]) < self.min_rho1:
-            rho1_cov_mat = self.random_cov_mat()
-        for i in range(self.num_stimuli):
-            cov_mat[i] = rho1_cov_mat.copy()
-        return cov_mat
-
-    def _set_ps(self, means):
-        return self._set_psa(self._set_psb(means))
-
-    def _set_psa(self, means):
-        # x-means of A are same across levels of B.
-        offset = np.random.uniform(-self.min_mean_diff/2, self.min_mean_diff/2)
-        means[4] = means[0] + offset
-        offset = np.random.uniform(-self.min_mean_diff/2, self.min_mean_diff/2)
-        means[6] = means[2] + offset
-        return means
-
-
-    def _set_psb(self, means):
-        # y-means of B are same across levels of A
-        offset = np.random.uniform(-self.min_mean_diff/2, self.min_mean_diff/2)
-        means[3] = means[1] + offset
-        offset = np.random.uniform(-self.min_mean_diff/2, self.min_mean_diff/2)
-        means[5] = means[7] + offset
-        return means
-
-    def _cov_to_corr(self, cov_mat):
-        """
-        Helper function to convert covariance matrix to correlation matrix
-        """
-        std_devs = np.sqrt(np.diag(cov_mat))
-        outer_prod = np.outer(std_devs, std_devs)
-        corr_mat = cov_mat / outer_prod
-        corr_mat[1, 0] = corr_mat[0, 1]
-        np.fill_diagonal(corr_mat, 1)
-        return corr_mat
-    
-    def _is_pi_like(self, cov_mat_list):
-        """
-        Check if all covariance matrices are "pi-like" (i.e., nearly diagonal)
-        """
-        return all(
-            np.abs(self._cov_to_corr(cov_mat)[0, 1]) < self.pi_tolerance for cov_mat in cov_mat_list
-        )
-        
-    def _is_rho1_like(self, cov_mat_list):
-        """
-        Check if ALL matrices in a set are "rho1-like" (i.e., nearly identical).
-        """
-        first_mat = cov_mat_list[0]
-        return all(
-            np.allclose(first_mat, current_mat, atol=self.rho1_tolerance)
-            for current_mat in cov_mat_list[1:]
-        )
+   
     
     def generate_parameter_controlled_cms(self, n_matrices, vary_means=True, vary_covariances=True, vary_crits=True):
         fixed_means = np.array([0., 0., 0.5, 0., 0., 0.5, 0.5, 0.5])
@@ -335,7 +297,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     if not (args.full or args.pretraining or args.all or args.tbt):
-        parser.error("At least one argument (--full, --pretraining, or --both) is required.")
+        parser.error("At least one argument (--full, --pretraining, or --tbt, or --all) is required.")
 
     if args.all or args.pretraining:
         # Stage 1: Vary only means, keep everything else fixed
@@ -389,7 +351,7 @@ if __name__ == "__main__":
     if args.all or args.full:
         # --- Existing data generation logic (unmodified for comparison) ---
         print("\n--- Generating data for all model constraints ---")
-        gen = GRTDataGenerator(num_matrices=NUM_MATRICES_PER_MODEL, num_dimensions=2, num_levels=2, trial_range=TRIALS_RANGE)
+        gen = GRTDataGenerator(num_matrices=NUM_MATRICES_PER_ACCURACY_BIN, num_dimensions=2, num_levels=2, trial_range=TRIALS_RANGE)
         cms, parameters, trial_counts, y_cls, y_cls_label = gen.generate_all_model_cms()
         np.savez(DATASET_FILE, X=cms, X_trials=trial_counts, y_params=parameters, y_model_cls=y_cls, y_cls_label=y_cls_label)
 
@@ -417,4 +379,5 @@ if __name__ == "__main__":
             y_params=all_params,
             y_model_labels=all_labels
         )
-        print(f"Done! Trial-by-trial data saved {TRIAL_BY_TRIAL_FIAL}.")
+        print(f"Done! Trial-by-trial data saved to {TRIAL_BY_TRIAL_FIAL}.")
+

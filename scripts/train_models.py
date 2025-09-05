@@ -1,9 +1,10 @@
 import tensorflow as tf
 from tensorflow import keras
 from keras.utils import to_categorical
-from keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
+from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, accuracy_score
+from scipy.stats import skew
 import numpy as np
 import os
 import matplotlib.pyplot as plt
@@ -14,110 +15,112 @@ import json
 import sys
 import time
 
-# These imports are assumed to be available from your project structure
 from src.utils.model_plotting_funcs import *
 from src.utils.GRT_data_generator import GRTDataGenerator
-from src.models.parallel_multi_task_model import get_parallel_multi_task_model_config
-from src.models.cascaded_non_bayesian_model import get_cascaded_non_bayesian_model_config
-from src.models.cascaded_mc_dropout_model import get_cascaded_mc_dropout_model_config
-from src.models.cascaded_weighted_uncertainty_model import get_cascaded_weighted_uncertainty_model_config
-from src.models.gated_multi_task_model import get_gated_multi_task_model_config
-from src.models.customised_gate_control_model import get_customised_gate_control_model_config
-from src.models.independent_separate_param_loss import get_independent_separate_param_loss_config, make_regression_losses, convert_targets_to_scales_corr, convert_scales_corr_to_cov
-
 from src.utils.config import *
 
-# Define whether to use pre-trained models. Set this to False to train from scratch.
-USE_PRETRAINED_MODELS = True
-
-# The denormalization function is no longer needed since we are using raw values.
 
 def load_model_from_file(module_name):
     """Dynamically loads the model builder and config from a specified Python file."""
     try:
+        module_name = module_name.split(".")[0]
         model_module = importlib.import_module(f"src.models.{module_name}")
-        return getattr(model_module, f"get_{module_name.lower()}_config")()
+        model_builder_name = f"build_{module_name.split('_')[0].lower()}_models" if "independent" in module_name else f"build_{module_name.split('.')[0].lower()}_model"
+        model_builder = getattr(model_module, model_builder_name)
+        
+        config_name = f"{module_name.split('.')[0].upper()}_CONFIG"
+        config = getattr(model_module, config_name)
+        return model_builder, config
     except (ModuleNotFoundError, AttributeError) as e:
         print(f"Error loading model from '{module_name}': {e}")
         return None, None
 
-
-def log_data_splits_to_csv(all_data, train_val_indices, test_indices, filename=SIMULATED_DATA_SPLIT_LOG):
+def log_data_splits_to_csv(data_full, idx_train_val, idx_test, filename=SIMULATED_DATA_SPLIT_LOG):
     """
     Creates and saves a CSV file logging the data split (train/validation/test) 
     for each sample in the dataset.
-    
-    Args:
-        all_data (tuple): The tuple containing all dataset arrays before splitting.
-        train_val_indices (np.array): The indices of samples assigned to the
-                                      combined training and validation set.
-        test_indices (np.array): The indices of samples assigned to the test set.
-        filename (str): The name of the output CSV file.
     """
-    # Unpack the all_data tuple to get the necessary arrays
-    X_combined, X_trials, y_params, y_model_cls, y_cls_label = all_data
-    split_labels = pd.Series(index=np.arange(len(y_cls_label)), dtype='object')
-    split_labels.loc[test_indices] = 'test'
-    split_labels.loc[train_val_indices] = 'train_val' # This will be split further later - but distinction is unnecessary for our analysis. I think..
-
-    # Create the DataFrame
+    _, _, _, _, _, _, y_cls_name,_  = data_full
+    split_labels = pd.Series(index=np.arange(len(y_cls_name)), dtype='object')
+    split_labels.loc[idx_test] = 'test'
+    split_labels.loc[idx_train_val] = 'train_val'
     data_log = pd.DataFrame({
-        'sample_id': np.arange(len(y_cls_label)),
-        'model_name': y_cls_label,
+        'sample_id': np.arange(len(y_cls_name)),
+        'model_name': y_cls_name,
         'data_split': split_labels.values
     })
-    
-    # Save the DataFrame to a CSV file
     data_log.to_csv(filename, index=False)
     print(f"Data split log saved to {filename}")
     
+def normalise_var(train, test, mean, std):
+    # Normalize the training and test regression targets
+    train = (train - mean) / std
+    test = (test - mean) / std
+    return train, test
  
-def train_and_evaluate_model(model, X_train, train_targets, X_val, val_targets, config):
-    """Trains and evaluates a single Keras model, capturing timing and model size."""
-    callbacks = [
-        EarlyStopping(monitor='val_loss', patience=PATIENCE, restore_best_weights=True),
-        ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=10, min_lr=0.00001),
-        ModelCheckpoint(filepath=os.path.join(MODEL_RESULTS_DIR, f"{config['model_name']}_best_model.h5"),
-                        monitor='val_loss', save_best_only=True, verbose=1)
-    ]
-    
-    # --- Start Timer ---
-    start_time = time.time()
-    
-    history = model.fit(
-        X_train,
-        train_targets,
-        epochs=EPOCHS,
-        batch_size=BATCH_SIZE,
-        validation_data=(X_val, val_targets),
-        callbacks=callbacks
-    )
+def denorm_var(preds, mean, std):
+    return (preds * std) + mean
 
-    # --- Stop Timer ---
-    end_time = time.time()
-    training_time_sec = end_time - start_time
-    
-    # Save history
-    history_path = os.path.join(MODEL_RESULTS_DIR, f"{config['model_name']}_history.json")
-    serializable_history = {key: [float(val) for val in values] for key, values in history.history.items()}
-    with open(history_path, 'w') as f:
-        json.dump(serializable_history, f)
-    print(f"Training history saved to: {history_path}") 
-    
-    # Save computational metrics
-    metrics_path = os.path.join(MODEL_RESULTS_DIR, f"{config['model_name']}_computational_metrics.json")
-    trainable_params = np.sum([tf.keras.backend.count_params(w) for w in model.trainable_weights])
-    computational_metrics = {
-        'training_time_seconds': training_time_sec,
-        'trainable_parameters': int(trainable_params),
-        'best_epoch': int(np.argmin(history.history['val_loss'])) + 1
-    }
-    with open(metrics_path, 'w') as f:
-        json.dump(computational_metrics, f)
-    print(f"Computational metrics saved to: {metrics_path}")
 
-    return model, history
+def compute_matrix_features(X, X_trials, epsilon=1e-8):
+    n_samples = X.shape[0]
+    n_classes = 4
+    X_props = X / (np.repeat(X_trials, n_classes, axis=1) + epsilon)
+    X_matrices = X_props.reshape(n_samples, n_classes, n_classes)
 
+    features = []
+
+    for mat, trials in zip(X_matrices, X_trials):
+        # Flattened row/column statistics
+        row_entropy = (-np.sum(mat * np.log(mat + epsilon), axis=1)).ravel()
+        col_entropy = (-np.sum(mat * np.log(mat + epsilon), axis=0)).ravel()
+        row_var = np.var(mat, axis=1).ravel()
+        col_var = np.var(mat, axis=0).ravel()
+        row_skew = np.array([skew(r) if np.std(r) > 1e-12 else 0.0 for r in mat]).ravel()
+
+        diag_probs = np.diagonal(mat).ravel()
+        off_diag_sum = (np.sum(mat, axis=1) - diag_probs).ravel()
+        overall_accuracy = np.atleast_1d(np.sum(diag_probs) / (trials + epsilon))
+
+        # Marginals
+        x_marginal = np.atleast_1d(np.array([np.sum(mat[[0,2], :]), np.sum(mat[[1,3], :])]))
+        y_marginal = np.atleast_1d(np.array([np.sum(mat[[0,1], :]), np.sum(mat[[2,3], :])]))
+
+        # Bias/tendency
+        row_sum = np.sum(mat, axis=1).ravel()
+        col_sum = np.sum(mat, axis=0).ravel()
+        row_bias = row_sum / (trials + epsilon)
+        col_bias = col_sum / (trials + epsilon)
+
+        # Confusability / discriminability
+        confusability_off_diag = off_diag_sum / (row_sum + epsilon)
+        discriminability = (diag_probs - np.mean(mat - np.diag(np.diag(mat)), axis=1)).ravel()
+
+        # Concatenate everything safely
+        feat_vector = np.hstack([
+            mat.flatten(),
+            row_entropy, col_entropy,
+            row_var, col_var,
+            row_skew,
+            diag_probs, off_diag_sum,
+            overall_accuracy,
+            x_marginal, y_marginal,
+            row_bias, col_bias,
+            confusability_off_diag,
+            discriminability
+        ])
+
+        features.append(feat_vector)
+
+    return np.array(features)
+
+def prepare_regression_targets(y_means, y_covs, y_crit, y_cls_ids):
+    """Append class IDs to means and covs for regression inputs; leave crit unchanged."""
+    class_ids = np.argmax(y_cls_ids, axis=1).reshape(-1, 1)
+    y_means_w_id = np.concatenate([y_means, class_ids], axis=1)
+    y_covs_w_id = np.concatenate([y_covs, class_ids], axis=1)
+    y_crit_w_id = y_crit
+    return y_means_w_id, y_covs_w_id, y_crit_w_id
 
 if __name__ == '__main__':
     gen = GRTDataGenerator(num_matrices=NUM_MATRICES_PER_MODEL, trial_range=TRIALS_RANGE)
@@ -128,309 +131,341 @@ if __name__ == '__main__':
         X = data['X']
         X_trials = data['X_trials']
         y_params = data['y_params']
-        y_model_cls = data['y_model_cls']
-        y_cls_label = data['y_cls_label']
-
+        y_cls_id = data['y_model_cls']
+        y_cls_name = data['y_cls_label']
+        y_accuracy = np.sum(X[:, [0, 5, 10, 15]], axis=1) / np.sum(X_trials, axis=1)
     else:
         print(f"Generating a new dataset with {NUM_MATRICES_PER_MODEL} matrices per model...")
-        X, y_params, X_trials, y_model_cls, y_cls_label = gen.generate_all_model_cms()
-        np.savez(DATASET_FILE, X=X, X_trials=X_trials, y_params=y_params, y_model_cls=y_model_cls, y_cls_label=y_cls_label)
+        X, y_params, X_trials, y_cls_id, y_cls_name = gen.generate_all_model_cms()
+        y_accuracy = np.sum(X[:, [0, 5, 10, 15]], axis=1) / np.sum(X_trials, axis=1)
+        np.savez(DATASET_FILE, X=X, X_trials=X_trials, y_params=y_params,
+                 y_model_cls=y_cls_id, y_cls_label=y_cls_name)
         print("Dataset saved!")
-    
-    model_names = gen.model_names
-    y_model_cls = to_categorical(y_model_cls)
 
-    X_proportions = X / (np.repeat(X_trials, 4, axis=1) + EPSILON)
-    X_trials_log = np.log(X_trials + EPSILON)
-    X_combined = np.hstack([X_proportions, X_trials_log])
+    # --- Prepare regression and classification targets ---
+    y_means = y_params[:, 2:8]
+    y_covs = y_params[:, [9, 13, 17, 21]]
+    y_crit = y_params[:, 24:26]
+    y_cls_id = to_categorical(y_cls_id)
 
-    all_data = (X_combined, X_trials, y_params, y_model_cls, y_cls_label)
+    # --- Feature extraction ---
+    if os.path.exists(MATRIX_FEATURE_FILE):
+        print(f"Loading {MATRIX_FEATURE_FILE}...")
+        feature_data = np.load(MATRIX_FEATURE_FILE)
+        X_input = feature_data['X_input']
+    else:
+        print("Generating matrix features...")
+        X_input = compute_matrix_features(X, X_trials)
+        np.savez(MATRIX_FEATURE_FILE, X_input=X_input)
 
-    original_indices = np.arange(len(y_cls_label))
-    train_val_indices, test_indices = train_test_split(
-        original_indices,
-        test_size=TEST_SPLIT, 
-        stratify=y_model_cls, 
+    data_full = (X_input, X_trials, y_means, y_covs, y_crit, y_cls_id, y_cls_name, y_accuracy)
+
+    # --- Split dataset ---
+    train_val_idx, test_idx = train_test_split(
+        np.arange(len(y_cls_name)),
+        test_size=TEST_SPLIT,
+        stratify=np.argmax(y_cls_id, axis=1),
         random_state=42
     )
-    log_data_splits_to_csv(all_data, train_val_indices, test_indices)
 
-    # 1. First split: Create a held-out test set (20%)
-    (X_train_val, X_test, X_trials_train_val, X_trials_test, 
-     y_reg_train_val, y_reg_test, y_cls_train_val, y_cls_test, 
-     y_cls_label_train_val, y_cls_label_test) = train_test_split(
-         *all_data, test_size=TEST_SPLIT, stratify=y_model_cls, random_state=42
+    # --- Save split information (train+val vs test) ---
+    log_data_splits_to_csv(data_full, train_val_idx, test_idx)
+
+    # --- Index all arrays ---
+    X_train_val_raw, X_test_raw = X_input[train_val_idx], X_input[test_idx]
+    X_trials_train_val, X_trials_test = X_trials[train_val_idx], X_trials[test_idx]
+    y_means_train_val_raw, y_means_test_raw = y_means[train_val_idx], y_means[test_idx]
+    y_covs_train_val_raw, y_covs_test_raw = y_covs[train_val_idx], y_covs[test_idx]
+    y_crit_train_val_raw, y_crit_test_raw = y_crit[train_val_idx], y_crit[test_idx]
+    y_cls_train_val, y_cls_test = y_cls_id[train_val_idx], y_cls_id[test_idx]
+    y_cls_name_train_val, y_cls_name_test = y_cls_name[train_val_idx], y_cls_name[test_idx]
+    y_accuracy_train_val, y_accuracy_test = y_accuracy[train_val_idx], y_accuracy[test_idx]
+
+    # --- Split train_val into train and validation ---
+    train_idx, val_idx = train_test_split(
+        np.arange(len(X_train_val_raw)),
+        test_size=0.25,
+        stratify=np.argmax(y_cls_train_val, axis=1),
+        random_state=42
     )
 
-    # Get the mapping from model name to numeric index for filtering
-    model_name_to_idx = {name: i for i, name in enumerate(model_names)}
+    X_train_raw, X_val_raw = X_train_val_raw[train_idx], X_train_val_raw[val_idx]
+    y_means_train_raw, y_means_val_raw = y_means_train_val_raw[train_idx], y_means_train_val_raw[val_idx]
+    y_covs_train_raw, y_covs_val_raw = y_covs_train_val_raw[train_idx], y_covs_train_val_raw[val_idx]
+    y_crit_train_raw, y_crit_val_raw = y_crit_train_val_raw[train_idx], y_crit_train_val_raw[val_idx]
+    y_cls_train, y_cls_val = y_cls_train_val[train_idx], y_cls_train_val[val_idx]
+    y_cls_name_train, y_cls_name_val = y_cls_name_train_val[train_idx], y_cls_name_train_val[val_idx]
+    y_accuracy_train, y_accuracy_val = y_accuracy_train_val[train_idx], y_accuracy_train_val[val_idx]
 
-    # Define these variables BEFORE the loop
-    input_shape = X_combined.shape[1]
-    num_models = len(model_names)
-    num_params = y_params.shape[1]
-    
-    # Loop through each model architecture to train it with the curriculum
+    # --- Normalize regression targets based only on TRAINING data ---
+    means_mean = np.mean(y_means_train_raw, axis=0)
+    means_std = np.std(y_means_train_raw, axis=0)
+    covs_mean = np.mean(y_covs_train_raw, axis=0)
+    covs_std = np.std(y_covs_train_raw, axis=0)
+    crit_mean = np.mean(y_crit_train_raw, axis=0)
+    crit_std = np.std(y_crit_train_raw, axis=0)
+
+    # Save normalization params for denormalization later
+    np.savez(os.path.join(MODEL_RESULTS_DIR, 'regression_normalization.npz'),
+             means_mean=means_mean, means_std=means_std,
+             covs_mean=covs_mean, covs_std=covs_std,
+             crit_mean=crit_mean, crit_std=crit_std)
+
+    # Normalize
+    y_means_train, y_means_val, y_means_test = (
+        (y_means_train_raw - means_mean) / means_std,
+        (y_means_val_raw - means_mean) / means_std,
+        (y_means_test_raw - means_mean) / means_std
+    )
+    y_covs_train, y_covs_val, y_covs_test = (
+        (y_covs_train_raw - covs_mean) / covs_std,
+        (y_covs_val_raw - covs_mean) / covs_std,
+        (y_covs_test_raw - covs_mean) / covs_std
+    )
+    y_crit_train, y_crit_val, y_crit_test = (
+        (y_crit_train_raw - crit_mean) / crit_std,
+        (y_crit_val_raw - crit_mean) / crit_std,
+        (y_crit_test_raw - crit_mean) / crit_std
+    )
+
+    # --- Normalize input features based only on TRAINING data ---
+    X_mean = np.mean(X_train_raw, axis=0)
+    X_std = np.std(X_train_raw, axis=0) + 1e-8
+
+    X_train = (X_train_raw - X_mean) / X_std
+    X_val = (X_val_raw - X_mean) / X_std
+    X_test = (X_test_raw - X_mean) / X_std
+
+    # Save input normalization params
+    np.savez(os.path.join(MODEL_RESULTS_DIR, 'input_feature_normalization.npz'),
+             X_mean=X_mean, X_std=X_std)
+
+
+    # --- Model name mapping ---
+    model_name_to_idx = {name: i for i, name in enumerate(gen.model_names)}
+    input_shape = X_input.shape[1]
+    num_models = len(gen.model_names)
+
+    # --- Training loop ---
     for MODEL_FILE in MODEL_FILES:
         model_builder, config = load_model_from_file(MODEL_FILE)
         if not model_builder:
             continue
-        
+
+        built_model = model_builder(input_shape, num_models, dropout_rate=DROPOUT, activation=ACTIVATION)
+        is_multi_task = config.get('is_multi_task', False)
+
+        if is_multi_task:
+            model = built_model
+            model.compile(
+                optimizer=keras.optimizers.Adam(learning_rate=LEARNING_RATE),
+                loss=config['losses'],
+                loss_weights=config.get('loss_weights', None),
+                metrics=config['metrics']
+            )
+        else:
+            if isinstance(built_model, tuple):
+                cls_model, reg_model = built_model
+                cls_model.compile(
+                    optimizer=keras.optimizers.Adam(learning_rate=LEARNING_RATE),
+                    loss=config['cls_losses'],
+                    metrics=[config['cls_metrics']]
+                )
+                reg_model.compile(
+                    optimizer=keras.optimizers.Adam(learning_rate=LEARNING_RATE),
+                    loss=config['reg_losses'],
+                    loss_weights=config.get('loss_weights', None),
+                    metrics=config['reg_metrics']
+                )
+
         print(f"\n--- Training {config['model_name']} with Curriculum Learning ---")
-        if MODEL_FILE == "independent_separate_param_loss":
-            _, reg_model = model_builder(input_shape, num_models, num_params, dropout_rate=DROPOUT, activation=ACTIVATION)
-            if USE_PRETRAINED_MODELS:
-                pretrained_reg_path = os.path.join(PRETRAINED_MODELS_DIR, f"{config['model_name']}_pretrained.h5")
-                if os.path.exists(pretrained_reg_path):
-                    print(f"Loading pre-trained regression weights for {config['model_name']}...")
-                    reg_model.load_weights(pretrained_reg_path)
-                else:
-                    print(f"No pre-trained weights found for {config['model_name']}. Training from scratch.")
-            model_to_train = reg_model
-                
-        # Initialize the model(s) once before the curriculum loop
-        if config.get('is_multi_task', True):
-            model = model_builder(input_shape, num_models, num_params, dropout_rate=DROPOUT, activation=ACTIVATION)
-            if USE_PRETRAINED_MODELS:
-                pretrained_path = os.path.join(PRETRAINED_MODELS_DIR, f"{config['model_name']}_pretrained.h5")
-                if os.path.exists(pretrained_path):
-                    print(f"Loading pre-trained weights for {config['model_name']}...")
-                    try:
-                        # by_name=True: Matches layers by name instead of by order.
-                        # skip_mismatch=True: Skips layers that have a shape mismatch.
-                        model.load_weights(pretrained_path, by_name=True, skip_mismatch=True)
-                        print(f"Successfully loaded shared layer weights from '{pretrained_path}'.")
-                    except Exception as e:
-                        print(f"Warning: Could not load pre-trained weights. Error: {e}")
-                        print("The model will be trained from scratch. Check the model architecture and file path.")
-                else:
-                    print(f"Warning: Pre-trained weights not found at {pretrained_path}. Training from scratch.")
-
-        else: # Independent models
-            if MODEL_FILE == "independent_separate_param_loss":  # This is GPT-independent
-                _, reg_model = model_builder(input_shape, num_models, num_params, dropout_rate=DROPOUT, activation=ACTIVATION)
-                if USE_PRETRAINED_MODELS:
-                    pretrained_reg_path = os.path.join(PRETRAINED_MODELS_DIR, f"{config['model_name']}_pretrained.h5")
-                    if os.path.exists(pretrained_reg_path):
-                        print(f"Loading pre-trained regression weights for {config['model_name']}...")
-                        reg_model.load_weights(pretrained_reg_path)
-                    else:
-                        print(f"No pre-trained weights found for {config['model_name']}. Training from scratch.")
-                model_to_train = reg_model
-            else:
-                cls_model, reg_model = model_builder(input_shape, num_models, num_params, dropout_rate=DROPOUT, activation=ACTIVATION)
-                if USE_PRETRAINED_MODELS:
-                    pretrained_reg_path = os.path.join(PRETRAINED_MODELS_DIR, f"{config['model_name']}_pretrained.h5")
-                    if os.path.exists(pretrained_reg_path):
-                        print(f"Loading pre-trained regression weights for {config['model_name']}...")
-                        reg_model.load_weights(pretrained_reg_path)
-                    else:
-                        print(f"Warning: Pre-trained regression weights not found at {pretrained_reg_path}. Training from scratch.")
-
-        current_curriculum_labels = []
+        combined_history, cls_history, reg_history = {}, {}, {}
+        cumulative_mask = np.zeros(len(X_train), dtype=bool)
 
 
-        # Curriculum Training Loop
-        for stage_idx, stage_models in enumerate(STAGED_CURRICULUM):
-            print(f"\n--- Stage {stage_idx + 1}: Adding models {stage_models} ---")
-            current_curriculum_labels.extend(stage_models)
-            
-            # Get the numeric indices for the current curriculum models
-            current_curriculum_indices = [model_name_to_idx[name] for name in current_curriculum_labels]
-            
-            # Filter the train_val dataset based on the current curriculum
-            mask = np.isin(np.argmax(y_cls_train_val, axis=1), current_curriculum_indices)
-            X_train_curriculum_val = X_train_val[mask]
-            y_reg_train_val_curriculum = y_reg_train_val[mask]
-            y_cls_train_val_curriculum = y_cls_train_val[mask]
-            
-            # Re-split the filtered data for this stage into train and val sets
-            (X_train_stage, X_val_stage, 
-             y_reg_train_stage, y_reg_val_stage, 
-             y_cls_train_stage, y_cls_val_stage) = train_test_split(
-                 X_train_curriculum_val, y_reg_train_val_curriculum, y_cls_train_val_curriculum,
-                 test_size=0.25, stratify=y_cls_train_val_curriculum, random_state=42
+        for stage_idx, (accuracy_range, stage_models) in enumerate(STAGED_CURRICULUM):
+            print(f"\n--- Stage {stage_idx + 1}: Accuracy {accuracy_range}, Models {stage_models} ---")
+
+            # Map model names to indices
+            curr_indices = [model_name_to_idx[name] for name in stage_models]
+
+            # Mask training samples belonging to the current stage
+            stage_mask = np.isin(np.argmax(y_cls_train, axis=1), curr_indices)
+            accuracy_mask = (y_accuracy_train >= accuracy_range[0]) & (y_accuracy_train < accuracy_range[1])
+            cumulative_mask = np.logical_or(cumulative_mask, stage_mask & accuracy_mask)
+
+            # Stage data (TRAINING only)
+            X_stage = X_train[cumulative_mask]
+            y_mean_stage = y_means_train[cumulative_mask]
+            y_cov_stage = y_covs_train[cumulative_mask]
+            y_crit_stage = y_crit_train[cumulative_mask]
+            y_cls_stage = y_cls_train[cumulative_mask]
+
+            # Split stage into train/val
+            stage_indices = np.arange(len(X_stage))
+            stage_train_idx, stage_val_idx = train_test_split(
+                stage_indices,
+                test_size=0.25,
+                stratify=np.argmax(y_cls_stage, axis=1),
+                random_state=42
             )
 
-            print(f"Number of training samples in this stage: {X_train_stage.shape[0]}")
-            print(f"Number of validation samples in this stage: {X_val_stage.shape[0]}")
-            print(f"Batches per epoch: {X_train_stage.shape[0] / BATCH_SIZE}") 
-            if MODEL_FILE == "independent_separate_param_loss":
-                y_reg_train = convert_targets_to_scales_corr(y_reg_train_stage)
-                y_reg_val = convert_targets_to_scales_corr(y_reg_val_stage)
-            else:
-                y_reg_train = y_reg_train_stage
-                y_reg_val = y_reg_val_stage
+            X_train_stage, X_val_stage = X_stage[stage_train_idx], X_stage[stage_val_idx]
+            y_mean_train_stage, y_mean_val_stage = y_mean_stage[stage_train_idx], y_mean_stage[stage_val_idx]
+            y_cov_train_stage, y_cov_val_stage = y_cov_stage[stage_train_idx], y_cov_stage[stage_val_idx]
+            y_crit_train_stage, y_crit_val_stage = y_crit_stage[stage_train_idx], y_crit_stage[stage_val_idx]
+            y_cls_train_stage, y_cls_val_stage = y_cls_stage[stage_train_idx], y_cls_stage[stage_val_idx]
 
+            # --- Prepare regression targets ---
+            y_mean_train_stage_w_id, y_cov_train_stage_w_id, y_crit_train_stage_w_id = prepare_regression_targets(
+                y_mean_train_stage, y_cov_train_stage, y_crit_train_stage, y_cls_train_stage
+            )
+            y_mean_val_stage_w_id, y_cov_val_stage_w_id, y_crit_val_stage_w_id = prepare_regression_targets(
+                y_mean_val_stage, y_cov_val_stage, y_crit_val_stage, y_cls_val_stage
+            )
+            # --- Callbacks ---
             callbacks = [
-                EarlyStopping(monitor='val_loss', patience=PATIENCE, min_delta=MIN_DELTA, restore_best_weights=True),
-                ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=10, min_lr=0.00001)
+                ReduceLROnPlateau(monitor='val_loss', factor=RLRP_FACTOR, patience=RLRP_PATIENCE, min_lr=RLRP_MIN_LR, verbose=1),
+                EarlyStopping(monitor='val_loss', patience=PATIENCE, min_delta=MIN_DELTA, verbose=1, restore_best_weights=True)
             ]
-            
-            # Use the final filename for the ModelCheckpoint in the last stage
-            is_final_stage = (stage_idx == len(STAGED_CURRICULUM) - 1)
-            final_filepath = os.path.join(MODEL_RESULTS_DIR, f"{config['model_name']}.h5")
 
-            if config.get('is_multi_task', True):
-                model_name = config['model_name']
-                # Determine the filename for this stage
-                filepath = final_filepath if is_final_stage else os.path.join(MODEL_RESULTS_DIR, f"{model_name}_stage_{stage_idx}_best_model.h5")
-                callbacks.append(ModelCheckpoint(filepath=filepath, monitor='val_loss', save_best_only=True, verbose=1))
-                
-                model.compile(
-                    optimizer=keras.optimizers.Adam(learning_rate=LEARNING_RATE),
-                    loss=config['losses'],
-                    loss_weights=config.get('loss_weights', None),
-                    metrics=config['metrics']
-                )
-# 
-                train_targets = {'classification_output': y_cls_train_stage, config['output_names'][1]: y_reg_train}
-                val_targets = {'classification_output': y_cls_val_stage, config['output_names'][1]: y_reg_val}
+            # --- Training ---
+            if is_multi_task:
+                train_targets = {'classification_output': y_cls_train_stage,
+                                 'means_output': y_mean_train_stage_w_id,
+                                 'cov_output': y_cov_train_stage_w_id,
+                                 'crit_output': y_crit_train_stage_w_id}
+                val_targets = {'classification_output': y_cls_val_stage,
+                               'means_output': y_mean_val_stage_w_id,
+                               'cov_output': y_cov_val_stage_w_id,
+                               'crit_output': y_crit_val_stage_w_id}
 
-                model.fit(
+                history = model.fit(
                     x=X_train_stage, y=train_targets,
                     epochs=EPOCHS, batch_size=BATCH_SIZE,
                     validation_data=(X_val_stage, val_targets),
-                    callbacks=callbacks, verbose=1
+                    callbacks=callbacks + [
+                        ModelCheckpoint(
+                            filepath=os.path.join(MODEL_RESULTS_DIR, f"{config['model_name']}_{stage_idx+1}.h5"),
+                            monitor='val_loss', save_best_only=True, save_weights_only=False, verbose=1
+                        )
+                    ],
+                    verbose=2
                 )
-                
-                # Load the best weights from the last stage's ModelCheckpoint
-                model.load_weights(filepath)
-                
-                
-            else:  # Independent models
-                if MODEL_FILE == "independent_separate_param_loss":
-                    reg_model_name = f"{config['model_name']}_Regression"
-                    reg_filepath = os.path.join(MODEL_RESULTS_DIR, f"{reg_model_name}.h5") if is_final_stage else os.path.join(MODEL_RESULTS_DIR, f"{reg_model_name}_stage_{stage_idx}_best_model.h5")
+                for key, value in history.history.items():
+                    combined_history.setdefault(key, []).extend(value)
 
-                    reg_callbacks = [
-                        EarlyStopping(monitor='val_loss', patience=PATIENCE, min_delta=MIN_DELTA, restore_best_weights=True),
-                        ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=10, min_lr=0.00001),
-                        ModelCheckpoint(filepath=reg_filepath, monitor='val_loss', save_best_only=True, verbose=1)
-                    ]
+            else:  # Independent model
+                # Classification
+                history_cls = cls_model.fit(
+                    x=X_train_stage, y=y_cls_train_stage,
+                    epochs=EPOCHS, batch_size=BATCH_SIZE,
+                    validation_data=(X_val_stage, y_cls_val_stage),
+                    callbacks=callbacks + [
+                        ModelCheckpoint(
+                            filepath=os.path.join(MODEL_RESULTS_DIR, f"{config['model_name']}_cls_{stage_idx+1}.h5"),
+                            monitor='val_loss', save_best_only=True, save_weights_only=False, verbose=1
+                        )
+                    ],
+                    verbose=2
+                )
+                for key, value in history_cls.history.items():
+                    cls_history.setdefault(key, []).extend(value)
 
-                    # Compile & train regression model
-                    reg_model.compile(
-                        optimizer=keras.optimizers.Adam(learning_rate=LEARNING_RATE),
-                        loss=config['losses'],
-                        loss_weights=config['loss_weights'],
-                        metrics=config['metrics']
-                    )
-                    reg_model.fit(
-                        X_train_stage,
-                        {
-                            'means_out': y_reg_train[:, 0:8],
-                            'scales_corr_out': y_reg_train[:, 8:20],
-                            'crit_out': y_reg_train[:, 20:22]
-                        },
-                        validation_data=(
-                            X_val_stage,
-                            {
-                                'means_out': y_reg_val[:, 0:8],
-                                'scales_corr_out': y_reg_val[:, 8:20],
-                                'crit_out': y_reg_val[:, 20:22]
-                            }
-                        ),
-                        epochs=EPOCHS,
-                        batch_size=BATCH_SIZE,
-                        callbacks=reg_callbacks,
-                        verbose=1
-                    )
+                # Regression
+                train_targets = {
+                    'means_output': y_mean_train_stage_w_id,
+                    'cov_output': y_cov_train_stage_w_id,
+                    'crit_output': y_crit_train_stage_w_id
+                }
+                val_targets = {
+                    'means_output': y_mean_val_stage_w_id,
+                    'cov_output': y_cov_val_stage_w_id,
+                    'crit_output': y_crit_val_stage_w_id
+                }
+                if config['model_name'] == "IndependentEnsemble":
+                    reg_train_inputs = [X_train_stage, y_cls_train_stage]
+                    reg_val_inputs = [X_val_stage, y_cls_val_stage]
                 else:
-                    cls_model_name = f"{config['model_name']}_Classification"
-                    reg_model_name = f"{config['model_name']}_Regression"
-                    
-                    # Determine the filename for this stage
-                    cls_filepath = os.path.join(MODEL_RESULTS_DIR, f"{cls_model_name}.h5") if is_final_stage else os.path.join(MODEL_RESULTS_DIR, f"{cls_model_name}_stage_{stage_idx}_best_model.h5")
-                    reg_filepath = os.path.join(MODEL_RESULTS_DIR, f"{reg_model_name}.h5") if is_final_stage else os.path.join(MODEL_RESULTS_DIR, f"{reg_model_name}_stage_{stage_idx}_best_model.h5")
+                    reg_train_inputs = X_train_stage
+                    reg_val_inputs = X_val_stage
+                history_reg = reg_model.fit(
+                    x=reg_train_inputs,
+                    y=train_targets,
+                    epochs=EPOCHS, batch_size=BATCH_SIZE,
+                    validation_data=(reg_val_inputs, val_targets),
+                    callbacks=callbacks + [
+                        ModelCheckpoint(
+                            filepath=os.path.join(MODEL_RESULTS_DIR, f"{config['model_name']}_reg_{stage_idx+1}.h5"),
+                            monitor='val_loss', save_best_only=True, save_weights_only=False, verbose=1
+                        )
+                    ],
+                    verbose=2
+                )
+                for key, value in history_reg.history.items():
+                    reg_history.setdefault(key, []).extend(value)
 
-                    # Define callbacks for both models
-                    cls_callbacks = [
-                        EarlyStopping(monitor='val_loss', patience=PATIENCE, min_delta=MIN_DELTA, restore_best_weights=True),
-                        ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=10, min_lr=0.00001),
-                        ModelCheckpoint(filepath=cls_filepath, monitor='val_loss', save_best_only=True, verbose=1)
-                    ]
-                    
-                    reg_callbacks = [
-                        EarlyStopping(monitor='val_loss', patience=PATIENCE, min_delta=MIN_DELTA, restore_best_weights=True),
-                        ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=10, min_lr=0.00001),
-                        ModelCheckpoint(filepath=reg_filepath, monitor='val_loss', save_best_only=True, verbose=1)
-                    ]
-                    
-                    # Train the classification model
-                    print("\n--- Training Independent Classification Model ---")
-                    cls_model.compile(optimizer=keras.optimizers.Adam(learning_rate=LEARNING_RATE), loss=config['losses']['classification_output'], metrics=[config['metrics']['classification_output']])
-                    cls_model.fit(x=X_train_stage, y=y_cls_train_stage, epochs=EPOCHS, batch_size=BATCH_SIZE, validation_data=(X_val_stage, y_cls_val_stage), callbacks=cls_callbacks, verbose=1)
-                    cls_model.load_weights(cls_filepath)
+        # --- Final evaluation ---
+        regression_params = np.load(os.path.join(MODEL_RESULTS_DIR, 'regression_normalization.npz'))
+        
+        # Denormalize predictions and compare to RAW test data
+        if is_multi_task:
+            final_combined_history = keras.callbacks.History()
+            final_combined_history.history = combined_history
+            plot_history(final_combined_history, FIGURES_DIR, config['model_name'])
+            
+            y_pred_cls, y_pred_means, y_pred_covs, y_pred_crit = model.predict(X_test)
+            
+            y_pred_means = denorm_var(y_pred_means, regression_params['means_mean'], regression_params['means_std'])
+            y_pred_covs = denorm_var(y_pred_covs, regression_params['covs_mean'], regression_params['covs_std'])
+            y_pred_crit = denorm_var(y_pred_crit, regression_params['crit_mean'], regression_params['crit_std'])
 
-                    # Train the regression model
-                    print("\n--- Training Independent Regression Model ---")
+            final_mae_means = mean_absolute_error(y_means_test_raw, y_pred_means)
+            final_mae_covs = mean_absolute_error(y_covs_test_raw, y_pred_covs)
+            final_mae_crit = mean_absolute_error(y_crit_test_raw, y_pred_crit)
 
- 
-                    reg_model.compile(optimizer=keras.optimizers.Adam(learning_rate=LEARNING_RATE), loss=config['losses']['regression_output'], metrics=[config['metrics']['regression_output']])
-                    reg_model.fit(x=X_train_stage, y=y_reg_train, epochs=EPOCHS, batch_size=BATCH_SIZE, validation_data=(X_val_stage, y_reg_val), callbacks=reg_callbacks, verbose=1)
-                reg_model.load_weights(reg_filepath)
-                
-        # --- Final Evaluation on the held-out test set ---
-        print("\n--- Final Evaluation on Full Test Set ---")
-
-        # Determine predictions based on model type
-        if config.get('is_multi_task', True):
-            # Multi-task model: y_pred is a list [cls_output, reg_output]
-            y_pred_list = model.predict(X_test)
-            y_pred_cls = y_pred_list[0]
-            y_pred_reg = y_pred_list[1]
-
-        elif MODEL_FILE == "independent_separate_param_loss":
-            # GPT-independent model: may return dict or list
-            y_pred_dict = reg_model.predict(X_test)
-            y_pred_reg = convert_scales_corr_to_cov(
-                np.hstack([y_pred_dict['means_out'], y_pred_dict['scales_corr_out'], y_pred_dict['crit_out']])
-            )
-            y_pred_reg = convert_scales_corr_to_cov(np.hstack([y_means_pred, y_scales_pred, y_crit_pred]))
-            y_pred_cls = np.zeros_like(y_cls_test)
-
-        else:
-            # Standard independent model
+        else:  # Independent model
+            # History plots (this part is correct)
+            final_cls_history = keras.callbacks.History()
+            final_cls_history.history = cls_history
+            plot_history(final_cls_history, FIGURES_DIR, config['model_name'] + "_cls")
+            
+            final_reg_history = keras.callbacks.History()
+            final_reg_history.history = reg_history
+            plot_history(final_reg_history, FIGURES_DIR, config['model_name'] + "_reg")
+            
+            # Get predictions from the classification model
             y_pred_cls = cls_model.predict(X_test)
-            y_pred_reg = reg_model.predict(X_test)
+            
+            if config['model_name'] == "IndependentEnsemble":
+                predicted_class_ids = np.argmax(y_pred_cls, axis=1)
+                y_pred_class_onehot = to_categorical(predicted_class_ids, num_classes=num_models)
+                reg_test_inputs = [X_test, y_pred_class_onehot]
+            else:
+                reg_test_inputs = X_test
+            y_pred_means, y_pred_covs, y_pred_crit = reg_model.predict(reg_test_inputs)
 
-        # Ensure predictions are 2D
-        if y_pred_reg.ndim == 1:
-            y_pred_reg = np.expand_dims(y_pred_reg, axis=1)
+            # Denormalize predictions and compare to RAW test data
+            y_pred_means = denorm_var(y_pred_means, regression_params['means_mean'], regression_params['means_std'])
+            y_pred_covs = denorm_var(y_pred_covs, regression_params['covs_mean'], regression_params['covs_std'])
+            y_pred_crit = denorm_var(y_pred_crit, regression_params['crit_mean'], regression_params['crit_std'])
 
-        # Compute metrics
+            final_mae_means = mean_absolute_error(y_means_test_raw, y_pred_means)
+            final_mae_covs = mean_absolute_error(y_covs_test_raw, y_pred_covs)
+            final_mae_crit = mean_absolute_error(y_crit_test_raw, y_pred_crit)
+
+        # Calculate final evaluation metrics
         final_accuracy = accuracy_score(np.argmax(y_cls_test, axis=1), np.argmax(y_pred_cls, axis=1))
-        final_mae = mean_absolute_error(y_reg_test, y_pred_reg)
 
         print(f"Final Test Accuracy: {final_accuracy:.4f}")
-        print(f"Final Test MAE: {final_mae:.4f}")
+        print("=== Final Test MAE ===")
+        print(f"Means: {final_mae_means:.3f}\nCovariances: {final_mae_covs:.3f}\nCrits: {final_mae_crit:.3f}")
+            
+        # Plotting
+        plot_confusion_matrix(y_cls_test, y_pred_cls, gen.model_names, FIGURES_DIR, config['model_name'] + "_cls")
 
-        # Plot confusion matrix for classification
-        plot_confusion_matrix(
-            y_cls_test, y_pred_cls, model_names, FIGURES_DIR, 
-            f"{config['model_name']}_Classification"
+        plot_regression_performance(
+            np.hstack([y_means_test, y_covs_test, y_crit_test]),
+            np.hstack([y_pred_means, y_pred_covs, y_pred_crit]),
+            FIGURES_DIR, config['model_name'] + "_reg"
         )
-
-        # Plot regression performance
-        num_outputs = y_pred_reg.shape[1]
-        num_cols = 4
-        num_rows = int(np.ceil(num_outputs / num_cols))
-        fig, axs = plt.subplots(num_rows, num_cols, figsize=(num_cols * 4, num_rows * 4), squeeze=False)
-        fig.suptitle(f'True vs. Predicted Values for {config["model_name"]}', fontsize=16)
-
-        for i in range(num_outputs):
-            ax = axs.flatten()[i]
-            ax.scatter(y_reg_test[:, i], y_pred_reg[:, i], alpha=0.5)
-            line_min = min(y_reg_test[:, i].min(), y_pred_reg[:, i].min())
-            line_max = max(y_reg_test[:, i].max(), y_pred_reg[:, i].max())
-            ax.plot([line_min, line_max], [line_min, line_max], 'r--')
-            ax.text(0.05, 0.95, f'{PARAM_NAMES[i]}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-            ax.set_xlabel('True Value')
-            ax.set_ylabel('Predicted Value')
-
-        plt.tight_layout()
-        plt.subplots_adjust(top=0.95)
-        regression_plot_path = os.path.join(FIGURES_DIR, f"{config['model_name']}_regression_performance.png")
-        plt.savefig(regression_plot_path)
-        # plt.show()
