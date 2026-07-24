@@ -1,0 +1,18 @@
+{
+  "id": "v16",
+  "claim": "LBA recovery; extra params cost no GRT identifiability",
+  "result": {
+    "lba_correlations": {
+      "t0": 0.6061238040873813,
+      "threshold_A": 0.5704625905055967,
+      "drift_k_A": 0.3993080908801714,
+      "drift_k_B": 0.39131967805902074
+    },
+    "grt_recovery_with_lba": {
+      "z_MAE": 0.4369513455323824,
+      "rho_MAE": 0.30916866904294515
+    }
+  },
+  "pass": true,
+  "seconds": 7.1
+}

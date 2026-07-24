@@ -1,0 +1,14 @@
+{
+  "id": "v06",
+  "claim": "stable across training seeds",
+  "result": {
+    "per_seed_MAE": [
+      0.2934301361842012,
+      0.29615236755774205,
+      0.29437212333839613
+    ],
+    "spread": 0.0011287728307164558
+  },
+  "pass": true,
+  "seconds": 13.3
+}

@@ -1,0 +1,1017 @@
+Folder PATH listing for volume Windows
+Volume serial number is 18E3-B08F
+C:.
+|   .gitignore
+|   .Rhistory
+|   full-tree.txt
+|   grin.Rproj
+|   grin_notes.txt
+|   ignored-status.txt
+|   README.md
+|   requirements.txt
+|   setup.py
+|   tracked-files.txt
+|   
++---articles
+|       grt extended to response times.pdf
+|       logical rule models of classification response times.pdf
+|       
++---data
+|   +---mdsdt_data
+|   |   |   silbert09a.rda
+|   |   |   silbert09b.rda
+|   |   |   silbert12.rda
+|   |   |   thomas01a.rda
+|   |   |   thomas01b.rda
+|   |   |   
+|   |   \---review_format
+|   |           thomas15a.rda
+|   |           thomas15b.rda
+|   |           wo89xt.rda
+|   |           
+|   +---real
+|   \---simulated
+|           grt_dataset.npz
+|           grt_rt_dataset.npz
+|           test_set_for_R.csv
+|           
++---docs
+|       DESIGN_RECORD.md
+|       FIGURE_EXPLAINER.md
+|       FIGURE_OVERHAUL.md
+|       GRT_model_spec.md
+|       interpreting.md
+|       PROJECT_OVERVIEW.md
+|       
++---grant
+|       funding-announcement-n0001425sbc03-globalx-white-paper-template.docx
+|       N0001425SB001 Companies-Interested-in-Subcontracting-Opps_13May2025.xlsx
+|       N0001425SB001_Amendment 0006.pdf
+|       white_paper_draft_Cognitive Architecture for Adaptive Perceptual Training in Human.docx
+|       
++---grin.egg-info
+|       dependency_links.txt
+|       PKG-INFO
+|       requires.txt
+|       SOURCES.txt
+|       top_level.txt
+|       
++---manuscript
+|       10_introduction.log
+|       10_introduction.tex
+|       20_methods.tex
+|       abstract.tex
+|       GRIN_introduction.tex
+|       main.aux
+|       main.bbl
+|       main.bcf
+|       main.blg
+|       main.log
+|       main.out
+|       main.pdf
+|       main.run.xml
+|       main.synctex.gz
+|       main.tex
+|       references.bib
+|       
++---presentations
+|   |   GRIN_poster.svg
+|   |   sbi_poster
+|   |   SBI_workshop_abstract.docx
+|   |   
+|   \---sbi_workshop
+|       |   grinposter.sty
+|       |   hero_PREVIEW.pdf
+|       |   latexmkrc
+|       |   make_poster_figures.py
+|       |   pipeline.log
+|       |   pipeline.tex
+|       |   pipeline_preview.aux
+|       |   pipeline_preview.log
+|       |   pipeline_preview.pdf
+|       |   pipeline_preview.synctex.gz
+|       |   pipeline_preview.tex
+|       |   poster.aux
+|       |   poster.log
+|       |   poster.pdf
+|       |   poster.synctex.gz
+|       |   poster.tex
+|       |   poster_PREVIEW.pdf
+|       |   README.md
+|       |   
+|       +---figures
+|       |       accuracy_crossover.png
+|       |       calibration.png
+|       |       constructs.png
+|       |       figure_explainer.pdf
+|       |       poster_recovery.png
+|       |       speed_accuracy.png
+|       |       
+|       \---__pycache__
+|               make_poster_figures.cpython-310.pyc
+|               
++---results
+|   +---figures
+|   |   |   calibration.png
+|   |   |   comparison_to_r.png
+|   |   |   confusion.png
+|   |   |   confusion_constructs.png
+|   |   |   constructs.png
+|   |   |   coverage_report.png
+|   |   |   error_map.png
+|   |   |   recovery.png
+|   |   |   speed_accuracy.png
+|   |   |   uncertainty.png
+|   |   |   
+|   |   +---generation
+|   |   |       congruency_asymmetry.png
+|   |   |       correlation.png
+|   |   |       overall_accuracy.png
+|   |   |       per_stimulus_accuracy.png
+|   |   |       response_bias.png
+|   |   |       sensitivity.png
+|   |   |       trials_per_stimulus.png
+|   |   |       
+|   |   +---recovery
+|   |   |       recovery.png
+|   |   |       recovery_grin.png
+|   |   |       recovery_grin_12way.png
+|   |   |       recovery_grtools.png
+|   |   |       recovery_grtools_12way.png
+|   |   |       recovery_mdsdt.png
+|   |   |       recovery_mdsdt_12way.png
+|   |   |       recovery_python_mle.png
+|   |   |       summary_classification.png
+|   |   |       summary_recovery.png
+|   |   |       
+|   |   \---rt
+|   |           cm_baseline_error_map_matched.png
+|   |           rt_architecture.png
+|   |           rt_by_architecture.png
+|   |           rt_calibration.png
+|   |           rt_confusion.png
+|   |           rt_confusion_constructs.png
+|   |           rt_error_map.png
+|   |           rt_lba.png
+|   |           rt_recovery.png
+|   |           rt_speed_accuracy.png
+|   |           rt_uncertainty.png
+|   |           rt_vs_counts_constructs.png
+|   |           rt_vs_counts_error_gain.png
+|   |           rt_vs_counts_paired.png
+|   |           rt_vs_counts_recovery.png
+|   |           
+|   +---mle_fits
+|   |       baseline_fits.csv
+|   |       
+|   +---models
+|   |       npe_model.onnx
+|   |       npe_model.pt
+|   |       npe_rt_model.onnx
+|   |       npe_rt_model.pt
+|   |       
+|   +---training_history
+|   |       training_history.csv
+|   |       training_history_rt.csv
+|   |       
+|   +---validation
+|   |   |   SUMMARY.md
+|   |   |   v01.json
+|   |   |   v02.json
+|   |   |   v03.json
+|   |   |   v04.json
+|   |   |   v05.json
+|   |   |   v06.json
+|   |   |   v07.json
+|   |   |   v08.json
+|   |   |   v09.json
+|   |   |   v10.json
+|   |   |   v11.json
+|   |   |   v12.json
+|   |   |   v13.json
+|   |   |   v14.json
+|   |   |   v15.json
+|   |   |   v16.json
+|   |   |   
+|   |   \---sweeps
+|   |           prior.json
+|   |           trials.json
+|   |           
+|   \---_archive
+|       +---figures
+|       |   |   .gitkeep
+|       |   |   accuracy_boxplot.png
+|       |   |   accuracy_vs_trials_subplots.png
+|       |   |   class_confusions_Attention_cls.png
+|       |   |   class_confusions_CascadedClassifierRegressor_cls.png
+|       |   |   class_confusions_CascadedRegressorClassifier_cls.png
+|       |   |   class_confusions_Ensemble_Classifier.png
+|       |   |   class_confusions_GatedHeads_cls.png
+|       |   |   class_confusions_Independent_cls.png
+|       |   |   class_confusions_ParallelMultiTask_cls.png
+|       |   |   class_confusions_ProgressiveSpecialization_cls.png
+|       |   |   class_confusions_SharedBackboneMultiTask_cls.png
+|       |   |   class_confusions_SharedSpecialized_cls.png
+|       |   |   coverage_report.png
+|       |   |   param_pred_Attention_reg.png
+|       |   |   param_pred_CascadedClassifierRegressor_reg.png
+|       |   |   param_pred_CascadedRegressorClassifier_reg.png
+|       |   |   param_pred_GatedHeads_reg.png
+|       |   |   param_pred_Independent_reg.png
+|       |   |   param_pred_ParallelMultiTask_reg.png
+|       |   |   param_pred_ProgressiveSpecialization_reg.png
+|       |   |   param_pred_SharedBackboneMultiTask_reg.png
+|       |   |   param_pred_SharedSpecialized_reg.png
+|       |   |   simulated_confusion_matrix_mean.png
+|       |   |   simulated_confusion_matrix_std.png
+|       |   |   training_history_Attention.png
+|       |   |   training_history_CascadedClassifierRegressor.png
+|       |   |   training_history_CascadedRegressorClassifier.png
+|       |   |   training_history_GatedHeads.png
+|       |   |   training_history_Independent_cls.png
+|       |   |   training_history_Independent_reg.png
+|       |   |   training_history_ParallelMultiTask.png
+|       |   |   training_history_ProgressiveSpecialization.png
+|       |   |   training_history_SharedBackboneMultiTask.png
+|       |   |   training_history_SharedSpecialized.png
+|       |   |   
+|       |   +---model_eval
+|       |   |   +---Attention
+|       |   |   |       calibration_curve.png
+|       |   |   |       confusion_matrix.png
+|       |   |   |       confusion_matrix_raw.png
+|       |   |   |       error_hist_cov1.png
+|       |   |   |       error_hist_cov2.png
+|       |   |   |       error_hist_cov3.png
+|       |   |   |       error_hist_cov4.png
+|       |   |   |       error_hist_crit1.png
+|       |   |   |       error_hist_crit2.png
+|       |   |   |       error_hist_mean1.png
+|       |   |   |       error_hist_mean2.png
+|       |   |   |       error_hist_mean3.png
+|       |   |   |       error_hist_mean4.png
+|       |   |   |       error_hist_mean5.png
+|       |   |   |       error_hist_mean6.png
+|       |   |   |       perf_vs_difficulty.png
+|       |   |   |       per_class_accuracy.png
+|       |   |   |       per_class_f1.png
+|       |   |   |       scatter_cov1.png
+|       |   |   |       scatter_cov2.png
+|       |   |   |       scatter_cov3.png
+|       |   |   |       scatter_cov4.png
+|       |   |   |       scatter_crit1.png
+|       |   |   |       scatter_crit2.png
+|       |   |   |       scatter_mean1.png
+|       |   |   |       scatter_mean2.png
+|       |   |   |       scatter_mean3.png
+|       |   |   |       scatter_mean4.png
+|       |   |   |       scatter_mean5.png
+|       |   |   |       scatter_mean6.png
+|       |   |   |       
+|       |   |   +---CascadedClassifierRegressor
+|       |   |   |       calibration_curve.png
+|       |   |   |       confusion_matrix.png
+|       |   |   |       confusion_matrix_raw.png
+|       |   |   |       error_hist_cov1.png
+|       |   |   |       error_hist_cov2.png
+|       |   |   |       error_hist_cov3.png
+|       |   |   |       error_hist_cov4.png
+|       |   |   |       error_hist_crit1.png
+|       |   |   |       error_hist_crit2.png
+|       |   |   |       error_hist_mean1.png
+|       |   |   |       error_hist_mean2.png
+|       |   |   |       error_hist_mean3.png
+|       |   |   |       error_hist_mean4.png
+|       |   |   |       error_hist_mean5.png
+|       |   |   |       error_hist_mean6.png
+|       |   |   |       perf_vs_difficulty.png
+|       |   |   |       per_class_accuracy.png
+|       |   |   |       per_class_f1.png
+|       |   |   |       scatter_cov1.png
+|       |   |   |       scatter_cov2.png
+|       |   |   |       scatter_cov3.png
+|       |   |   |       scatter_cov4.png
+|       |   |   |       scatter_crit1.png
+|       |   |   |       scatter_crit2.png
+|       |   |   |       scatter_mean1.png
+|       |   |   |       scatter_mean2.png
+|       |   |   |       scatter_mean3.png
+|       |   |   |       scatter_mean4.png
+|       |   |   |       scatter_mean5.png
+|       |   |   |       scatter_mean6.png
+|       |   |   |       
+|       |   |   +---CascadedRegressorClassifier
+|       |   |   |       calibration_curve.png
+|       |   |   |       confusion_matrix.png
+|       |   |   |       confusion_matrix_raw.png
+|       |   |   |       error_hist_cov1.png
+|       |   |   |       error_hist_cov2.png
+|       |   |   |       error_hist_cov3.png
+|       |   |   |       error_hist_cov4.png
+|       |   |   |       error_hist_crit1.png
+|       |   |   |       error_hist_crit2.png
+|       |   |   |       error_hist_mean1.png
+|       |   |   |       error_hist_mean2.png
+|       |   |   |       error_hist_mean3.png
+|       |   |   |       error_hist_mean4.png
+|       |   |   |       error_hist_mean5.png
+|       |   |   |       error_hist_mean6.png
+|       |   |   |       perf_vs_difficulty.png
+|       |   |   |       per_class_accuracy.png
+|       |   |   |       per_class_f1.png
+|       |   |   |       scatter_cov1.png
+|       |   |   |       scatter_cov2.png
+|       |   |   |       scatter_cov3.png
+|       |   |   |       scatter_cov4.png
+|       |   |   |       scatter_crit1.png
+|       |   |   |       scatter_crit2.png
+|       |   |   |       scatter_mean1.png
+|       |   |   |       scatter_mean2.png
+|       |   |   |       scatter_mean3.png
+|       |   |   |       scatter_mean4.png
+|       |   |   |       scatter_mean5.png
+|       |   |   |       scatter_mean6.png
+|       |   |   |       
+|       |   |   +---GatedHeads
+|       |   |   |       calibration_curve.png
+|       |   |   |       confusion_matrix.png
+|       |   |   |       confusion_matrix_raw.png
+|       |   |   |       error_hist_cov1.png
+|       |   |   |       error_hist_cov2.png
+|       |   |   |       error_hist_cov3.png
+|       |   |   |       error_hist_cov4.png
+|       |   |   |       error_hist_crit1.png
+|       |   |   |       error_hist_crit2.png
+|       |   |   |       error_hist_mean1.png
+|       |   |   |       error_hist_mean2.png
+|       |   |   |       error_hist_mean3.png
+|       |   |   |       error_hist_mean4.png
+|       |   |   |       error_hist_mean5.png
+|       |   |   |       error_hist_mean6.png
+|       |   |   |       perf_vs_difficulty.png
+|       |   |   |       per_class_accuracy.png
+|       |   |   |       per_class_f1.png
+|       |   |   |       scatter_cov1.png
+|       |   |   |       scatter_cov2.png
+|       |   |   |       scatter_cov3.png
+|       |   |   |       scatter_cov4.png
+|       |   |   |       scatter_crit1.png
+|       |   |   |       scatter_crit2.png
+|       |   |   |       scatter_mean1.png
+|       |   |   |       scatter_mean2.png
+|       |   |   |       scatter_mean3.png
+|       |   |   |       scatter_mean4.png
+|       |   |   |       scatter_mean5.png
+|       |   |   |       scatter_mean6.png
+|       |   |   |       
+|       |   |   +---Independent
+|       |   |   |       calibration_curve.png
+|       |   |   |       confusion_matrix.png
+|       |   |   |       confusion_matrix_raw.png
+|       |   |   |       error_hist_cov1.png
+|       |   |   |       error_hist_cov2.png
+|       |   |   |       error_hist_cov3.png
+|       |   |   |       error_hist_cov4.png
+|       |   |   |       error_hist_crit1.png
+|       |   |   |       error_hist_crit2.png
+|       |   |   |       error_hist_mean1.png
+|       |   |   |       error_hist_mean2.png
+|       |   |   |       error_hist_mean3.png
+|       |   |   |       error_hist_mean4.png
+|       |   |   |       error_hist_mean5.png
+|       |   |   |       error_hist_mean6.png
+|       |   |   |       perf_vs_difficulty.png
+|       |   |   |       per_class_accuracy.png
+|       |   |   |       per_class_f1.png
+|       |   |   |       scatter_cov1.png
+|       |   |   |       scatter_cov2.png
+|       |   |   |       scatter_cov3.png
+|       |   |   |       scatter_cov4.png
+|       |   |   |       scatter_crit1.png
+|       |   |   |       scatter_crit2.png
+|       |   |   |       scatter_mean1.png
+|       |   |   |       scatter_mean2.png
+|       |   |   |       scatter_mean3.png
+|       |   |   |       scatter_mean4.png
+|       |   |   |       scatter_mean5.png
+|       |   |   |       scatter_mean6.png
+|       |   |   |       
+|       |   |   +---ParallelMultiTask
+|       |   |   |       calibration_curve.png
+|       |   |   |       confusion_matrix.png
+|       |   |   |       confusion_matrix_raw.png
+|       |   |   |       error_hist_cov1.png
+|       |   |   |       error_hist_cov2.png
+|       |   |   |       error_hist_cov3.png
+|       |   |   |       error_hist_cov4.png
+|       |   |   |       error_hist_crit1.png
+|       |   |   |       error_hist_crit2.png
+|       |   |   |       error_hist_mean1.png
+|       |   |   |       error_hist_mean2.png
+|       |   |   |       error_hist_mean3.png
+|       |   |   |       error_hist_mean4.png
+|       |   |   |       error_hist_mean5.png
+|       |   |   |       error_hist_mean6.png
+|       |   |   |       perf_vs_difficulty.png
+|       |   |   |       per_class_accuracy.png
+|       |   |   |       per_class_f1.png
+|       |   |   |       scatter_cov1.png
+|       |   |   |       scatter_cov2.png
+|       |   |   |       scatter_cov3.png
+|       |   |   |       scatter_cov4.png
+|       |   |   |       scatter_crit1.png
+|       |   |   |       scatter_crit2.png
+|       |   |   |       scatter_mean1.png
+|       |   |   |       scatter_mean2.png
+|       |   |   |       scatter_mean3.png
+|       |   |   |       scatter_mean4.png
+|       |   |   |       scatter_mean5.png
+|       |   |   |       scatter_mean6.png
+|       |   |   |       
+|       |   |   +---ProgressiveSpecialization
+|       |   |   |       calibration_curve.png
+|       |   |   |       confusion_matrix.png
+|       |   |   |       confusion_matrix_raw.png
+|       |   |   |       error_hist_cov1.png
+|       |   |   |       error_hist_cov2.png
+|       |   |   |       error_hist_cov3.png
+|       |   |   |       error_hist_cov4.png
+|       |   |   |       error_hist_crit1.png
+|       |   |   |       error_hist_crit2.png
+|       |   |   |       error_hist_mean1.png
+|       |   |   |       error_hist_mean2.png
+|       |   |   |       error_hist_mean3.png
+|       |   |   |       error_hist_mean4.png
+|       |   |   |       error_hist_mean5.png
+|       |   |   |       error_hist_mean6.png
+|       |   |   |       perf_vs_difficulty.png
+|       |   |   |       per_class_accuracy.png
+|       |   |   |       per_class_f1.png
+|       |   |   |       scatter_cov1.png
+|       |   |   |       scatter_cov2.png
+|       |   |   |       scatter_cov3.png
+|       |   |   |       scatter_cov4.png
+|       |   |   |       scatter_crit1.png
+|       |   |   |       scatter_crit2.png
+|       |   |   |       scatter_mean1.png
+|       |   |   |       scatter_mean2.png
+|       |   |   |       scatter_mean3.png
+|       |   |   |       scatter_mean4.png
+|       |   |   |       scatter_mean5.png
+|       |   |   |       scatter_mean6.png
+|       |   |   |       
+|       |   |   +---SharedBackboneMultiTask
+|       |   |   |       calibration_curve.png
+|       |   |   |       confusion_matrix.png
+|       |   |   |       confusion_matrix_raw.png
+|       |   |   |       error_hist_cov1.png
+|       |   |   |       error_hist_cov2.png
+|       |   |   |       error_hist_cov3.png
+|       |   |   |       error_hist_cov4.png
+|       |   |   |       error_hist_crit1.png
+|       |   |   |       error_hist_crit2.png
+|       |   |   |       error_hist_mean1.png
+|       |   |   |       error_hist_mean2.png
+|       |   |   |       error_hist_mean3.png
+|       |   |   |       error_hist_mean4.png
+|       |   |   |       error_hist_mean5.png
+|       |   |   |       error_hist_mean6.png
+|       |   |   |       perf_vs_difficulty.png
+|       |   |   |       per_class_accuracy.png
+|       |   |   |       per_class_f1.png
+|       |   |   |       scatter_cov1.png
+|       |   |   |       scatter_cov2.png
+|       |   |   |       scatter_cov3.png
+|       |   |   |       scatter_cov4.png
+|       |   |   |       scatter_crit1.png
+|       |   |   |       scatter_crit2.png
+|       |   |   |       scatter_mean1.png
+|       |   |   |       scatter_mean2.png
+|       |   |   |       scatter_mean3.png
+|       |   |   |       scatter_mean4.png
+|       |   |   |       scatter_mean5.png
+|       |   |   |       scatter_mean6.png
+|       |   |   |       
+|       |   |   \---SharedSpecialized
+|       |   |           calibration_curve.png
+|       |   |           confusion_matrix.png
+|       |   |           confusion_matrix_raw.png
+|       |   |           error_hist_cov1.png
+|       |   |           error_hist_cov2.png
+|       |   |           error_hist_cov3.png
+|       |   |           error_hist_cov4.png
+|       |   |           error_hist_crit1.png
+|       |   |           error_hist_crit2.png
+|       |   |           error_hist_mean1.png
+|       |   |           error_hist_mean2.png
+|       |   |           error_hist_mean3.png
+|       |   |           error_hist_mean4.png
+|       |   |           error_hist_mean5.png
+|       |   |           error_hist_mean6.png
+|       |   |           perf_vs_difficulty.png
+|       |   |           per_class_accuracy.png
+|       |   |           per_class_f1.png
+|       |   |           scatter_cov1.png
+|       |   |           scatter_cov2.png
+|       |   |           scatter_cov3.png
+|       |   |           scatter_cov4.png
+|       |   |           scatter_crit1.png
+|       |   |           scatter_crit2.png
+|       |   |           scatter_mean1.png
+|       |   |           scatter_mean2.png
+|       |   |           scatter_mean3.png
+|       |   |           scatter_mean4.png
+|       |   |           scatter_mean5.png
+|       |   |           scatter_mean6.png
+|       |   |           
+|       |   +---pretraining
+|       |   |       .gitkeep
+|       |   |       
+|       |   +---specialist_acc
+|       |   |       error_vs_accuracy_binned_ds.png
+|       |   |       error_vs_accuracy_binned_pi_ds.png
+|       |   |       error_vs_accuracy_binned_pi_psa_ds.png
+|       |   |       error_vs_accuracy_binned_pi_psb_ds.png
+|       |   |       error_vs_accuracy_binned_pi_ps_ds.png
+|       |   |       error_vs_accuracy_binned_psa_ds.png
+|       |   |       error_vs_accuracy_binned_psb_ds.png
+|       |   |       error_vs_accuracy_binned_ps_ds.png
+|       |   |       error_vs_accuracy_binned_rho1_ds.png
+|       |   |       error_vs_accuracy_binned_rho1_psa_ds.png
+|       |   |       error_vs_accuracy_binned_rho1_psb_ds.png
+|       |   |       error_vs_accuracy_binned_rho1_ps_ds.png
+|       |   |       
+|       |   +---specialist_classifier
+|       |   +---specialist_params
+|       |   |       param_pred_ds.png
+|       |   |       param_pred_pi_ds.png
+|       |   |       param_pred_pi_psa_ds.png
+|       |   |       param_pred_pi_psb_ds.png
+|       |   |       param_pred_pi_ps_ds.png
+|       |   |       param_pred_psa_ds.png
+|       |   |       param_pred_psb_ds.png
+|       |   |       param_pred_ps_ds.png
+|       |   |       param_pred_rho1_ds.png
+|       |   |       param_pred_rho1_psa_ds.png
+|       |   |       param_pred_rho1_psb_ds.png
+|       |   |       param_pred_rho1_ps_ds.png
+|       |   |       
+|       |   +---specialist_trials
+|       |   |       error_vs_trials_binned_ds.png
+|       |   |       error_vs_trials_binned_pi_ds.png
+|       |   |       error_vs_trials_binned_pi_psa_ds.png
+|       |   |       error_vs_trials_binned_pi_psb_ds.png
+|       |   |       error_vs_trials_binned_pi_ps_ds.png
+|       |   |       error_vs_trials_binned_psa_ds.png
+|       |   |       error_vs_trials_binned_psb_ds.png
+|       |   |       error_vs_trials_binned_ps_ds.png
+|       |   |       error_vs_trials_binned_rho1_ds.png
+|       |   |       error_vs_trials_binned_rho1_psa_ds.png
+|       |   |       error_vs_trials_binned_rho1_psb_ds.png
+|       |   |       error_vs_trials_binned_rho1_ps_ds.png
+|       |   |       
+|       |   \---training
+|       |           training_history_ds_training_history.png
+|       |           training_history_pi_ds_training_history.png
+|       |           training_history_pi_psa_ds_training_history.png
+|       |           training_history_pi_psb_ds_training_history.png
+|       |           training_history_pi_ps_ds_training_history.png
+|       |           training_history_psa_ds_training_history.png
+|       |           training_history_psb_ds_training_history.png
+|       |           training_history_ps_ds_training_history.png
+|       |           training_history_rho1_ds_training_history.png
+|       |           training_history_rho1_psa_ds_training_history.png
+|       |           training_history_rho1_psb_ds_training_history.png
+|       |           training_history_rho1_ps_ds_training_history.png
+|       |           
+|       +---mle_fits
+|       \---models
+|           |   .gitkeep
+|           |   Attention_1.h5
+|           |   CascadedClassifierRegressor_1.h5
+|           |   CascadedRegressorClassifier_1.h5
+|           |   GatedHeads_1.h5
+|           |   Independent_cls_1.h5
+|           |   Independent_cls_2.h5
+|           |   Independent_cls_3.h5
+|           |   Independent_cls_4.h5
+|           |   Independent_reg_1.h5
+|           |   Independent_reg_2.h5
+|           |   Independent_reg_3.h5
+|           |   Independent_reg_4.h5
+|           |   ParallelMultiTask_1.h5
+|           |   ProgressiveSpecialization_1.h5
+|           |   SharedBackboneMultiTask_1.h5
+|           |   SharedSpecialized_1.h5
+|           |   specialist_model_ds.h5
+|           |   specialist_model_metrics.csv
+|           |   specialist_model_pi_ds.h5
+|           |   specialist_model_pi_psa_ds.h5
+|           |   specialist_model_pi_psb_ds.h5
+|           |   specialist_model_pi_ps_ds.h5
+|           |   specialist_model_psa_ds.h5
+|           |   specialist_model_psb_ds.h5
+|           |   specialist_model_ps_ds.h5
+|           |   specialist_model_rho1_ds.h5
+|           |   specialist_model_rho1_psa_ds.h5
+|           |   specialist_model_rho1_psb_ds.h5
+|           |   specialist_model_rho1_ps_ds.h5
+|           |   
+|           +---pretrained
+|           |       .gitkeep
+|           |       
+|           \---training
+|                   specialist_model_ds.h5
+|                   specialist_model_pi_ds.h5
+|                   specialist_model_pi_psa_ds.h5
+|                   specialist_model_pi_psb_ds.h5
+|                   specialist_model_pi_ps_ds.h5
+|                   specialist_model_psa_ds.h5
+|                   specialist_model_psb_ds.h5
+|                   specialist_model_ps_ds.h5
+|                   specialist_model_rho1_ds.h5
+|                   specialist_model_rho1_psa_ds.h5
+|                   specialist_model_rho1_psb_ds.h5
+|                   specialist_model_rho1_ps_ds.h5
+|                   
++---scripts
+|   |   build_benchmarks.py
+|   |   check_mle_health.py
+|   |   compare_real_data.py
+|   |   compare_to_r.py
+|   |   evaluate.py
+|   |   evaluate_rt.py
+|   |   export_for_r.py
+|   |   export_onnx.py
+|   |   generate_data.py
+|   |   make_figures.py
+|   |   make_figures_rt.py
+|   |   make_recovery_figures.py
+|   |   npz_to_csv.py
+|   |   run_all.py
+|   |   sweeps.py
+|   |   train.py
+|   |   train_rt.py
+|   |   
+|   +---R
+|   |       .Rhistory
+|   |       fit_baselines.R
+|   |       fit_real_data.R
+|   |       
+|   +---_archive
+|   |       classify_specialist_models.py
+|   |       compare_model_performance.py
+|   |       evaluate_models.py
+|   |       evaluate_specialist_models.py
+|   |       fit_grtools.R
+|   |       fit_mdsdt.R
+|   |       grtools_fit_real_data.R
+|   |       model_comparison.py
+|   |       plot_simulated_parameters.py
+|   |       plot_simulation_data.py
+|   |       pretrain_parameters.py
+|   |       save_model_predictions.py
+|   |       train_lstm_models.py
+|   |       train_models.py
+|   |       train_specialist_classifier.py
+|   |       train_specialist_models.py
+|   |       visualise_pretraining.py
+|   |       
+|   \---__pycache__
+|           build_benchmarks.cpython-310.pyc
+|           build_benchmarks.cpython-39.pyc
+|           check_mle_health.cpython-310.pyc
+|           classify_specialist_models.cpython-39.pyc
+|           compare_model_performance.cpython-39.pyc
+|           compare_to_r.cpython-310.pyc
+|           evaluate.cpython-310.pyc
+|           evaluate.cpython-39.pyc
+|           evaluate_models.cpython-39.pyc
+|           evaluate_rt.cpython-310.pyc
+|           evaluate_rt.cpython-39.pyc
+|           evaluate_specialist_models.cpython-39.pyc
+|           export_for_r.cpython-310.pyc
+|           export_for_r.cpython-39.pyc
+|           export_onnx.cpython-310.pyc
+|           export_onnx.cpython-39.pyc
+|           generate_data.cpython-310.pyc
+|           generate_data.cpython-39.pyc
+|           make_figures.cpython-310.pyc
+|           make_figures.cpython-39.pyc
+|           make_figures_rt.cpython-310.pyc
+|           make_figures_rt.cpython-39.pyc
+|           make_recovery_figures.cpython-310.pyc
+|           model_comparison.cpython-39.pyc
+|           model_evaluation.cpython-39.pyc
+|           plot_simulated_parameters.cpython-39.pyc
+|           plot_simulation_data.cpython-39.pyc
+|           pretrain_parameters.cpython-39.pyc
+|           run_all.cpython-310.pyc
+|           save_model_predictions.cpython-39.pyc
+|           train.cpython-310.pyc
+|           train.cpython-39.pyc
+|           train_lstm_models.cpython-39.pyc
+|           train_models.cpython-39-ASCPSY-NC285749.pyc
+|           train_models.cpython-39.pyc
+|           train_rt.cpython-310.pyc
+|           train_rt.cpython-39.pyc
+|           train_specialist_classifier.cpython-39.pyc
+|           train_specialist_models.cpython-39.pyc
+|           visualise_pretraining.cpython-39.pyc
+|           
++---src
+|   |   api.py
+|   |   config.py
+|   |   grt_model.py
+|   |   __init__.py
+|   |   
+|   +---adaptive
+|   |       engine.py
+|   |       training.py
+|   |       __init__.py
+|   |       
+|   +---data
+|   |   |   generator.py
+|   |   |   rt_arch_generator.py
+|   |   |   rt_lba_generator.py
+|   |   |   __init__.py
+|   |   |   
+|   |   \---__pycache__
+|   |           generator.cpython-310.pyc
+|   |           generator.cpython-39.pyc
+|   |           rt_lba_generator.cpython-310.pyc
+|   |           rt_lba_generator.cpython-39.pyc
+|   |           __init__.cpython-310.pyc
+|   |           __init__.cpython-39.pyc
+|   |           
+|   +---inference
+|   |   |   compare.py
+|   |   |   evaluate.py
+|   |   |   mle.py
+|   |   |   model_posterior.py
+|   |   |   model_selection.py
+|   |   |   ood.py
+|   |   |   predict.py
+|   |   |   predict_rt.py
+|   |   |   __init__.py
+|   |   |   
+|   |   \---__pycache__
+|   |           compare.cpython-310.pyc
+|   |           compare.cpython-39.pyc
+|   |           evaluate.cpython-310.pyc
+|   |           evaluate.cpython-39.pyc
+|   |           mle.cpython-310.pyc
+|   |           mle.cpython-39.pyc
+|   |           model_posterior.cpython-310.pyc
+|   |           model_posterior.cpython-39.pyc
+|   |           model_selection.cpython-310.pyc
+|   |           model_selection.cpython-39.pyc
+|   |           ood.cpython-310.pyc
+|   |           ood.cpython-39.pyc
+|   |           predict.cpython-310.pyc
+|   |           predict.cpython-39.pyc
+|   |           predict_rt.cpython-310.pyc
+|   |           predict_rt.cpython-39.pyc
+|   |           __init__.cpython-310.pyc
+|   |           __init__.cpython-39.pyc
+|   |           
+|   +---models
+|   |   |   heads.py
+|   |   |   losses.py
+|   |   |   network.py
+|   |   |   rt_network.py
+|   |   |   __init__.py
+|   |   |   
+|   |   +---archive
+|   |   |   |   attention.py
+|   |   |   |   cascaded_mc_dropout_model.py
+|   |   |   |   cascaded_non_bayesian_model.py
+|   |   |   |   cascaded_weighted_uncertainty_model.py
+|   |   |   |   classifier_regressor_cascade.py
+|   |   |   |   customised_gate_control_model.py
+|   |   |   |   gated_heads.py
+|   |   |   |   gated_multi_task_model.py
+|   |   |   |   independent.py
+|   |   |   |   independent_ensemble.py
+|   |   |   |   independent_models.py
+|   |   |   |   independent_separate_param_loss.py
+|   |   |   |   MISSING_FILES.md
+|   |   |   |   parallel.py
+|   |   |   |   parallel_multi_task_model.py
+|   |   |   |   progressive_specialisation.py
+|   |   |   |   regressor_classifier_cascade.py
+|   |   |   |   shared_backbone.py
+|   |   |   |   shared_specialised.py
+|   |   |   |   
+|   |   |   +---lstm
+|   |   |   |   |   bidirectional_lstm.py
+|   |   |   |   |   cnn_lstm_hybrid.py
+|   |   |   |   |   gru_model.py
+|   |   |   |   |   MISSING_FILES.md
+|   |   |   |   |   standard_lstm.py
+|   |   |   |   |   __init__.py
+|   |   |   |   |   
+|   |   |   |   \---__pycache__
+|   |   |   |           bidirectional_lstm.cpython-39.pyc
+|   |   |   |           gru_model.cpython-39.pyc
+|   |   |   |           standard_lstm.cpython-39.pyc
+|   |   |   |           
+|   |   |   \---pretrained
+|   |   |           .gitkeep
+|   |   |           CascadedMCDropout_pretrained.h5
+|   |   |           CascadedNonBayesian_pretrained.h5
+|   |   |           CascadedWeightedUncertainty_pretrained.h5
+|   |   |           CustomisedGateControl_pretrained.h5
+|   |   |           GatedMultiTask_pretrained.h5
+|   |   |           GPT_Independent_pretrained.h5
+|   |   |           Independent_pretrained-ASCPSY-NC285476.h5
+|   |   |           Independent_pretrained.h5
+|   |   |           independent_separate_param_loss_pretrained.h5
+|   |   |           ParallelMultiTask_pretrained-ASCPSY-NC285476.h5
+|   |   |           ParallelMultiTask_pretrained.h5
+|   |   |           
+|   |   \---__pycache__
+|   |           attention.cpython-39.pyc
+|   |           cascaded.cpython-39.pyc
+|   |           cascaded_mc_dropout_model.cpython-39.pyc
+|   |           cascaded_non_bayesian_model.cpython-39.pyc
+|   |           cascaded_weighted_uncertainty_model.cpython-39.pyc
+|   |           classifier_regressor_cascade.cpython-39.pyc
+|   |           customised_gate_control_model.cpython-39.pyc
+|   |           full_bayes.cpython-39.pyc
+|   |           gated_heads.cpython-39.pyc
+|   |           gated_multi_task_model.cpython-39.pyc
+|   |           GPT_independent.cpython-39.pyc
+|   |           heads.cpython-310.pyc
+|   |           heads.cpython-39.pyc
+|   |           independent.cpython-39.pyc
+|   |           independent_ensemble.cpython-39.pyc
+|   |           independent_models.cpython-39.pyc
+|   |           independent_separate_param_loss.cpython-39.pyc
+|   |           losses.cpython-310.pyc
+|   |           losses.cpython-39.pyc
+|   |           mdn_multitask_model.cpython-39.pyc
+|   |           network.cpython-310.pyc
+|   |           network.cpython-39.pyc
+|   |           parallel.cpython-39.pyc
+|   |           parallel_multi_task_model.cpython-39.pyc
+|   |           progressive_specialisation.cpython-39.pyc
+|   |           regressor_classifier_cascade.cpython-39.pyc
+|   |           rt_network.cpython-310.pyc
+|   |           rt_network.cpython-39.pyc
+|   |           shared_backbone.cpython-39.pyc
+|   |           shared_specialised.cpython-39.pyc
+|   |           __init__.cpython-310.pyc
+|   |           __init__.cpython-39.pyc
+|   |           
+|   +---viz
+|   |   |   figures.py
+|   |   |   generation.py
+|   |   |   labels.py
+|   |   |   recovery.py
+|   |   |   style.py
+|   |   |   
+|   |   \---__pycache__
+|   |           figures.cpython-310.pyc
+|   |           figures.cpython-39.pyc
+|   |           generation.cpython-39.pyc
+|   |           labels.cpython-310.pyc
+|   |           recovery.cpython-310.pyc
+|   |           style.cpython-310.pyc
+|   |           style.cpython-39.pyc
+|   |           
+|   +---_archive
+|   |   \---utils
+|   |       |   custom_losses.py
+|   |       |   GRT_data_generator.py
+|   |       |   mdsdt_grt_base.R
+|   |       |   model_comparison_funcs.py
+|   |       |   model_plotting_funcs.py
+|   |       |   npz_to_csv.py
+|   |       |   param_training_funcs.py
+|   |       |   pltStyle_8bit.py
+|   |       |   __init__.py
+|   |       |   
+|   |       \---__pycache__
+|   |               classification_loss.cpython-39.pyc
+|   |               config.cpython-313.pyc
+|   |               config.cpython-39-ASCPSY-NC285476.pyc
+|   |               config.cpython-39.pyc
+|   |               custom_losses.cpython-39.pyc
+|   |               get_covariance_matrices.cpython-39.pyc
+|   |               GRT_data_generator.cpython-313.pyc
+|   |               GRT_data_generator.cpython-39-ASCPSY-NC285749.pyc
+|   |               GRT_data_generator.cpython-39.pyc
+|   |               model_comparison_funcs.cpython-39.pyc
+|   |               model_plotting_funcs.cpython-39.pyc
+|   |               npz_to_csv.cpython-39.pyc
+|   |               param_training_funcs.cpython-39.pyc
+|   |               pltStyle_8bit.cpython-39.pyc
+|   |               __init__.cpython-313.pyc
+|   |               __init__.cpython-39.pyc
+|   |               
+|   \---__pycache__
+|           api.cpython-310.pyc
+|           api.cpython-39.pyc
+|           config.cpython-310.pyc
+|           config.cpython-39.pyc
+|           grt_model.cpython-310.pyc
+|           grt_model.cpython-39.pyc
+|           train_models.cpython-39.pyc
+|           __init__.cpython-310.pyc
+|           __init__.cpython-313.pyc
+|           __init__.cpython-39.pyc
+|           
++---tests
+|       core.test.mjs
+|       fit.test.mjs
+|       gen_io_reference.py
+|       gen_reference.py
+|       get_fit_reference.py
+|       io.test.mjs
+|       model.test.mjs
+|       run_web.sh
+|       test_generator.py
+|       test_grt_model.py
+|       
++---validation
+|   |   checks.py
+|   |   checks_rt.py
+|   |   README_validation.md
+|   |   run_all.py
+|   |   sweeps.py
+|   |   
+|   \---__pycache__
+|           checks.cpython-310.pyc
+|           checks.cpython-39.pyc
+|           checks_rt.cpython-310.pyc
+|           checks_rt.cpython-39.pyc
+|           run_all.cpython-310.pyc
+|           run_all.cpython-39.pyc
+|           sweeps.cpython-310.pyc
+|           
++---web
+|   |   .Rhistory
+|   |   analyse.html
+|   |   deploy-infra.sh
+|   |   DEPLOYMENT.md
+|   |   dynamics.html
+|   |   index.html
+|   |   learn.html
+|   |   README.md
+|   |   space-builder-time-attack.html
+|   |   space-builder.html
+|   |   validate.html
+|   |   
+|   +---assets
+|   |   +---audio
+|   |   |       eagle-screech.mp3
+|   |   |       
+|   |   +---css
+|   |   |       grin.css
+|   |   |       
+|   |   +---data
+|   |   |       benchmarks.json
+|   |   |       
+|   |   +---images
+|   |   |       captain-goodvibes.png
+|   |   |       seapig-logo.png
+|   |   |       spur-icon.png
+|   |   |       spur-icon.svg
+|   |   |       
+|   |   +---js
+|   |   |       grin-model.js
+|   |   |       grin-shell.js
+|   |   |       grt-core.js
+|   |   |       grt-fit.js
+|   |   |       grt-io.js
+|   |   |       grt-plot.js
+|   |   |       grt-sim.js
+|   |   |       
+|   |   +---models
+|   |   |   +---cm
+|   |   |   |       manifest.json
+|   |   |   |       npe_model.onnx
+|   |   |   |       
+|   |   |   \---cmrt
+|   |   |           manifest.json
+|   |   |           npe_rt_model.onnx
+|   |   |           
+|   |   \---vendor
+|   |       \---ort
+|   |               ort-wasm-simd.wasm
+|   |               ort.min.js
+|   |               
+|   \---components
+|           nav.html
+|           
++---www
+|       analyse.html
+|       grt-common.css
+|       grt-common.js
+|       grt_explorer.html
+|       npe_model.onnx
+|       test_cm.csv
+|       test_cm_headers.csv
+|       
+\---_archive

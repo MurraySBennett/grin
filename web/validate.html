@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- Anti-flash: apply the theme class on <html> SYNCHRONOUSLY, before first
+         paint. Must stay inline and right after <meta charset> — grin-shell.js is
+         an ES module and runs too late to prevent the flash. Reads the SAME key
+         the rest of the site uses ("msb-dark-mode"), so a dark/light choice made
+         anywhere carries across; falls back to the OS preference. Keep in sync
+         with grin-shell.js resolve(). -->
+    <script>
+      (function () {
+        try {
+          var s = localStorage.getItem("msb-dark-mode");
+          var dark =
+            s === "dark" ||
+            (s !== "light" &&
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) document.documentElement.classList.add("is-dark");
+        } catch (e) {
+          /* storage blocked (private mode) -- fall through to light */
+        }
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Space Builder — GRIN</title>
+    <meta
+      name="description"
+      content="Build a GRT perceptual space, watch the confusion matrix it produces, run a virtual experiment, and see whether the model can find its way back."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./assets/css/grin.css" />
+  </head>
+  <body data-page="space-builder">
+    <header class="site">
+      <h1>Space Builder</h1>
+      <p class="tagline">
+        Build a perceptual space. See the data it produces. Find out whether
+        anyone could have recovered it.
+      </p>
+      <div id="nav-placeholder"></div>
+    </header>
+
+    <main class="container">
+      <div class="plain" style="margin-bottom: 1.25rem">
+        <span class="eyebrow">In plain English</span>
+        <p>
+          Imagine identifying a face as <em>happy or sad</em> and
+          <em>male or female</em> at the same time. GRT says each face lands
+          somewhere in a two-dimensional "perceptual space" — a cloud, not a
+          point, because perception is noisy. You respond by asking which side
+          of each line the cloud landed on.
+        </p>
+        <p>
+          Two things can go wrong with independence.
+          <strong>The clouds can move</strong>: if a face's happiness changes
+          depending on whether it's male, the dimensions aren't
+          <em>separable</em>. <strong>The clouds can tilt</strong>: if
+          noisy-happy and noisy-male travel together on a given trial, the
+          dimensions aren't <em>independent</em>. Drag the sliders and watch
+          both happen.
+        </p>
+      </div>
+
+      <div class="tool">
+        <!-- ------------------------------------------------------------------ -->
+        <aside class="panel sticky">
+          <span class="eyebrow">1. Build the space</span>
+
+          <label
+            >Sensitivity, dimension A
+            <span class="val" id="v-mA">1.40</span></label
+          >
+          <input
+            type="range"
+            id="mA"
+            min="0.1"
+            max="2.5"
+            step="0.05"
+            value="1.4"
+          />
+
+          <label
+            >Sensitivity, dimension B
+            <span class="val" id="v-mB">1.40</span></label
+          >
+          <input
+            type="range"
+            id="mB"
+            min="0.1"
+            max="2.5"
+            step="0.05"
+            value="1.4"
+          />
+
+          <label
+            >Perceptual correlation ρ
+            <span class="val" id="v-rho">0.00</span></label
+          >
+          <input
+            type="range"
+            id="rho"
+            min="-0.9"
+            max="0.9"
+            step="0.05"
+            value="0"
+          />
+
+          <details open>
+            <summary>Break the assumptions</summary>
+            <div class="details-body">
+              <label
+                >Non-separability of A
+                <span class="val" id="v-dA">0.00</span></label
+              >
+              <input
+                type="range"
+                id="dA"
+                min="-1.5"
+                max="1.5"
+                step="0.05"
+                value="0"
+              />
+              <p class="cap" style="margin-top: 0.2rem">
+                How much A's perceived value shifts depending on the
+                <em>level of B</em>. Non-zero ⇒ A is not separable from B.
+              </p>
+
+              <label
+                >Non-separability of B
+                <span class="val" id="v-dB">0.00</span></label
+              >
+              <input
+                type="range"
+                id="dB"
+                min="-1.5"
+                max="1.5"
+                step="0.05"
+                value="0"
+              />
+
+              <label
+                >ρ differs across stimuli
+                <span class="val" id="v-rhoSpread">0.00</span></label
+              >
+              <input
+                type="range"
+                id="rhoSpread"
+                min="0"
+                max="0.6"
+                step="0.05"
+                value="0"
+              />
+              <p class="cap" style="margin-top: 0.2rem">
+                Gives the two "matched" stimuli a different correlation from the
+                other two. Non-zero ⇒ a single ρ can't describe the whole space.
+              </p>
+
+              <hr class="hr" />
+              <p class="cap" style="margin-top: 0">
+                <strong
+                  >The sliders above move a matched PAIR of stimuli
+                  together</strong
+                >
+                — the textbook pattern. In real data, separability often fails
+                more messily: <strong>one specific stimulus</strong> reads
+                oddly, not a coordinated pair. This moves just one:
+              </p>
+              <label>Which stimulus wanders?</label>
+              <select id="nudgeStim">
+                <option value="0">A1 / B1</option>
+                <option value="1">A1 / B2</option>
+                <option value="2">A2 / B1</option>
+                <option value="3">A2 / B2</option>
+              </select>
+              <label
+                >Δx for that stimulus only
+                <span class="val" id="v-nudgeX">0.00</span></label
+              >
+              <input
+                type="range"
+                id="nudgeX"
+                min="-1.5"
+                max="1.5"
+                step="0.05"
+                value="0"
+              />
+              <label
+                >Δy for that stimulus only
+                <span class="val" id="v-nudgeY">0.00</span></label
+              >
+              <input
+                type="range"
+                id="nudgeY"
+                min="-1.5"
+                max="1.5"
+                step="0.05"
+                value="0"
+              />
+              <div class="row">
+                <button id="nudge-reset" class="ghost wide">
+                  Reset all nudges
+                </button>
+              </div>
+              <p class="cap" id="nudge-summary" style="margin-top: 0.4rem"></p>
+            </div>
+          </details>
+
+          <details>
+            <summary>Names</summary>
+            <div class="details-body">
+              <label>Dimension A</label>
+              <input type="text" id="aName" value="Dimension A" />
+              <label>Levels of A (comma separated)</label>
+              <input type="text" id="aLevels" value="A1, A2" />
+              <label>Dimension B</label>
+              <input type="text" id="bName" value="Dimension B" />
+              <label>Levels of B</label>
+              <input type="text" id="bLevels" value="B1, B2" />
+            </div>
+          </details>
+
+          <div class="checkrow">
+            <input type="checkbox" id="showMarginals" checked />
+            <label for="showMarginals" style="margin: 0"
+              >Show marginal distributions</label
+            >
+          </div>
+
+          <hr class="hr" />
+
+          <span class="eyebrow">2. Run an experiment</span>
+          <label
+            >Trials per stimulus <span class="val" id="v-n">100</span></label
+          >
+          <input type="range" id="n" min="5" max="1000" step="5" value="100" />
+          <div class="row">
+            <button id="run" class="wide">Run the experiment</button>
+          </div>
+          <div class="row">
+            <button id="reset" class="ghost wide">Reset the space</button>
+          </div>
+          <p class="status" id="status">
+            Adjust the space, then run an experiment.
+          </p>
+        </aside>
+
+        <!-- ------------------------------------------------------------------ -->
+        <section>
+          <div class="card">
+            <span class="eyebrow">The perceptual space you built</span>
+            <div class="viz-2">
+              <div>
+                <canvas id="space" width="565" height="565"></canvas>
+                <div class="legend" id="legend"></div>
+              </div>
+              <div>
+                <p class="cap" style="margin-top: 0">
+                  Each ellipse is one stimulus: a 1-SD contour of where it lands
+                  in perceptual space on a given trial. The dashed cross is the
+                  decision bound — you respond by asking which quadrant you fell
+                  into.
+                </p>
+                <p class="cap">
+                  <strong>Read the marginals.</strong> Each dimension's two
+                  curves of the same colour are the same level of that
+                  dimension, paired with the two different levels of the
+                  <em>other</em> one (solid vs dotted). If they sit on top of
+                  each other, that dimension is separable.
+                  <strong>If they pull apart, it isn't.</strong>
+                </p>
+                <div id="truth"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <span class="eyebrow">The data that space produces</span>
+            <div class="viz-2">
+              <div>
+                <table class="cm" id="cm"></table>
+                <p class="cap" id="cm-cap">
+                  Exact response probabilities implied by the space above — this
+                  is what you'd get with infinitely many trials.
+                </p>
+              </div>
+              <div>
+                <div class="note">
+                  <h4>This is the whole problem</h4>
+                  <p>
+                    The confusion matrix has 16 cells, but each row must sum to
+                    1 — so it carries exactly <strong>12 free numbers</strong>.
+                    And the space above has exactly 12 identified parameters.
+                    That is not a coincidence: it's why a single confusion
+                    matrix is enough to pin down the space, and why one extra
+                    parameter would make it impossible.
+                  </p>
+                </div>
+                <div id="acc"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" id="recovery-card" hidden>
+            <span class="eyebrow">3. Could anyone have recovered it?</span>
+            <div id="stub-slot"></div>
+            <div class="viz-2">
+              <div>
+                <canvas id="space2" width="565" height="565"></canvas>
+                <div class="legend" id="legend2"></div>
+                <p class="cap">
+                  Solid = the space you built.
+                  <strong>Dashed rose = what was recovered</strong> from the
+                  noisy data alone. The gap between them is the error — and it
+                  is <em>supposed</em> to shrink as you raise the trial count.
+                </p>
+              </div>
+              <div>
+                <span class="eyebrow" style="font-size: 0.55rem"
+                  >Recovered parameters (90% intervals)</span
+                >
+                <div id="ests"></div>
+                <span
+                  class="eyebrow"
+                  style="font-size: 0.55rem; margin-top: 1rem"
+                  >Structural conclusions</span
+                >
+                <div id="constructs"></div>
+                <div id="verdict"></div>
+              </div>
+            </div>
+            <details>
+              <summary>What just happened?</summary>
+              <div class="details-body">
+                <p style="font-size: 0.88rem; margin-top: 0">
+                  We drew <span id="ntrials-echo">100</span> trials per stimulus
+                  from your space, producing a noisy confusion matrix — a
+                  simulated experiment. Then we handed
+                  <em>only that matrix</em> to the model, which had never seen
+                  your sliders, and asked it to reconstruct the space.
+                </p>
+                <p style="font-size: 0.88rem">
+                  Try this: set the trial count to 10 and run it a few times.
+                  The estimates jump around — and, crucially,
+                  <strong>the intervals get wide</strong>. That is the whole
+                  point. An honest method doesn't just get less accurate with
+                  less data; it <em>tells you</em>
+                  it has got less accurate.
+                </p>
+              </div>
+            </details>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site">
+      <p>GRIN — amortised Bayesian inference for General Recognition Theory.</p>
+      <p class="fine">
+        <a href="https://murraysbennett.com"
+          >Part of Murray S. Bennett's research</a
+        >
+      </p>
+      <p class="fine">
+        Everything runs client-side. No data leaves your machine.
+      </p>
+    </footer>
+
+    <script type="module">
+      import * as Plot from "./assets/js/grt-plot.js";
+      import * as Sim from "./assets/js/grt-sim.js";
+      import { loadModel } from "./assets/js/grin-model.js";
+      import { cmAccuracy } from "./assets/js/grt-plot.js";
+      import { forwardProbabilities } from "./assets/js/grt-core.js";
+      import "./assets/js/grin-shell.js";
+
+      const $ = (id) => document.getElementById(id);
+      const SLIDERS = ["mA", "mB", "rho", "dA", "dB", "rhoSpread", "n"];
+      const DEFAULTS = {
+        mA: 1.4,
+        mB: 1.4,
+        rho: 0,
+        dA: 0,
+        dB: 0,
+        rhoSpread: 0,
+        n: 100,
+      };
+
+      // Independent per-stimulus nudges. Kept as separate state (not read fresh from
+      // the DOM like the other sliders) because only ONE stimulus's Δx/Δy is visible
+      // on screen at a time — switching the dropdown must not forget the other three.
+      let nudge = { x: [0, 0, 0, 0], y: [0, 0, 0, 0] };
+
+      let model = null;
+      let lastRun = null;
+
+      async function getModel() {
+        if (model) return model;
+        model = await loadModel("./assets/models/cm");
+        return model;
+      }
+
+      function readControls() {
+        const o = {};
+        for (const k of SLIDERS) o[k] = parseFloat($(k).value);
+        return o;
+      }
+
+      /** The actual representation on screen: sliders + the independent nudges. */
+      function currentRep() {
+        return Sim.buildRepresentation({ ...readControls(), nudge });
+      }
+
+      function nudgeSummary() {
+        const active = [0, 1, 2, 3].filter(
+          (i) => nudge.x[i] !== 0 || nudge.y[i] !== 0,
+        );
+        if (!active.length) return "No stimuli nudged.";
+        const names = ["A1/B1", "A1/B2", "A2/B1", "A2/B2"];
+        return (
+          "Nudged: " +
+          active
+            .map(
+              (i) =>
+                `${names[i]} (Δx ${nudge.x[i].toFixed(2)}, Δy ${nudge.y[i].toFixed(2)})`,
+            )
+            .join("; ")
+        );
+      }
+
+      function labels() {
+        const [a1, a2] = Plot.parseLevels($("aLevels").value, ["A1", "A2"]);
+        const [b1, b2] = Plot.parseLevels($("bLevels").value, ["B1", "B2"]);
+        return {
+          aName: $("aName").value || "Dimension A",
+          a1,
+          a2,
+          bName: $("bName").value || "Dimension B",
+          b1,
+          b2,
+        };
+      }
+
+      /**
+       * @param {boolean} invalidate — true when the CONTROLS changed (the previous run
+       * no longer describes the space on screen, so it must be cleared). False when we
+       * are only repainting, e.g. on a theme change — repainting must never destroy
+       * the user's results.
+       */
+      function draw(invalidate = true) {
+        const c = readControls();
+        for (const k of SLIDERS)
+          $("v-" + k) &&
+            ($("v-" + k).textContent = k === "n" ? c[k] : c[k].toFixed(2));
+        $("nudge-summary").textContent = nudgeSummary();
+
+        const rep = currentRep();
+        const L = labels();
+        const stimuli = [0, 1, 2, 3].map((i) => ({
+          zx: rep.zx[i],
+          zy: rep.zy[i],
+          rho: rep.rho[i],
+        }));
+
+        Plot.renderSpace($("space"), {
+          stimuli,
+          labels: L,
+          showMarginals: $("showMarginals").checked,
+        });
+        Plot.buildLegend($("legend"), L);
+
+        const P = forwardProbabilities([...rep.zx, ...rep.zy, ...rep.rho]);
+        Plot.renderCM($("cm"), P, L);
+
+        const acc = cmAccuracy(P);
+        $("acc").innerHTML = `<div class="est">
+    <div class="lbl">Accuracy</div>
+    <div class="track"><div class="ci" style="left:0;width:${(100 * acc).toFixed(1)}%;opacity:.8"></div></div>
+    <div class="num">${(100 * acc).toFixed(1)}%</div>
+  </div>`;
+
+        // what is TRUE of this space — stated before any inference, so the user can
+        // check the model's answer against a known truth rather than trusting it.
+        // Checked against the actual built vectors (rep), not the sliders (c): a
+        // nudge can break PS(A) on its own even when dA is 0, so c alone can no
+        // longer tell you the truth.
+        const t = Sim.trueAssumptions(rep);
+        const pill = (ok, yes, no) =>
+          `<span class="pill ${ok ? "ok" : "warn"}">${ok ? yes : no}</span>`;
+        $("truth").innerHTML = `
+    <p class="cap" style="margin-bottom:.35rem"><strong>Ground truth for this space:</strong></p>
+    <div class="row" style="margin-top:0">
+      ${pill(t.psA, "A separable", "A NOT separable")}
+      ${pill(t.psB, "B separable", "B NOT separable")}
+      ${pill(t.pi, "independent", t.rho1 ? "correlated (one ρ)" : "correlated (ρ varies)")}
+    </div>`;
+
+        // any change to the space invalidates the previous run
+        if (invalidate && lastRun) {
+          $("recovery-card").hidden = true;
+          lastRun = null;
+          $("status").textContent = "Space changed. Run the experiment again.";
+        }
+      }
+
+      async function run() {
+        const rep = currentRep();
+        const L = labels();
+        const n = parseFloat($("n").value);
+
+        $("status").textContent = "Simulating…";
+        const data = Sim.simulateCounts(rep, n);
+
+        const m = await getModel();
+        const res = await m.predict(data);
+        lastRun = { data, res, rep, L, n };
+
+        // the observed (noisy) matrix now replaces the exact one
+        const props = data.counts.map((r, i) =>
+          r.map((v) => v / Math.max(1, data.trials[i])),
+        );
+        Plot.renderCM($("cm"), props, L, { counts: data.counts });
+        $("cm-cap").innerHTML =
+          `Observed from <strong>${n} trials per stimulus</strong> (counts in small type). ` +
+          `Noisy — which is the point.`;
+
+        // recovered space
+        const stimuli = [0, 1, 2, 3].map((i) => ({
+          zx: rep.zx[i],
+          zy: rep.zy[i],
+          rho: rep.rho[i],
+        }));
+        Plot.renderSpace($("space2"), {
+          stimuli,
+          predicted: Plot.toStimuli(res.mean),
+          labels: L,
+          showMarginals: false,
+        });
+        Plot.buildLegend($("legend2"), L, { predictedLabel: "recovered" });
+
+        // estimates with intervals, against the truth
+        const names = m.paramNames;
+        const truth = [...rep.zx, ...rep.zy, ...rep.rho];
+        let html = "";
+        for (let i = 0; i < 12; i++) {
+          const range = i < 8 ? [-3, 3] : [-1, 1];
+          html += Plot.estRow(
+            `${names[i]} <span style="color:var(--mute-soft)">(true ${truth[i].toFixed(2)})</span>`,
+            res.mean[i],
+            res.std[i],
+            range,
+          );
+        }
+        $("ests").innerHTML = html;
+
+        // structural conclusions vs ground truth
+        const t = Sim.trueAssumptions(rep);
+        $("constructs").innerHTML =
+          Plot.pbar(
+            `A is separable <em>(truly ${t.psA ? "yes" : "no"})</em>`,
+            res.sep.A,
+          ) +
+          Plot.pbar(
+            `B is separable <em>(truly ${t.psB ? "yes" : "no"})</em>`,
+            res.sep.B,
+          ) +
+          Plot.pbar(
+            `Independent (ρ = 0) <em>(truly ${t.pi ? "yes" : "no"})</em>`,
+            res.corr.pi,
+          ) +
+          Plot.pbar(
+            `One shared ρ <em>(truly ${t.rho1 && !t.pi ? "yes" : "no"})</em>`,
+            res.corr.rho1,
+          ) +
+          Plot.pbar(
+            `ρ varies by stimulus <em>(truly ${!t.rho1 ? "yes" : "no"})</em>`,
+            res.corr.free,
+          );
+
+        const mc = res.modelClass;
+        const decisive = mc.joint >= 0.5;
+        $("verdict").innerHTML = `
+    <div class="note ${decisive ? "" : "warn"}">
+      <h4>Verdict: <code>${mc.name}</code></h4>
+      <p>
+        Joint probability <strong>${mc.joint.toFixed(2)}</strong>.
+        ${
+          decisive
+            ? "That's a reasonably confident call."
+            : `That is <strong>not</strong> a confident call. With ${n} trials per stimulus the data
+             simply don't pin the structure down — and a method that reported a single
+             winning model here, with no caveat, would be misleading you.`
+        }
+      </p>
+    </div>`;
+
+        $("ntrials-echo").textContent = n;
+        $("recovery-card").hidden = false;
+        $("status").textContent = `Done in ${res.ms.toFixed(1)} ms.`;
+        renderStubBanner(res);
+        $("recovery-card").scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
+      }
+
+      function renderStubBanner(res) {
+        $("stub-slot").innerHTML =
+          res.backend === "stub"
+            ? `<div class="stub-banner">
+         <strong>Placeholder inference.</strong> The trained network isn't wired in yet, so these
+         estimates come from a maximum-likelihood stand-in. The parameter estimates are
+         real; the <em>uncertainty intervals are only a rough approximation</em>, and calibrated
+         uncertainty is the main thing GRIN adds. Treat the intervals as illustrative
+         until the weights land.
+       </div>`
+            : "";
+      }
+
+      for (const k of SLIDERS) $(k).addEventListener("input", () => draw(true));
+      // Renaming a dimension or toggling the marginals does NOT change the space, so
+      // it must not throw away a completed run.
+      ["aName", "aLevels", "bName", "bLevels", "showMarginals"].forEach((id) =>
+        $(id).addEventListener("input", () => {
+          draw(false);
+          if (lastRun) redrawRun();
+        }),
+      );
+      $("run").addEventListener("click", run);
+      $("reset").addEventListener("click", () => {
+        for (const [k, v] of Object.entries(DEFAULTS)) $(k).value = v;
+        nudge = { x: [0, 0, 0, 0], y: [0, 0, 0, 0] };
+        $("nudgeX").value = 0;
+        $("nudgeY").value = 0;
+        $("nudgeStim").value = "0";
+        $("recovery-card").hidden = true;
+        lastRun = null;
+        draw();
+        $("status").textContent =
+          "Reset. Adjust the space, then run an experiment.";
+      });
+
+      // --- nudge controls: the dropdown selects WHICH stimulus the two sliders
+      // below it are currently editing. Switching stimuli must show that stimulus's
+      // own stored offset, not reset it to zero or leak the previous one. ---
+      function syncNudgeSliders() {
+        const i = +$("nudgeStim").value;
+        $("nudgeX").value = nudge.x[i];
+        $("nudgeY").value = nudge.y[i];
+        $("v-nudgeX").textContent = nudge.x[i].toFixed(2);
+        $("v-nudgeY").textContent = nudge.y[i].toFixed(2);
+      }
+      $("nudgeStim").addEventListener("change", syncNudgeSliders);
+      $("nudgeX").addEventListener("input", () => {
+        nudge.x[+$("nudgeStim").value] = parseFloat($("nudgeX").value);
+        $("v-nudgeX").textContent = (+$("nudgeX").value).toFixed(2);
+        draw(true);
+      });
+      $("nudgeY").addEventListener("input", () => {
+        nudge.y[+$("nudgeStim").value] = parseFloat($("nudgeY").value);
+        $("v-nudgeY").textContent = (+$("nudgeY").value).toFixed(2);
+        draw(true);
+      });
+      $("nudge-reset").addEventListener("click", () => {
+        nudge = { x: [0, 0, 0, 0], y: [0, 0, 0, 0] };
+        syncNudgeSliders();
+        draw(true);
+      });
+
+      // A theme change must only REDRAW. Re-running run() here would silently
+      // resample the experiment, so toggling dark mode would change your results.
+      Plot.onThemeChange(() => {
+        draw(false);
+        if (lastRun) redrawRun();
+      });
+
+      function redrawRun() {
+        const { data, res, rep, L, n } = lastRun;
+        const props = data.counts.map((r, i) =>
+          r.map((v) => v / Math.max(1, data.trials[i])),
+        );
+        Plot.renderCM($("cm"), props, L, { counts: data.counts });
+        $("cm-cap").innerHTML =
+          `Observed from <strong>${n} trials per stimulus</strong> (counts in small type). Noisy — which is the point.`;
+        Plot.renderSpace($("space2"), {
+          stimuli: [0, 1, 2, 3].map((i) => ({
+            zx: rep.zx[i],
+            zy: rep.zy[i],
+            rho: rep.rho[i],
+          })),
+          predicted: Plot.toStimuli(res.mean),
+          labels: L,
+          showMarginals: false,
+        });
+        Plot.buildLegend($("legend2"), L, { predictedLabel: "recovered" });
+        $("recovery-card").hidden = false;
+      }
+
+      draw();
+    </script>
+  </body>
+</html>

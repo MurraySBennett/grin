@@ -1,0 +1,11 @@
+{
+  "id": "v05",
+  "claim": "amortized speedup vs MLE",
+  "result": {
+    "npe_ms_per_matrix": 0.03337860107421875,
+    "mle_ms_per_matrix": 83.97857348124187,
+    "speedup": 2515.940476190476
+  },
+  "pass": true,
+  "seconds": 19.2
+}

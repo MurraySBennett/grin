@@ -1,0 +1,9 @@
+{
+  "id": "v01",
+  "claim": "forward model is exact",
+  "result": {
+    "max_abs_error_vs_scipy": 2.220446049250313e-16
+  },
+  "pass": true,
+  "seconds": 0.1
+}

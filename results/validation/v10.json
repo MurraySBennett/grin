@@ -1,0 +1,11 @@
+{
+  "id": "v10",
+  "claim": "degrades gracefully under lapses",
+  "result": {
+    "lapse_0.0": 0.24365555440993614,
+    "lapse_0.2": 0.5681215164089634,
+    "lapse_0.5": 0.862114219784836
+  },
+  "pass": true,
+  "seconds": 15.6
+}

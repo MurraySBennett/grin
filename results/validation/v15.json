@@ -1,0 +1,19 @@
+{
+  "id": "v15",
+  "claim": "architecture is read from DISTRIBUTION SHAPE, not speed",
+  "result": {
+    "mean_rt_before": {
+      "serial_exhaustive": 2.5507597719693194,
+      "serial_self_terminating": 1.4402430058877262,
+      "parallel_exhaustive": 2.2408245945239234,
+      "parallel_self_terminating": 0.6583091425463425,
+      "coactive": 0.5378751758393618
+    },
+    "overall_original": 0.8614583333333333,
+    "overall_rt_matched": 0.8614583333333333,
+    "coactive_original": 0.9817073170731707,
+    "coactive_rt_matched": 0.9817073170731707
+  },
+  "pass": true,
+  "seconds": 14.0
+}

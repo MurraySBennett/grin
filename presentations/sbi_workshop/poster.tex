@@ -1,0 +1,250 @@
+%% ============================================================================
+%%  poster.tex — GRIN / SBI workshop poster, 48 x 36 in landscape
+%%
+%%  Build:   latexmk -pdf poster.tex        (or just: pdflatex poster.tex)
+%%  Iterate on the hero figure alone:  latexmk -pdf pipeline_preview.tex
+%%
+%%  BEFORE YOU PRINT — the checklist is in README.md. The short version:
+%%    1. Set \highlightchecksfalse below, once every \chk{} number is confirmed.
+%%    2. Make sure no "figure not found" placeholders are left on the page.
+%%    3. Confirm the affiliations line.
+%% ============================================================================
+\documentclass[final]{article}
+\usepackage[paperwidth=48in, paperheight=36in, margin=1.5in]{geometry}
+\usepackage{grinposter}
+
+%% Figures: poster-specific re-renders in figures/ win; otherwise fall back to
+%% the live output of make_figures.py. See make_poster_figures.py — several of
+%% the suite's figures are 12-panel and are unreadable when squeezed into an
+%% 8.6 in column at their default scale.
+\graphicspath{{figures/}{../../results/figures/}}
+
+%% Flip this to false for the final print run. While it is true, every number
+%% that still needs checking against your latest run is highlighted in yellow.
+\highlightcheckstrue
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.11in}
+
+%% Five columns with 0.5 in gutters across the 45 in text block.
+\newlength{\colw}
+\setlength{\colw}{(\textwidth - 4\dimexpr 0.5in\relax)/5}
+
+\begin{document}
+\raggedright
+
+%% ===========================================================================
+%%  TITLE BAND
+%% ===========================================================================
+\begin{minipage}[b]{0.76\textwidth}
+  \setlength{\parskip}{0pt}%
+  {\titlefont\color{gink}
+   Adaptive Perceptual Training via\\
+   Simulation-Based Inference of GRT Models\par}
+  \vspace{0.18in}
+  {\subtitlefont\color{greddeep}
+   Fitting a perceptual model fast enough to teach with it\par}
+  \vspace{0.18in}
+  {\authorfont\color{gink}\textbf{Murray S. Bennett} \quad\textbullet\quad Peter D. Kvam\par}
+  \vspace{0.06in}
+  %% TODO: I have assumed Kvam is also at Ohio State. Correct this if not —
+  %% it is highlighted so you cannot print it without looking at it.
+  {\afflfont\color{gink}\chk{Department of Psychology, The Ohio State University}\par}
+\end{minipage}%
+\hfill
+\begin{minipage}[b]{0.22\textwidth}
+  \setlength{\parskip}{0pt}%
+  \raggedleft
+  %% Drop osu-logo.png (or .pdf) in this folder and it appears automatically.
+  \IfFileExists{osu-logo.png}%
+    {\includegraphics[height=2.3in]{osu-logo.png}\par\vspace{0.25in}}%
+    {\IfFileExists{osu-logo.pdf}%
+      {\includegraphics[height=2.3in]{osu-logo.pdf}\par\vspace{0.25in}}%
+      {\textcolor{gmute}{\smallfont[ osu-logo.png goes here ]}\par\vspace{0.25in}}}
+  \begin{minipage}{2.3in}\centering
+    \qrcode[height=1.85in]{https://github.com/murraysbennett/grin}\par
+    \vspace{0.06in}{\reffont\color{gink}code + design record}
+  \end{minipage}%
+  \hspace{0.35in}%
+  \begin{minipage}{2.3in}\centering
+    \qrcode[height=1.85in]{https://grin.murraysbennett.com}\par
+    \vspace{0.06in}{\reffont\color{gink}\chk{run it yourself}}
+  \end{minipage}
+\end{minipage}
+
+\vspace{0.1in}
+{\color{gink}\rule{\textwidth}{6pt}}
+\vspace{0.5in}
+
+%% ===========================================================================
+%%  HERO FIGURE — the whole method in one image
+%% ===========================================================================
+\noindent\input{pipeline}
+
+\vspace{0.24in}
+{\color{gmute}\rule{\textwidth}{2pt}}
+\vspace{0.16in}
+
+%% ===========================================================================
+%%  FIVE COLUMNS
+%% ===========================================================================
+\noindent
+%% ---------------------------------------------------------------- column 1
+\begin{minipage}[t]{\colw}
+\qhead{the problem}{What are we actually trying to measure?}
+
+{\bodyfont
+Two trainees can score \emph{identically} on a diagnostic task and be wrong in
+completely different ways. One cannot see the feature. One sees it but has
+drifted their criterion. One sees both features but cannot pull them apart.
+
+General Recognition Theory separates these. It gives each person a perceptual
+space: where the stimuli sit, how noisy each is, whether the two features are
+perceived independently, and where the decision bounds fall.
+\par}
+
+\begin{callout}
+\textbf{Why it matters clinically.} A trainee who confuses an irregular
+\emph{border} with variegated \emph{colour} needs different practice from one
+who simply cannot see colour variation at all. Accuracy alone cannot tell them
+apart. The representation can.
+\end{callout}
+
+{\bodyfont
+A $4\times4$ identification matrix carries exactly 12 independent numbers, so
+we work in the 12-parameter identified coordinates. Saturated, therefore
+identified --- no restricted-model hierarchy needed.
+\par}
+\end{minipage}%
+\hfill
+%% ---------------------------------------------------------------- column 2
+\begin{minipage}[t]{\colw}
+\qhead{recovery}{Does it recover the truth?}
+
+\gfig[0.34]{poster_recovery.png}{1.0}{Predicted vs.\ true on held-out simulations.
+Sensitivities are recovered tightly; correlations are not --- and that is a
+property of the data, not the method. Right: the two coordinates of each stimulus recovered jointly.}
+
+{\bodyfont
+Sensitivities come back at \chk{$r \approx 0.98$}. Perceptual correlations are
+much noisier, \chk{$r \approx 0.75$}. Maximum likelihood shows the \emph{same}
+split on the same matrices: weak correlations are genuinely unrecoverable from
+a single confusion matrix.
+\par}
+
+\gfig[0.40]{calibration.png}{1.0}{Simulation-based calibration: flat rank histogram,
+coverage on the diagonal.}
+
+{\bodyfont
+The posterior is not just narrow --- it is \textbf{honest}. That is what makes
+it safe to act on mid-experiment.
+\par}
+\end{minipage}%
+\hfill
+%% ---------------------------------------------------------------- column 3
+\begin{minipage}[t]{\colw}
+\qhead{speed}{Is it fast enough to matter?}
+
+\gfig[0.44]{accuracy_crossover.png}{1.0}{Against the MLE workflow people actually run:
+fit every model class, keep the AIC/BIC winner.}
+
+\bignum{\chk{$\sim10^{4}\times$}}{faster than the realistic MLE workflow}
+
+{\bodyfont
+Fast enough is not a bonus here --- it is the whole enabling condition. At
+\chk{$\sim$3\,\textmu s} a posterior update fits inside an inter-stimulus
+interval, so the model can sit \emph{inside} the trial loop instead of waiting
+until the session is over.
+
+And below \chk{$\sim$100} trials per stimulus the network is also \emph{more
+accurate} than MLE: the prior regularises exactly where likelihood
+optimisation diverges. It also never fails to return an answer, which the R
+implementations sometimes do.
+\par}
+\end{minipage}%
+\hfill
+%% ---------------------------------------------------------------- column 4
+\begin{minipage}[t]{\colw}
+\qhead{limits}{Where does it break?}
+
+\gfig[0.42]{constructs.png}{1.0}{Construct probabilities are calibrated; the
+right-hand panel is the identifiability frontier for perceptual independence.}
+
+{\bodyfont
+Separability is recovered sharply (\chk{$\approx0.94$}) and matches exact
+AIC/BIC selection. Perceptual independence does not: accuracy climbs with the
+size of the true correlation.
+\par}
+
+\begin{callout}
+\textbf{We are not overselling PI.} Near-independence is information-limited,
+so we report a calibrated \emph{probability} rather than forcing a verdict.
+Decisional separability stays assumed --- response times do not rescue it, and
+recovering it needs bound manipulations we have not run.
+\end{callout}
+
+{\bodyfont
+Adding response times helps where you would expect and not where you would
+hope: it buys processing architecture (\chk{$0.88$}) and dimension neglect
+(\chk{$0.97$}), but moves PI only \chk{$0.60 \to 0.65$}.
+\par}
+\end{minipage}%
+\hfill
+%% ---------------------------------------------------------------- column 5
+\begin{minipage}[t]{\colw}
+\qhead{the payoff}{What does that buy you?}
+
+\bignum{\chk{55\%}}{of trials saved by stopping each participant at a precision
+threshold instead of a fixed budget}
+
+\bignum{\chk{46\%}}{fewer trials for a simulated learner to reach an expert
+target under a representation-tracking curriculum}
+
+{\bodyfont
+\textbf{An honest negative:} information-gain stimulus selection roughly
+\emph{ties} round-robin. With four symmetric stimuli, balanced coverage is
+already near-optimal. The win comes from knowing \emph{when to stop} and
+\emph{what to teach}, not from cleverer sampling.
+\par}
+
+\begin{callout}
+\textbf{Next.} Take this to melanoma screening, where border and colour genuinely
+overlap; relax decisional separability; and move from selecting stimuli in a
+pool to generating them. The targeted-training result rests on an
+\emph{assumed} learning dynamic --- it demonstrates the mechanism, not a
+validated protocol.
+\end{callout}
+\end{minipage}
+
+%% ===========================================================================
+%%  FOOTER
+%% ===========================================================================
+\vfill
+{\color{gmute}\rule{\textwidth}{2pt}}
+\vspace{0.05in}
+
+\noindent
+\begin{minipage}[t]{0.62\textwidth}
+\setlength{\parskip}{0pt}%
+{\reffont\color{gink}
+Ashby, F.~G., \& Townsend, J.~T. (1986). Varieties of perceptual independence.
+\emph{Psychological Review, 93}, 154--179.\\[0.06in]
+Cranmer, K., Brehmer, J., \& Louppe, G. (2020). The frontier of simulation-based
+inference. \emph{PNAS, 117}, 30055--30062.\\[0.06in]
+Silbert, N.~H., \& Thomas, R.~D. (2013). Decisional separability, model
+identification, and statistical inference in GRT. \emph{Psychonomic Bulletin \&
+Review, 20}, 1--20.
+\par}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.34\textwidth}
+\setlength{\parskip}{0pt}%
+\raggedleft
+{\smallfont\color{gink}
+\textbf{bennett.1755@osu.edu} \ \textbullet\ \texttt{github.com/murraysbennett/grin}\\
+Every claim here is re-runnable: \texttt{python validation/run\_all.py}
+\par}
+\end{minipage}
+
+\end{document}

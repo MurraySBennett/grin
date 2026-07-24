@@ -1,0 +1,166 @@
+%% ============================================================================
+%%  grinposter.sty — visual identity for the GRIN poster
+%%
+%%  The palette is copied verbatim from  grin/src/viz/style.py  so the poster
+%%  and every figure on it are literally the same object. If you change the
+%%  palette in style.py, change it HERE TOO (they are the only two places).
+%%
+%%  IMPORTANT: style.py sets savefig.facecolor = PAPER (#FBF7F0), so every
+%%  figure PNG has a cream background baked in. That is why the poster board
+%%  is cream and not white — otherwise each figure sits in a visible rectangle.
+%% ============================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{grinposter}[2026/07/23 GRIN poster identity]
+
+\RequirePackage[T1]{fontenc}
+\RequirePackage[utf8]{inputenc}
+\RequirePackage{xcolor}
+\RequirePackage{graphicx}
+\RequirePackage{tikz}
+\RequirePackage{ragged2e}
+\RequirePackage{enumitem}
+\RequirePackage{calc}
+\RequirePackage{qrcode}
+\RequirePackage[most]{tcolorbox}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds,shapes.geometric,%
+                decorations.pathreplacing,shadows.blur}
+
+%% ---------------------------------------------------------------------------
+%%  FONT
+%%  First choice: Source Sans Pro (MiKTeX will fetch it on first compile).
+%%  Swap the order of these two lines if you'd rather match the figures
+%%  EXACTLY — style.py currently sets matplotlib to DejaVu Sans.
+%% ---------------------------------------------------------------------------
+\IfFileExists{sourcesanspro.sty}{%
+  \RequirePackage[default]{sourcesanspro}%
+}{\IfFileExists{dejavu.sty}{%
+  \RequirePackage{dejavu}\renewcommand{\familydefault}{\sfdefault}%
+}{%
+  \RequirePackage{helvet}\renewcommand{\familydefault}{\sfdefault}%
+}}
+
+%% ---------------------------------------------------------------------------
+%%  PALETTE  (mirrors src/viz/style.py)
+%% ---------------------------------------------------------------------------
+\definecolor{gblue}    {HTML}{9FC1D4}  % dusty pastel blue
+\definecolor{gbluedeep}{HTML}{4F7C94}
+\definecolor{gred}     {HTML}{C17767}  % soft terracotta
+\definecolor{greddeep} {HTML}{8F4C40}
+\definecolor{gink}     {HTML}{3A3532}  % warm charcoal — all body text
+\definecolor{gmute}    {HTML}{B6AFA5}  % warm grey — rules, secondary
+\definecolor{gpaper}   {HTML}{FBF7F0}  % cream — THE BOARD COLOUR
+\definecolor{gtint}    {HTML}{F2EADD}  % callout background, one step warmer
+
+\pagecolor{gpaper}
+\color{gink}
+
+%% ---------------------------------------------------------------------------
+%%  TYPE SCALE  (tuned for 48 x 36 in, read from ~4 ft; title from ~15 ft)
+%%  If you need to claw back space, drop \bodyfont to 28/38 before you start
+%%  deleting content — it is still comfortably readable.
+%% ---------------------------------------------------------------------------
+\newcommand{\titlefont}    {\fontsize{80}{90}\selectfont\bfseries}
+\newcommand{\subtitlefont} {\fontsize{50}{60}\selectfont\itshape}
+\newcommand{\authorfont}   {\fontsize{44}{54}\selectfont}
+\newcommand{\afflfont}     {\fontsize{32}{40}\selectfont\itshape}
+\newcommand{\sectionfont}  {\fontsize{44}{50}\selectfont\bfseries}
+\newcommand{\bodyfont}     {\fontsize{28}{38}\selectfont}
+\newcommand{\smallfont}    {\fontsize{26}{34}\selectfont}
+\newcommand{\capfont}      {\fontsize{22}{28}\selectfont\itshape}
+\newcommand{\reffont}      {\fontsize{22}{26}\selectfont}
+\newcommand{\hugenumfont}  {\fontsize{72}{76}\selectfont\bfseries}
+
+%% ---------------------------------------------------------------------------
+%%  NUMBERS THAT STILL NEED CONFIRMING AGAINST YOUR LATEST RUN
+%%  \chk{...} highlights a figure so you cannot print a stale number by
+%%  accident. Set \highlightchecksfalse in poster.tex before the final export.
+%% ---------------------------------------------------------------------------
+\newif\ifhighlightchecks
+\highlightcheckstrue
+\definecolor{gcheck}{HTML}{FFE99A}
+\newcommand{\chk}[1]{\ifhighlightchecks\colorbox{gcheck}{#1}\else#1\fi}
+
+%% ---------------------------------------------------------------------------
+%%  PANEL FURNITURE  (frameless — matches the despined figures)
+%% ---------------------------------------------------------------------------
+% \panelhead{4}{Is it fast enough?}
+\newcommand{\panelhead}[2]{%
+  \par\noindent
+  \begin{tikzpicture}[baseline=(n.base)]
+    \node[circle,fill=gred,text=gpaper,minimum size=1.15cm,inner sep=0pt,
+          font=\fontsize{34}{34}\selectfont\bfseries] (n) {#1};
+  \end{tikzpicture}%
+  \hspace{0.22in}{\sectionfont\color{gink}#2}%
+  \par\vspace{0.10in}%
+  {\color{gbluedeep}\rule{\linewidth}{4pt}}%
+  \par\vspace{0.20in}%
+}
+
+% \qhead{RECOVERY}{Does it recover the truth?}
+% Used for the column headings. Deliberately NOT the numbered red badge used in
+% the hero figure — the columns do not map one-to-one onto the five stages, and
+% reusing the badge would promise a correspondence that isn't there.
+\newcommand{\qhead}[2]{%
+  \par\noindent{\fontsize{24}{28}\selectfont\bfseries\color{gred}\MakeUppercase{#1}}%
+  \par\vspace{0.04in}%
+  {\sectionfont\color{gink}#2}%
+  \par\vspace{0.10in}%
+  {\color{gbluedeep}\rule{\linewidth}{4pt}}%
+  \par\vspace{0.16in}%
+}
+
+% A figure with a caption underneath, sized to the column.
+% \panelfig{recovery.png}{1.0}{Caption text.}
+\newcommand{\panelfig}[3]{%
+  \par\vspace{0.10in}
+  \noindent\includegraphics[width=#2\linewidth]{#1}%
+  \par\vspace{0.06in}
+  {\capfont\color{gink}#3\par}
+  \vspace{0.11in}
+}
+
+% \gfig{recovery.png}{1.0}{Caption.}
+% Looks in figures/ first (poster-specific re-renders), then in the live
+% results/figures/ directory, and if it finds neither it draws a labelled
+% placeholder instead of failing. So the poster ALWAYS compiles, and any
+% missing figure is obvious on the page rather than buried in the log.
+\newlength{\gfigw}
+\newlength{\gfigh}
+\newcommand{\missingfig}[3]{%
+  \setlength{\gfigw}{\dimexpr #2\linewidth - 3pt\relax}%
+  \setlength{\gfigh}{#3\gfigw}%
+  \par\vspace{0.10in}\noindent
+  \begin{tikzpicture}
+    \node[draw=gmute, line width=2pt, dashed, fill=gtint, rounded corners=6pt,
+          minimum width=\gfigw, minimum height=\gfigh,
+          align=center, font=\smallfont, text=gmute]
+         {figure not found:\\\texttt{\detokenize{#1}}};
+  \end{tikzpicture}\par\vspace{0.16in}}
+
+% #1 (optional) = height/width aspect, used ONLY to size the placeholder so the
+% layout can be checked before the real figures are in place. Real figures use
+% their own aspect. Defaults to 0.45, which is typical of this figure suite.
+\newcommand{\gfig}[4][0.45]{%
+  \IfFileExists{figures/#2}%
+    {\panelfig{figures/#2}{#3}{#4}}%
+    {\IfFileExists{../../results/figures/#2}%
+      {\panelfig{../../results/figures/#2}{#3}{#4}}%
+      {\missingfig{#2}{#3}{#1}}}}
+
+% Tinted callout, used sparingly (twice on the poster).
+\newtcolorbox{callout}[1][]{%
+  colback=gtint, colframe=gred, boxrule=0pt, leftrule=8pt,
+  arc=4pt, left=14pt, right=14pt, top=12pt, bottom=12pt,
+  fontupper=\smallfont\color{gink}, #1}
+
+% A single big number with a label under it.
+% \bignum{55\%}{of trials saved by adaptive stopping}
+\newcommand{\bignum}[2]{%
+  \par\vspace{0.06in}\noindent
+  {\hugenumfont\color{greddeep}#1}\par
+  {\smallfont\color{gink}#2\par}\vspace{0.10in}}
+
+\setlist[itemize]{leftmargin=1.1em, itemsep=0.10in, topsep=0.06in,
+                  parsep=0pt, label=\textcolor{gred}{\rule[0.28ex]{0.5em}{0.5em}}}
+
+\endinput

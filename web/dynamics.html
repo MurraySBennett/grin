@@ -1,0 +1,947 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- Anti-flash: apply the theme class on <html> SYNCHRONOUSLY, before first
+         paint. Must stay inline and right after <meta charset> — grin-shell.js is
+         an ES module and runs too late to prevent the flash. Reads the SAME key
+         the rest of the site uses ("msb-dark-mode"), so a dark/light choice made
+         anywhere carries across; falls back to the OS preference. Keep in sync
+         with grin-shell.js resolve(). -->
+    <script>
+      (function () {
+        try {
+          var s = localStorage.getItem("msb-dark-mode");
+          var dark =
+            s === "dark" ||
+            (s !== "light" &&
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) document.documentElement.classList.add("is-dark");
+        } catch (e) {
+          /* storage blocked (private mode) -- fall through to light */
+        }
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dynamics — GRIN</title>
+    <meta
+      name="description"
+      content="Fitting isn't something you do after data collection — GRIN is fast enough to do it during. Watch a fit converge, watch it track a genuinely drifting participant, and see what early stopping buys you."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./assets/css/grin.css" />
+  </head>
+  <body data-page="dynamics">
+    <header class="site">
+      <h1>Dynamics</h1>
+      <p class="tagline">Fit as a process, not a snapshot.</p>
+      <div id="nav-placeholder"></div>
+    </header>
+
+    <main class="container">
+      <div class="plain" style="margin-bottom: 1.25rem">
+        <span class="eyebrow">The point of this page</span>
+        <p>
+          Everywhere else on this site is one fit, examined after the fact.
+          That's normal for a method that takes seconds to minutes per fit — you
+          run the experiment, then you analyse it. GRIN takes about a
+          millisecond. That's not just "the same workflow, faster" — it opens up
+          things you can't do at all when fitting is slow: watching an estimate
+          firm up trial by trial, catching drift while it's still happening,
+          stopping a session the moment you're confident enough instead of
+          running a fixed number of trials regardless.
+        </p>
+        <p style="margin-bottom: 0">
+          Everything below is simulated, GRIN's stub (the trained network isn't
+          wired in here yet — see the note in each section), and honestly
+          labelled where the mechanism has a real limit.
+        </p>
+      </div>
+
+      <!-- ============================================================== -->
+      <div class="card">
+        <span class="eyebrow">Watch a fit converge — or track a drift</span>
+        <div class="tool">
+          <aside class="panel sticky">
+            <label
+              >True correlation ρ
+              <span class="val" id="v-rho">0.00</span></label
+            >
+            <input
+              type="range"
+              id="rho"
+              min="-0.9"
+              max="0.9"
+              step="0.05"
+              value="0"
+            />
+            <p class="cap" style="margin-top: 0.2rem">
+              Held constant across the whole run. Correlation turns out to be
+              the hardest of these parameters to pin down precisely (see the
+              note below) — the drift toggle moves separability instead, which
+              the fit tracks far more cleanly.
+            </p>
+
+            <hr class="hr" />
+            <label
+              >Separability violation, dimension A
+              <span class="val" id="v-dA">0.00</span></label
+            >
+            <input
+              type="range"
+              id="dA"
+              min="-1.5"
+              max="1.5"
+              step="0.05"
+              value="0"
+            />
+            <label
+              >Separability violation, dimension B
+              <span class="val" id="v-dB">0.00</span></label
+            >
+            <input
+              type="range"
+              id="dB"
+              min="-1.5"
+              max="1.5"
+              step="0.05"
+              value="0"
+            />
+            <p class="cap" style="margin-top: 0.2rem">
+              Either sign shifts the pair the other way — negative and positive
+              are just which direction.
+            </p>
+
+            <div class="checkrow">
+              <input type="checkbox" id="drift-on" />
+              <label for="drift-on" style="margin: 0"
+                >Separability genuinely shifts partway through</label
+              >
+            </div>
+            <div id="drift-controls" hidden>
+              <label
+                >Target, dimension A (after the shift)
+                <span class="val" id="v-dA2">0.90</span></label
+              >
+              <input
+                type="range"
+                id="dA2"
+                min="-1.5"
+                max="1.5"
+                step="0.05"
+                value="0.90"
+              />
+              <label
+                >Target, dimension B (after the shift)
+                <span class="val" id="v-dB2">0.00</span></label
+              >
+              <input
+                type="range"
+                id="dB2"
+                min="-1.5"
+                max="1.5"
+                step="0.05"
+                value="0"
+              />
+              <label
+                >Intervention point
+                <span class="val" id="v-intervention">50%</span> through the
+                session</label
+              >
+              <input
+                type="range"
+                id="intervention"
+                min="10"
+                max="90"
+                step="5"
+                value="50"
+              />
+              <label
+                >Learning rate <span class="val" id="v-alpha">0.08</span></label
+              >
+              <input
+                type="range"
+                id="alpha"
+                min="0.02"
+                max="0.30"
+                step="0.01"
+                value="0.08"
+              />
+              <p class="cap" style="margin-top: 0.2rem">
+                One continuous session, not two — before the intervention point,
+                separability sits at the starting values above; from that point
+                on it creeps toward the target each trial (a
+                Rescorla-Wagner-style approach), fast at first and flattening as
+                it nears the target, never a straight line that only arrives on
+                the very last trial.
+              </p>
+            </div>
+
+            <hr class="hr" />
+            <label
+              >Total trials per stimulus (max 200)
+              <span class="val" id="v-total">150</span></label
+            >
+            <input
+              type="range"
+              id="total"
+              min="40"
+              max="200"
+              step="10"
+              value="150"
+            />
+            <label
+              >Checkpoint every
+              <span class="val" id="v-every">20</span> trials</label
+            >
+            <input
+              type="range"
+              id="every"
+              min="10"
+              max="60"
+              step="10"
+              value="20"
+            />
+            <p
+              class="cap"
+              id="trail-checkpoint-note"
+              style="margin-top: 0.2rem"
+            ></p>
+
+            <div class="checkrow">
+              <input type="checkbox" id="use-window" />
+              <label for="use-window" style="margin: 0"
+                >Use a sliding window, not a running total</label
+              >
+            </div>
+            <div id="window-size-row" hidden>
+              <label
+                >Window size (trials/stimulus)
+                <span class="val" id="v-window">100</span></label
+              >
+              <input
+                type="range"
+                id="window"
+                min="10"
+                max="200"
+                step="10"
+                value="100"
+              />
+              <p
+                class="cap"
+                id="window-range-note"
+                style="margin-top: 0.2rem"
+              ></p>
+            </div>
+
+            <div class="row">
+              <button id="run-trail" class="wide">Run</button>
+            </div>
+            <p class="status" id="trail-status">Set the truth, then run.</p>
+          </aside>
+
+          <section>
+            <div class="card">
+              <canvas id="trail-canvas" width="460" height="460"></canvas>
+              <div class="track" style="height: 0.5rem; margin-top: 0.6rem">
+                <div
+                  class="fill"
+                  id="trail-progress"
+                  style="width: 0%; transition: width 0.1s linear"
+                ></div>
+              </div>
+              <div id="trail-stub-slot"></div>
+              <p class="cap" id="trail-cap" style="margin-top: 0.6rem">
+                Each layer is one checkpoint's fit; older ones fade as newer
+                ones draw over them — the whole sequence is one picture of how
+                the estimate moved, not just where it ended up.
+              </p>
+              <div id="trail-insight"></div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- ============================================================== -->
+      <div class="card">
+        <span class="eyebrow">Early stopping</span>
+        <p class="cap" style="margin-top: 0">
+          A fixed-N protocol runs every participant for the same number of
+          trials regardless of how the data look. Refitting every few trials
+          means you can stop the moment you're confident enough — and skip the
+          rest.
+        </p>
+        <div class="tool">
+          <aside class="panel sticky">
+            <label
+              >True correlation ρ
+              <span class="val" id="v-stop-rho">0.00</span></label
+            >
+            <input
+              type="range"
+              id="stop-rho"
+              min="-0.9"
+              max="0.9"
+              step="0.05"
+              value="0"
+            />
+            <label
+              >Separability violation, dimension A
+              <span class="val" id="v-stop-dA">0.00</span></label
+            >
+            <input
+              type="range"
+              id="stop-dA"
+              min="-1.5"
+              max="1.5"
+              step="0.05"
+              value="0"
+            />
+            <label
+              >Separability violation, dimension B
+              <span class="val" id="v-stop-dB">0.00</span></label
+            >
+            <input
+              type="range"
+              id="stop-dB"
+              min="-1.5"
+              max="1.5"
+              step="0.05"
+              value="0"
+            />
+            <p class="cap" style="margin-top: 0.2rem">
+              This is the ground truth the simulation draws from — set it
+              however you like.
+            </p>
+
+            <hr class="hr" />
+            <label>What are we confident about?</label>
+            <select id="construct">
+              <option value="full">
+                The full representation (recommended)
+              </option>
+              <option value="sepA">Only: is dimension A separable?</option>
+              <option value="sepB">Only: is dimension B separable?</option>
+              <option value="pi">Only: are the dimensions independent?</option>
+            </select>
+            <p class="cap" id="construct-note" style="margin-top: 0.2rem"></p>
+
+            <label
+              >Stop when confidence reaches
+              <span class="val" id="v-thresh">0.90</span></label
+            >
+            <input
+              type="range"
+              id="thresh"
+              min="0.6"
+              max="0.99"
+              step="0.01"
+              value="0.90"
+            />
+            <label
+              >Trial budget per stimulus (max 150)
+              <span class="val" id="v-stop-total">100</span></label
+            >
+            <input
+              type="range"
+              id="stop-total"
+              min="20"
+              max="150"
+              step="10"
+              value="100"
+            />
+            <label
+              >Checkpoint every
+              <span class="val" id="v-stop-every">10</span> trials</label
+            >
+            <input
+              type="range"
+              id="stop-every"
+              min="5"
+              max="50"
+              step="5"
+              value="10"
+            />
+            <p
+              class="cap"
+              id="stop-checkpoint-note"
+              style="margin-top: 0.2rem"
+            ></p>
+
+            <div class="row">
+              <button id="run-stop" class="wide">Run</button>
+            </div>
+            <p class="status" id="stop-status">Set the truth, then run.</p>
+          </aside>
+
+          <section>
+            <div class="card">
+              <div id="stop-stub-slot"></div>
+              <div id="stop-verdict"></div>
+              <div id="stop-mle-slot"></div>
+              <div class="track" style="height: 0.5rem; margin-bottom: 0.6rem">
+                <div
+                  class="fill"
+                  id="stop-progress"
+                  style="width: 0%; transition: width 0.1s linear"
+                ></div>
+              </div>
+              <span class="eyebrow" style="font-size: 0.55rem"
+                >Confidence over the session</span
+              >
+              <div id="stop-track"></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <footer class="site">
+      <p>GRIN — amortised Bayesian inference for General Recognition Theory.</p>
+      <p class="fine">
+        <a href="https://murraysbennett.com"
+          >Part of Murray S. Bennett's research</a
+        >
+      </p>
+      <p class="fine">
+        Everything runs client-side. No data leaves your machine.
+      </p>
+    </footer>
+
+    <script type="module">
+      import * as Plot from "./assets/js/grt-plot.js";
+      import * as Sim from "./assets/js/grt-sim.js";
+      import * as Fit from "./assets/js/grt-fit.js";
+      import * as Core from "./assets/js/grt-core.js";
+      import { loadModel } from "./assets/js/grin-model.js";
+      import "./assets/js/grin-shell.js";
+
+      const $ = (id) => document.getElementById(id);
+      const L = {
+        aName: "Dimension A",
+        a1: "A1",
+        a2: "A2",
+        bName: "Dimension B",
+        b1: "B1",
+        b2: "B2",
+      };
+
+      let cmModel = null;
+      async function getModel() {
+        if (!cmModel) cmModel = await loadModel("./assets/models/cm");
+        return cmModel;
+      }
+
+      /** GRIN's joint probability for a SPECIFIC named class -- not necessarily the
+       * same as res.modelClass.joint, which is the joint probability of whichever
+       * class GRIN currently considers most likely. Those agree when GRIN's best
+       * guess IS the true class and diverge when it isn't -- which is exactly the
+       * distinction "confidence in the true answer" needs to make. */
+      function jointProbOfClass(res, className) {
+        const spec = Core.MODEL_SPECS[className];
+        const pCorr = res.corr[spec.corr];
+        const pSepA = spec.psA ? res.sep.A : 1 - res.sep.A;
+        const pSepB = spec.psB ? res.sep.B : 1 - res.sep.B;
+        return pCorr * pSepA * pSepB;
+      }
+
+      // --------------------------------------------------------------------------- //
+      // Section A: fading trail / drift tracking
+      // --------------------------------------------------------------------------- //
+      const TRAIL_MAX_CHECKPOINTS = 40; // caps worst-case work: 40 x one Nelder-Mead
+      // fit is a fraction of a second even on the
+      // slowest slider combination allowed here
+
+      function syncTrailControls() {
+        $("v-rho").textContent = (+$("rho").value).toFixed(2);
+        $("v-dA").textContent = (+$("dA").value).toFixed(2);
+        $("v-dB").textContent = (+$("dB").value).toFixed(2);
+        $("v-dA2").textContent = (+$("dA2").value).toFixed(2);
+        $("v-dB2").textContent = (+$("dB2").value).toFixed(2);
+        $("v-intervention").textContent = `${$("intervention").value}%`;
+        $("v-alpha").textContent = (+$("alpha").value).toFixed(2);
+        $("v-total").textContent = $("total").value;
+        $("v-every").textContent = $("every").value;
+        $("drift-controls").hidden = !$("drift-on").checked;
+        $("window-size-row").hidden = !$("use-window").checked;
+
+        const total = +$("total").value,
+          every = +$("every").value;
+        const wouldBe = Math.ceil((total * 4) / every);
+        $("trail-checkpoint-note").textContent =
+          wouldBe > TRAIL_MAX_CHECKPOINTS
+            ? `${wouldBe} checkpoints requested — capped to ${TRAIL_MAX_CHECKPOINTS} by widening the spacing, to keep this responsive.`
+            : `${wouldBe} checkpoints at this setting.`;
+
+        // The window slider's own range has to track the actual experiment length:
+        // a window of "100 trials/stimulus" is meaningless if the whole session is
+        // only 40 trials/stimulus long. Recompute min/max every time total changes,
+        // rather than leaving them fixed at whatever felt reasonable for the
+        // slider's OWN default -- a hardcoded range can't know what total allows at
+        // its own extremes.
+        const windowEl = $("window");
+        const newMax = total;
+        const newMin = Math.min(10, total);
+        windowEl.min = newMin;
+        windowEl.max = newMax;
+        if (+windowEl.value > newMax) windowEl.value = newMax;
+        if (+windowEl.value < newMin) windowEl.value = newMin;
+        $("v-window").textContent = windowEl.value;
+        $("window-range-note").textContent =
+          `Range adjusts with the total above: ${newMin}–${newMax} trials/stimulus.`;
+      }
+      [
+        "rho",
+        "dA",
+        "dB",
+        "dA2",
+        "dB2",
+        "intervention",
+        "alpha",
+        "total",
+        "every",
+        "window",
+      ].forEach((id) => $(id).addEventListener("input", syncTrailControls));
+      $("drift-on").addEventListener("change", () => {
+        // Drifting truth genuinely needs a window -- a cumulative fit can never
+        // fully catch up to a representation that changed partway through, since
+        // every pre-change trial keeps dragging the estimate toward a blend of old
+        // and new truth forever. Suggest the window on, but leave it overridable so
+        // the lag itself can be shown deliberately as a teaching moment.
+        if ($("drift-on").checked) {
+          $("use-window").checked = true;
+        }
+        syncTrailControls();
+      });
+      $("use-window").addEventListener("change", syncTrailControls);
+      syncTrailControls();
+
+      /** Widen the checkpoint spacing if needed so a run can never exceed
+       * TRAIL_MAX_CHECKPOINTS, regardless of slider combination — bounding the
+       * worst case is safer than trusting slider ranges never to combine badly. */
+      function boundedEvery(totalPerStimulus, requestedEvery, maxCheckpoints) {
+        const totalTrials = totalPerStimulus * 4;
+        return Math.max(
+          requestedEvery,
+          Math.ceil(totalTrials / maxCheckpoints),
+        );
+      }
+
+      let trailAbort = null;
+
+      async function runTrail() {
+        trailAbort?.abort();
+        trailAbort = new AbortController();
+        const { signal } = trailAbort;
+
+        const total = +$("total").value;
+        const every = boundedEvery(
+          total,
+          +$("every").value,
+          TRAIL_MAX_CHECKPOINTS,
+        );
+        const drift = $("drift-on").checked;
+        const useWindow = $("use-window").checked;
+        // The window slider is labelled and displayed in trials/STIMULUS, matching
+        // everything else on this page, but checkpointSnapshots' windowSize counts
+        // trials TOTAL across all 4 stimuli -- without this x4, a window showing
+        // "100 trials/stimulus" was actually only remembering ~25/stimulus.
+        const windowSize = useWindow ? +$("window").value * 4 : null;
+        const rho = +$("rho").value;
+        const dA = +$("dA").value,
+          dB = +$("dB").value;
+
+        $("trail-status").textContent = "Simulating…";
+        $("trail-progress").style.width = "0%";
+        // Correlation stays fixed throughout -- it's the drift TARGET that changed,
+        // from correlation to separability, precisely because correlation turned
+        // out to have much higher sampling variance at these trial counts (checked
+        // directly: SD of the estimated correlation barely shrinks between 15 and
+        // 100 trials/stimulus, while the same check on separability tightens up
+        // far more cleanly) -- a drifting correlation would mostly just look noisy
+        // rather than show a clean before/after transition.
+        const trials = drift
+          ? Sim.simulateGradualDriftStream(
+              {
+                mA: 1.3,
+                mB: 1.3,
+                rho,
+                dAStart: dA,
+                dBStart: dB,
+                dATarget: +$("dA2").value,
+                dBTarget: +$("dB2").value,
+              },
+              total,
+              +$("intervention").value / 100,
+              +$("alpha").value,
+              Sim.makeRNG(),
+            )
+          : Sim.simulateTrialStream(
+              Sim.buildRepresentation({ mA: 1.3, mB: 1.3, rho, dA, dB }),
+              total,
+              Sim.makeRNG(),
+            );
+
+        const model = await getModel();
+        if (signal.aborted) return;
+        const snapshots = Fit.checkpointSnapshots(trials, {
+          every,
+          windowSize: windowSize || undefined,
+        });
+        const checkpoints = [];
+        for (const snap of snapshots) {
+          if (signal.aborted) return;
+          const res = await model.predict({
+            counts: snap.counts,
+            trials: snap.trials,
+            rtq: null,
+          });
+          checkpoints.push({
+            trialCount: snap.trialCount,
+            counts: snap.counts,
+            stimuli: Plot.toStimuli(res.mean),
+            grin: res,
+          });
+        }
+        if (!checkpoints.length) {
+          $("trail-status").innerHTML =
+            `<span class="pill bad">Not enough trials yet for even one checkpoint — raise the total or lower "checkpoint every".</span>`;
+          return;
+        }
+        if (signal.aborted) return;
+
+        $("trail-status").textContent =
+          `Fitting ${checkpoints.length} checkpoints…`;
+        await Plot.animateFadeTrail(
+          $("trail-canvas"),
+          checkpoints,
+          { labels: L, showMarginals: false },
+          { curve: "exp", minAlpha: 0.06 },
+          {
+            delayMs: 60,
+            signal,
+            onProgress: (i, n) => {
+              $("trail-progress").style.width =
+                `${((100 * i) / n).toFixed(0)}%`;
+            },
+          },
+        );
+        if (signal.aborted) return;
+
+        const last = checkpoints[checkpoints.length - 1];
+        const zx = [
+          last.stimuli[0].zx,
+          last.stimuli[1].zx,
+          last.stimuli[2].zx,
+          last.stimuli[3].zx,
+        ];
+        const zy = [
+          last.stimuli[0].zy,
+          last.stimuli[1].zy,
+          last.stimuli[2].zy,
+          last.stimuli[3].zy,
+        ];
+        const dAest = (
+          Math.abs(zx[0] - zx[1]) + Math.abs(zx[2] - zx[3])
+        ).toFixed(2);
+        const dBest = (
+          Math.abs(zy[0] - zy[2]) + Math.abs(zy[1] - zy[3])
+        ).toFixed(2);
+        const totalMs = checkpoints.reduce((a, c) => a + (c.grin.ms || 0), 0);
+        $("trail-status").innerHTML =
+          `<span class="pill ok">${checkpoints.length} GRIN checkpoints in ${totalMs.toFixed(1)} ms total, ${trials.length} trials. Latest estimated separability violation: A≈${dAest}, B≈${dBest}.</span>`;
+        $("trail-stub-slot").innerHTML =
+          last.grin.backend === "stub"
+            ? `<div class="stub-banner">The trained network isn't wired in yet — this trail is an MLE stand-in dressed in GRIN's interface. Speeds and exact values will change once real weights land.</div>`
+            : "";
+
+        if (drift) {
+          const interventionPct = $("intervention").value;
+          const interventionPerStim = Math.round(
+            (+interventionPct / 100) * total,
+          );
+          const trueBefore = Math.abs(dA),
+            trueAfter = Math.abs(+$("dA2").value);
+          const windowPerStim = useWindow ? +$("window").value : null;
+          $("trail-insight").innerHTML = useWindow
+            ? `<div class="note">
+          <h4>The window is catching up</h4>
+          <p>Separability starts creeping from |Δ|≈${trueBefore.toFixed(2)} toward |Δ|≈${trueAfter.toFixed(2)}
+          starting around trial ${interventionPerStim} (per stimulus, ${interventionPct}% through the
+          session) — gradually, not a jump. A sliding window only "remembers" the last
+          ${windowPerStim} trials/stimulus, so once enough post-shift data has entered the window,
+          the estimate can track the new truth as it settles — try turning the window off to see
+          what happens without it.</p>
+        </div>`
+            : `<div class="note warn">
+          <h4>This is the lag, on purpose</h4>
+          <p>This is a <strong>running total</strong>, not a window — every trial from before the
+          shift is still in there, permanently pulling the estimate toward a blend of old and new
+          truth. No matter how long you kept running, a pure running total would never fully catch
+          up to the new value the representation is settling toward. Turn on the sliding window
+          (left) to see the fix.</p>
+        </div>`;
+        } else {
+          $("trail-insight").innerHTML = "";
+        }
+      }
+      $("run-trail").addEventListener("click", runTrail);
+      Plot.onThemeChange(() => {
+        /* re-run only if a result exists would need cached state; keep simple: no-op */
+      });
+
+      // --------------------------------------------------------------------------- //
+      // Section B: early stopping
+      //
+      // Each checkpoint here calls fitAndSelect — ALL 12 model classes, not just
+      // one — since the confidence readout needs a real BIC-weighted comparison
+      // across classes, not a single fit. That's roughly 10x the cost per
+      // checkpoint of Section A's single-class fits, so it needs its own (lower)
+      // checkpoint cap and, just as importantly, has to yield to the browser
+      // between every checkpoint rather than run one long synchronous block. That
+      // lack of yielding, not the total amount of work, was what actually froze the
+      // tab: 120 checkpoints x ~150ms with no yielding is one 18-second block the
+      // browser can't interrupt to repaint or respond to input; the same 120
+      // checkpoints spread across yielded frames doesn't freeze anything, it just
+      // visibly progresses.
+      // --------------------------------------------------------------------------- //
+      const STOP_MAX_CHECKPOINTS = 40; // ~40 x fitAndSelect is a few seconds, chunked
+
+      function syncStopControls() {
+        $("v-stop-rho").textContent = (+$("stop-rho").value).toFixed(2);
+        $("v-stop-dA").textContent = (+$("stop-dA").value).toFixed(2);
+        $("v-stop-dB").textContent = (+$("stop-dB").value).toFixed(2);
+        $("v-thresh").textContent = (+$("thresh").value).toFixed(2);
+        $("v-stop-total").textContent = $("stop-total").value;
+        $("v-stop-every").textContent = $("stop-every").value;
+
+        const total = +$("stop-total").value,
+          every = +$("stop-every").value;
+        const wouldBe = Math.ceil((total * 4) / every);
+        $("stop-checkpoint-note").textContent =
+          wouldBe > STOP_MAX_CHECKPOINTS
+            ? `${wouldBe} checkpoints requested — capped to ${STOP_MAX_CHECKPOINTS} by widening the spacing, to keep this responsive.`
+            : `${wouldBe} checkpoints at this setting.`;
+
+        const construct = $("construct").value;
+        $("construct-note").textContent =
+          construct === "full"
+            ? "Confidence in the exact model class matching everything you set above — the simplest thing to actually watch for."
+            : "Confidence toward whichever side is true above, for that one question only — the rest of the representation is ignored.";
+      }
+      [
+        "stop-rho",
+        "stop-dA",
+        "stop-dB",
+        "thresh",
+        "stop-total",
+        "stop-every",
+        "construct",
+      ].forEach((id) => $(id).addEventListener("input", syncStopControls));
+      syncStopControls();
+
+      /** Which of the 12 canonical classes exactly matches the ground truth these
+       * sliders describe. There's no rhoSpread control here (all 4 stimuli share
+       * one rho), so a non-zero correlation is always "rho1", never "free" — this
+       * page can't construct a ground truth "free" would be needed to name. */
+      function trueClassName(rho, dA, dB) {
+        const corr = rho === 0 ? "pi" : "rho1";
+        const psA = dA === 0,
+          psB = dB === 0;
+        return Object.keys(Core.MODEL_SPECS).find((m) => {
+          const spec = Core.MODEL_SPECS[m];
+          return spec.corr === corr && spec.psA === psA && spec.psB === psB;
+        });
+      }
+
+      /**
+       * Confidence toward whichever answer is actually TRUE — not toward "yes" by
+       * default. Measuring P(separable) when the ground truth is NON-separable was
+       * exactly backwards: a correct fit pushes that number toward 0, which can
+       * never cross a high stopping threshold no matter how much data arrives. The
+       * fix is symmetric: report confidence in whatever the true side is, whichever
+       * direction that happens to be.
+       *
+       * Reads GRIN's own factorised heads (res.corr, res.sep) — this is what makes
+       * refitting cheap enough to check every few trials in the first place; an
+       * MLE-based version of this same logic exists further down as a single,
+       * one-time REFERENCE fit for comparison, not something re-run per checkpoint.
+       */
+      function confidenceFor(construct, res, trueClass, truth) {
+        if (construct === "full") return jointProbOfClass(res, trueClass);
+        const pYes =
+          construct === "pi"
+            ? res.corr.pi
+            : construct === "sepA"
+              ? res.sep.A
+              : res.sep.B;
+        const truthIsYes =
+          construct === "pi"
+            ? truth.rho === 0
+            : construct === "sepA"
+              ? truth.dA === 0
+              : truth.dB === 0;
+        return truthIsYes ? pYes : 1 - pYes;
+      }
+
+      let stopAbort = null;
+
+      async function runEarlyStopping() {
+        stopAbort?.abort();
+        stopAbort = new AbortController();
+        const { signal } = stopAbort;
+
+        const construct = $("construct").value;
+        const threshold = +$("thresh").value;
+        const total = +$("stop-total").value;
+        const every = boundedEvery(
+          total,
+          +$("stop-every").value,
+          STOP_MAX_CHECKPOINTS,
+        );
+
+        const truth = {
+          rho: +$("stop-rho").value,
+          dA: +$("stop-dA").value,
+          dB: +$("stop-dB").value,
+        };
+        const trueClass = trueClassName(truth.rho, truth.dA, truth.dB);
+
+        $("stop-status").textContent = "Simulating…";
+        $("stop-verdict").innerHTML = "";
+        $("stop-track").innerHTML = "";
+        $("stop-stub-slot").innerHTML = "";
+        $("stop-mle-slot").innerHTML = "";
+        const rep = Sim.buildRepresentation({ mA: 1.3, mB: 1.3, ...truth });
+        const trials = Sim.simulateTrialStream(rep, total, Sim.makeRNG());
+
+        const model = await getModel();
+        if (signal.aborted) return;
+        const snapshots = Fit.checkpointSnapshots(trials, {
+          every,
+          minPerCheckpoint: 4,
+        });
+
+        const rows = [];
+        let stoppedAt = null;
+        let totalGrinMs = 0;
+        for (const snap of snapshots) {
+          if (signal.aborted) return;
+          const res = await model.predict({
+            counts: snap.counts,
+            trials: snap.trials,
+            rtq: null,
+          });
+          totalGrinMs += res.ms || 0;
+          const conf = confidenceFor(construct, res, trueClass, truth);
+          rows.push({ n: snap.trialCount, conf });
+
+          // render progressively -- one more bar, not the whole track dumped at
+          // once at the end -- so it visibly progresses instead of appearing all
+          // at once. The first bar to cross the threshold is highlighted so "how
+          // many trials would I have needed" is a glance, not a scan down a column.
+          const firstHitIdx = rows.findIndex((r) => r.conf >= threshold);
+          $("stop-track").innerHTML = rows
+            .map((r, idx) =>
+              Plot.pbar(`${Math.round(r.n / 4)} trials/stim.`, r.conf, {
+                dimBelow: threshold,
+                highlight: idx === firstHitIdx,
+              }),
+            )
+            .join("");
+          $("stop-status").textContent =
+            `Checkpoint ${rows.length} (${Math.round(snap.trialCount / 4)} trials/stimulus)…`;
+          $("stop-progress").style.width =
+            `${((100 * snap.trialCount) / trials.length).toFixed(0)}%`;
+
+          // Track the FIRST crossing but keep running to the full budget -- seeing
+          // confidence sit near-flat for the rest of the session (or bounce around
+          // near the threshold) is the actual point: it's what "the rest of the
+          // fixed protocol would have bought you" looks like, not a number asserted
+          // after the fact. GRIN is fast enough that this doesn't even need a
+          // yield-per-checkpoint the way the old MLE-per-checkpoint version did;
+          // one micro-yield at the end of the loop is enough to keep the tab
+          // responsive without slowing the run down for no reason.
+          if (stoppedAt === null && conf >= threshold)
+            stoppedAt = snap.trialCount;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        if (signal.aborted) return;
+        if (model.backend === "stub") {
+          $("stop-stub-slot").innerHTML =
+            `<div class="stub-banner">The trained network isn't wired in yet — this session ran on an MLE stand-in dressed in GRIN's interface. The per-checkpoint speed shown below is therefore MLE's speed, not GRIN's real (much faster) speed.</div>`;
+        }
+
+        // A single MLE reference fit, on the FINAL dataset only -- the classical
+        // "vs MLE" comparison this whole site makes elsewhere (see Analyse), not
+        // something re-run at every checkpoint. Doing that would reintroduce
+        // exactly the freeze this page used to have: full 12-class MLE selection,
+        // run dozens of times, with no yielding, is the whole reason this loop
+        // needed a checkpoint cap and per-frame yields in the first place when it
+        // used to run through MLE. GRIN doesn't need either of those -- it's fast
+        // enough to just check every checkpoint directly.
+        const finalSnap = snapshots[snapshots.length - 1];
+        const mleSel = Fit.fitAndSelect(
+          finalSnap.counts,
+          finalSnap.trials,
+          "bic",
+        );
+        const mleAgrees = mleSel.best.model === trueClass;
+        const projectedMleMs = mleSel.ms * snapshots.length;
+        $("stop-mle-slot").innerHTML = `<div class="note">
+    <h4>Checked against classical MLE (one fit, on the final dataset)</h4>
+    <p>MLE's own best-supported class on the full session: <code>${mleSel.best.model}</code>
+    (${mleAgrees ? "agrees with" : "differs from"} the true <code>${trueClass}</code>), computed in
+    ${mleSel.ms.toFixed(1)} ms for that one fit. GRIN ran all ${snapshots.length} checkpoints in
+    ${totalGrinMs.toFixed(1)} ms combined. Re-running MLE's full 12-class selection at every one of
+    those checkpoints — which is what actually checking this often would require classically —
+    would cost roughly <strong>${(projectedMleMs / 1000).toFixed(1)} seconds</strong>
+    (${mleSel.ms.toFixed(0)} ms × ${snapshots.length}, <em>projected from the one measured fit above,
+    not actually run</em> — the earlier version of this page did run it that many times, which is
+    why it used to freeze). That gap is the entire reason early stopping is only checked this
+    cheaply with GRIN.</p>
+  </div>`;
+
+        const labelFor =
+          construct === "full"
+            ? `P(exactly <code>${trueClass}</code>)`
+            : {
+                sepA: "P(A separable)",
+                sepB: "P(B separable)",
+                pi: "P(independent)",
+              }[construct];
+        const savedPct = stoppedAt
+          ? Math.round(100 * (1 - stoppedAt / trials.length))
+          : 0;
+        const stoppedPerStim = Math.round(stoppedAt / 4);
+        const budgetPerStim = Math.round(trials.length / 4);
+        $("stop-verdict").innerHTML = stoppedAt
+          ? `<div class="note">
+        <h4>Could have stopped at ${stoppedPerStim} trials/stimulus</h4>
+        <p>${labelFor} first crossed ${threshold.toFixed(2)} there (highlighted below) — but this run
+        kept going to the full ${budgetPerStim}-trial budget anyway, on purpose, so you can see what
+        the rest of the session actually bought. Look at the bars after the highlighted one:
+        confidence mostly just sits there. That's <strong>${savedPct}% of the session</strong> spent
+        confirming something already known. This is only practical to check for in the first place
+        because refitting costs about a millisecond; classical per-fit optimisation couldn't check
+        this often without the checking itself becoming the bottleneck.</p>
+      </div>`
+          : `<div class="note warn">
+        <h4>Never reached ${threshold.toFixed(2)} confidence</h4>
+        <p>Across the whole ${budgetPerStim}-trial-per-stimulus budget, ${labelFor} didn't cross the
+        threshold. Either raise the trial budget, lower the threshold, or this effect size may need
+        more data than a fixed-N protocol of this length would give it anyway — which is itself a
+        useful thing to find out before running real participants.</p>
+      </div>`;
+        $("stop-status").innerHTML = `<span class="pill ok">Done.</span>`;
+      }
+      $("run-stop").addEventListener("click", runEarlyStopping);
+    </script>
+  </body>
+</html>
