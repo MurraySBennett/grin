@@ -1,0 +1,174 @@
+{
+  "generated_at": "2026-07-12T02:37:09Z",
+  "mode": "grin+mle",
+  "seed": 20260711,
+  "checks": {
+    "v03_recovery": {
+      "id": "v03",
+      "claim": "parameter recovery",
+      "n": 720,
+      "trials_per_stimulus": 200,
+      "mle": {
+        "zscore_MAE": 0.4574414493085408,
+        "rho_MAE": 0.35598875952076525,
+        "status": "measured"
+      },
+      "grin": {
+        "zscore_MAE": 0.139942151075125,
+        "rho_MAE": 0.2095464746127917,
+        "status": "measured"
+      }
+    },
+    "v04_calibration": {
+      "id": "v04",
+      "claim": "posterior interval coverage",
+      "note": "Nominal X% intervals should contain the true parameter X% of the time. This is the calibration claim, and it is specific to a model that returns a posterior \u2014 an MLE point estimate has no comparable number, so none is reported here.",
+      "grin": {
+        "coverage": {
+          "50%": 0.5736111111111111,
+          "90%": 0.9305555555555556,
+          "95%": 0.9643055555555555
+        },
+        "n": 600,
+        "status": "measured"
+      }
+    },
+    "v05_speed": {
+      "id": "v05",
+      "claim": "amortized speedup vs MLE",
+      "n": 240,
+      "mle_one_fit_ms": 102.32233107089996,
+      "mle_full_selection_ms": 604.7185162703196,
+      "grin": {
+        "ms_per_matrix": 0.008347630500793457,
+        "speedup_vs_one_mle_fit": 12257.649767940022,
+        "speedup_vs_full_selection": 72441.93621325717,
+        "status": "measured"
+      }
+    },
+    "v07_trial_sweep": {
+      "id": "v07",
+      "claim": "reliability across trial counts",
+      "by_trials": {
+        "10": {
+          "mle_MAE": 1.390828906340763,
+          "grin": {
+            "MAE": 0.3673463566113729,
+            "coverage90": 0.8993055555555556,
+            "status": "measured"
+          }
+        },
+        "25": {
+          "mle_MAE": 1.0749349164330237,
+          "grin": {
+            "MAE": 0.28355581747136027,
+            "coverage90": 0.9043981481481481,
+            "status": "measured"
+          }
+        },
+        "50": {
+          "mle_MAE": 0.8324528512309598,
+          "grin": {
+            "MAE": 0.23405698612550818,
+            "coverage90": 0.9145833333333333,
+            "status": "measured"
+          }
+        },
+        "100": {
+          "mle_MAE": 0.5746095928606078,
+          "grin": {
+            "MAE": 0.19319221607756837,
+            "coverage90": 0.93125,
+            "status": "measured"
+          }
+        },
+        "200": {
+          "mle_MAE": 0.4155580927058668,
+          "grin": {
+            "MAE": 0.16274016200248712,
+            "coverage90": 0.9511574074074074,
+            "status": "measured"
+          }
+        },
+        "400": {
+          "mle_MAE": 0.2899264720989117,
+          "grin": {
+            "MAE": 0.14235758821369665,
+            "coverage90": 0.9594907407407407,
+            "status": "measured"
+          }
+        },
+        "1000": {
+          "mle_MAE": 0.15895062208558258,
+          "grin": {
+            "MAE": 0.1346834299680221,
+            "coverage90": 0.9539351851851852,
+            "status": "measured"
+          }
+        }
+      }
+    },
+    "v08_pi_frontier": {
+      "id": "v08",
+      "claim": "PI identifiability frontier (the honest limit)",
+      "mle_aic_bic": {
+        "true_PI": {
+          "n": 321,
+          "accuracy": 0.9937694704049844
+        },
+        "weak": {
+          "n": 113,
+          "accuracy": 0.25663716814159293
+        },
+        "moderate": {
+          "n": 147,
+          "accuracy": 0.6802721088435374
+        },
+        "strong": {
+          "n": 379,
+          "accuracy": 0.741424802110818
+        }
+      },
+      "grin": {
+        "true_PI": {
+          "n": 321,
+          "accuracy": 0.9376947040498442
+        },
+        "weak": {
+          "n": 113,
+          "accuracy": 0.26548672566371684
+        },
+        "moderate": {
+          "n": 147,
+          "accuracy": 0.7619047619047619
+        },
+        "strong": {
+          "n": 379,
+          "accuracy": 0.8548812664907651
+        },
+        "status": "measured"
+      }
+    },
+    "v11_selection": {
+      "id": "v11",
+      "claim": "model-class selection accuracy",
+      "n": 480,
+      "mle_aic_bic": {
+        "exact_class_accuracy": 0.5854166666666667,
+        "ms_per_matrix": 652.9263709982237,
+        "status": "measured"
+      },
+      "grin": {
+        "corr_accuracy": 0.7083333333333334,
+        "sepA_accuracy": 0.9479166666666666,
+        "sepB_accuracy": 0.9354166666666667,
+        "ms_per_matrix": 0.007252891858418782,
+        "status": "measured"
+      }
+    }
+  },
+  "rt_checks": {
+    "status": "pending_weights",
+    "note": "See validation/checks_rt.py (v12-v16) for the protocols to mirror once the RT model is trained."
+  }
+}

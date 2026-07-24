@@ -1,0 +1,12 @@
+{
+  "id": "v08",
+  "claim": "PI identifiability frontier (the honest limit)",
+  "result": {
+    "true_PI": 0.6583333333333333,
+    "weak": 0.47435897435897434,
+    "moderate": 0.5681818181818182,
+    "strong": 0.6203703703703703
+  },
+  "pass": true,
+  "seconds": 15.4
+}

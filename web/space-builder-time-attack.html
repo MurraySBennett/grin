@@ -1,0 +1,981 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <script>
+      (function () {
+        try {
+          var s = localStorage.getItem("grin-theme");
+          var d =
+            s === "dark" ||
+            (s !== "light" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (d) document.documentElement.classList.add("is-dark");
+        } catch (e) {}
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Space Builder: Time Attack — GRIN</title>
+    <meta
+      name="description"
+      content="Three processing architectures produce identical confusion matrices. Only response times can tell them apart. See it happen."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./assets/css/grin.css" />
+  </head>
+  <body data-page="time-attack">
+    <header class="site">
+      <h1>Space Builder: Time Attack</h1>
+      <p class="tagline">The thing accuracy cannot tell you.</p>
+      <div id="nav-placeholder"></div>
+    </header>
+
+    <main class="container">
+      <div class="plain" style="margin-bottom: 1.25rem">
+        <span class="eyebrow">The point of this page</span>
+        <p>
+          A confusion matrix tells you <em>what</em> someone perceived. It
+          cannot tell you <em>how</em> they got there — whether they processed
+          the two dimensions one after another or at the same time, whether they
+          waited for both or stopped as soon as one was settled.
+        </p>
+        <p>
+          That isn't a limitation of the method. It's a limitation of the
+          <strong>data</strong>. Below, three of the five architectures produce
+          <em>the same confusion matrix</em> — not similar, the same. No amount
+          of accuracy data, and no cleverer statistics, could ever separate
+          them. But they finish at visibly different times.
+          <strong
+            >Response times are not a nice extra here; they are the only channel
+            the information is in.</strong
+          >
+        </p>
+      </div>
+
+      <div class="card" style="margin-bottom: 1.25rem">
+        <span class="eyebrow">What this model actually needs from you</span>
+        <div class="viz-2">
+          <div>
+            <p class="cap" style="margin-top: 0">
+              <strong>Counts alone</strong> — just the aggregate 4×4 table.
+            </p>
+            <table class="cm" style="font-size: 0.75rem">
+              <tr>
+                <th></th>
+                <th>A1/B1</th>
+                <th>A1/B2</th>
+                <th>A2/B1</th>
+                <th>A2/B2</th>
+              </tr>
+              <tr>
+                <th>A1/B1</th>
+                <td>84</td>
+                <td>7</td>
+                <td>8</td>
+                <td>1</td>
+              </tr>
+              <tr>
+                <th>A1/B2</th>
+                <td>6</td>
+                <td>85</td>
+                <td>1</td>
+                <td>8</td>
+              </tr>
+              <tr>
+                <th>A2/B1</th>
+                <td>9</td>
+                <td>1</td>
+                <td>84</td>
+                <td>6</td>
+              </tr>
+              <tr>
+                <th>A2/B2</th>
+                <td>1</td>
+                <td>9</td>
+                <td>7</td>
+                <td>83</td>
+              </tr>
+            </table>
+          </div>
+          <div>
+            <p class="cap" style="margin-top: 0">
+              <strong>Counts + response times</strong> — every trial,
+              individually, with a timestamp.
+            </p>
+            <table class="cm" style="font-size: 0.75rem">
+              <tr>
+                <th>stimulus</th>
+                <th>response</th>
+                <th>rt (s)</th>
+              </tr>
+              <tr>
+                <td>A1/B1</td>
+                <td>A1/B1</td>
+                <td>0.61</td>
+              </tr>
+              <tr>
+                <td>A1/B2</td>
+                <td>A1/B2</td>
+                <td>0.44</td>
+              </tr>
+              <tr>
+                <td>A2/B1</td>
+                <td>A1/B1</td>
+                <td>0.98</td>
+              </tr>
+              <tr>
+                <td>A2/B2</td>
+                <td>A2/B2</td>
+                <td>0.52</td>
+              </tr>
+              <tr>
+                <td colspan="3" style="color: var(--mute); font-style: italic">
+                  … one row per trial, hundreds of rows
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        <p class="cap" style="margin-bottom: 0">
+          That's a genuinely different data-collection commitment, not just "the
+          same experiment, analysed more thoroughly" — every trial needs its own
+          timestamp, not just its outcome. The per-trial table gets compressed
+          down to 5 quantiles per cell (80 numbers total) before it reaches the
+          model; that compression is shown live in the
+          <strong>The response times</strong> card below once you run an
+          experiment.
+        </p>
+      </div>
+
+      <div class="tool">
+        <!-- ------------------------------------------------------------------ -->
+        <aside class="panel sticky">
+          <span class="eyebrow">1. The space</span>
+          <label
+            >Sensitivity, dimension A
+            <span class="val" id="v-mA">1.40</span></label
+          >
+          <input
+            type="range"
+            id="mA"
+            min="0.1"
+            max="2.5"
+            step="0.05"
+            value="1.4"
+          />
+          <label
+            >Sensitivity, dimension B
+            <span class="val" id="v-mB">1.40</span></label
+          >
+          <input
+            type="range"
+            id="mB"
+            min="0.1"
+            max="2.5"
+            step="0.05"
+            value="1.4"
+          />
+          <label
+            >Perceptual correlation ρ
+            <span class="val" id="v-rho">0.00</span></label
+          >
+          <input
+            type="range"
+            id="rho"
+            min="-0.9"
+            max="0.9"
+            step="0.05"
+            value="0"
+          />
+
+          <details>
+            <summary>Break the assumptions</summary>
+            <div class="details-body">
+              <label
+                >Non-separability of A
+                <span class="val" id="v-dA">0.00</span></label
+              >
+              <input
+                type="range"
+                id="dA"
+                min="-1.5"
+                max="1.5"
+                step="0.05"
+                value="0"
+              />
+              <label
+                >Non-separability of B
+                <span class="val" id="v-dB">0.00</span></label
+              >
+              <input
+                type="range"
+                id="dB"
+                min="-1.5"
+                max="1.5"
+                step="0.05"
+                value="0"
+              />
+              <label
+                >ρ differs across stimuli
+                <span class="val" id="v-rhoSpread">0.00</span></label
+              >
+              <input
+                type="range"
+                id="rhoSpread"
+                min="0"
+                max="0.6"
+                step="0.05"
+                value="0"
+              />
+
+              <hr class="hr" />
+              <p class="cap" style="margin-top: 0">
+                <strong>The sliders above move a matched pair together</strong>
+                — the textbook pattern. Real separability failures are often
+                messier: <strong>one stimulus</strong>
+                wanders on its own. This moves just one:
+              </p>
+              <label>Which stimulus wanders?</label>
+              <select id="nudgeStim">
+                <option value="0">A1 / B1</option>
+                <option value="1">A1 / B2</option>
+                <option value="2">A2 / B1</option>
+                <option value="3">A2 / B2</option>
+              </select>
+              <label
+                >Δx for that stimulus only
+                <span class="val" id="v-nudgeX">0.00</span></label
+              >
+              <input
+                type="range"
+                id="nudgeX"
+                min="-1.5"
+                max="1.5"
+                step="0.05"
+                value="0"
+              />
+              <label
+                >Δy for that stimulus only
+                <span class="val" id="v-nudgeY">0.00</span></label
+              >
+              <input
+                type="range"
+                id="nudgeY"
+                min="-1.5"
+                max="1.5"
+                step="0.05"
+                value="0"
+              />
+              <div class="row">
+                <button id="nudge-reset" class="ghost wide">
+                  Reset all nudges
+                </button>
+              </div>
+              <p class="cap" id="nudge-summary" style="margin-top: 0.4rem"></p>
+            </div>
+          </details>
+
+          <hr class="hr" />
+
+          <span class="eyebrow">2. How is it processed?</span>
+          <div class="choices" id="arch-choices"></div>
+
+          <hr class="hr" />
+
+          <span class="eyebrow">3. The clock</span>
+          <label
+            >Non-decision time t₀ <span class="val" id="v-t0">0.30</span></label
+          >
+          <input
+            type="range"
+            id="t0"
+            min="0.15"
+            max="0.45"
+            step="0.01"
+            value="0.30"
+          />
+          <p class="cap" style="margin-top: 0.2rem">
+            Encoding + motor response. Shifts every RT, explains none of them.
+          </p>
+
+          <label
+            >Caution (threshold)
+            <span class="val" id="v-threshold">0.70</span></label
+          >
+          <input
+            type="range"
+            id="threshold"
+            min="0.35"
+            max="1.10"
+            step="0.01"
+            value="0.70"
+          />
+          <p class="cap" style="margin-top: 0.2rem">
+            How much evidence before committing. Slower <em>and</em> more
+            accurate.
+          </p>
+
+          <label
+            >Drift scaling, A <span class="val" id="v-kA">1.30</span></label
+          >
+          <input
+            type="range"
+            id="kA"
+            min="0.6"
+            max="2.0"
+            step="0.05"
+            value="1.3"
+          />
+          <label
+            >Drift scaling, B <span class="val" id="v-kB">1.30</span></label
+          >
+          <input
+            type="range"
+            id="kB"
+            min="0.6"
+            max="2.0"
+            step="0.05"
+            value="1.3"
+          />
+          <p class="cap" style="margin-top: 0.2rem">
+            How fast evidence accumulates. Drive one of these down and watch
+            that dimension become the bottleneck.
+          </p>
+
+          <hr class="hr" />
+
+          <label
+            >Trials per stimulus <span class="val" id="v-n">200</span></label
+          >
+          <input
+            type="range"
+            id="n"
+            min="10"
+            max="1000"
+            step="10"
+            value="200"
+          />
+          <div class="row">
+            <button id="run" class="wide">Run the experiment</button>
+          </div>
+          <div class="row">
+            <button id="compare" class="ghost wide">
+              Compare all 5 architectures
+            </button>
+          </div>
+          <p class="status" id="status">Pick an architecture, then run.</p>
+        </aside>
+
+        <!-- ------------------------------------------------------------------ -->
+        <section>
+          <div class="card">
+            <span class="eyebrow">Space &amp; data</span>
+            <div class="viz-2">
+              <div>
+                <canvas id="space" width="565" height="565"></canvas>
+                <div class="legend" id="legend"></div>
+              </div>
+              <div>
+                <table class="cm" id="cm"></table>
+                <p class="cap" id="cm-cap">
+                  Exact response probabilities implied by the space.
+                </p>
+                <div id="truth"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" id="rt-card" hidden>
+            <span class="eyebrow">The response times</span>
+            <div class="viz-2">
+              <div>
+                <canvas id="rt" width="460" height="300"></canvas>
+                <div class="legend" id="legend-rt"></div>
+              </div>
+              <div>
+                <p class="cap" style="margin-top: 0">
+                  One curve per stimulus, over the times of
+                  <strong>correct</strong> responses. Each curve is scaled by
+                  that stimulus's accuracy, so the area under it is P(correct) —
+                  a curve that is both <em>low</em> and <em>fast</em> is the
+                  signature of guessing, not of skill.
+                </p>
+                <p class="cap">
+                  The small ticks under each curve are the
+                  <strong>five quantiles GRIN actually reads</strong>
+                  (10th, 30th, 50th, 70th, 90th). That is the entire RT input: 5
+                  numbers per cell, 80 in total. Everything the model concludes
+                  about processing, it concludes from those ticks.
+                </p>
+                <div id="rt-stats"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" id="infer-card" hidden>
+            <span class="eyebrow">What the model recovers</span>
+            <div id="stub-slot"></div>
+            <div class="viz-2">
+              <div>
+                <span class="eyebrow" style="font-size: 0.55rem"
+                  >Processing architecture</span
+                >
+                <div id="arch-probs"></div>
+                <div id="neglect"></div>
+              </div>
+              <div>
+                <span class="eyebrow" style="font-size: 0.55rem"
+                  >Structure &amp; accumulators</span
+                >
+                <div id="constructs"></div>
+                <div id="lba"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" id="rt-value-card" hidden>
+            <span class="eyebrow"
+              >What did adding response times actually change?</span
+            >
+            <p class="cap" style="margin-top: 0">
+              Architecture and the accumulator parameters are things
+              <em>only</em> the RT model can see at all — there's no
+              "counts-only version" of those to compare against. But the GRT
+              question underneath — separable? independent? — is something BOTH
+              models answer. Same simulated data, same question, two models:
+              this is that comparison, live, not just asserted.
+            </p>
+            <div class="viz-2">
+              <div>
+                <span class="eyebrow" style="font-size: 0.55rem"
+                  >Counts alone</span
+                >
+                <div id="rt-value-cm"></div>
+              </div>
+              <div>
+                <span class="eyebrow" style="font-size: 0.55rem"
+                  >Counts + response times</span
+                >
+                <div id="rt-value-cmrt"></div>
+              </div>
+            </div>
+            <div id="rt-value-verdict"></div>
+          </div>
+
+          <div class="card" id="compare-card" hidden>
+            <span class="eyebrow">The demonstration</span>
+            <p style="font-size: 0.92rem">
+              The same perceptual space, the same accumulator settings, run
+              under all five architectures. Look at the accuracy column, then
+              look at the timing column.
+            </p>
+            <div style="overflow-x: auto">
+              <table
+                class="cm"
+                id="compare-table"
+                style="font-size: 0.78rem"
+              ></table>
+            </div>
+            <div id="compare-verdict"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site">
+      <p>GRIN — amortised Bayesian inference for General Recognition Theory.</p>
+      <p class="fine">
+        <a href="https://murraysbennett.com"
+          >Part of Murray S. Bennett's research</a
+        >
+      </p>
+      <p class="fine">
+        Everything runs client-side. No data leaves your machine.
+      </p>
+    </footer>
+
+    <script type="module">
+      import * as Plot from "./assets/js/grt-plot.js";
+      import * as Sim from "./assets/js/grt-sim.js";
+      import { loadModel } from "./assets/js/grin-model.js";
+      import { forwardProbabilities } from "./assets/js/grt-core.js";
+      import "./assets/js/grin-shell.js";
+
+      const $ = (id) => document.getElementById(id);
+      const SPACE = ["mA", "mB", "rho", "dA", "dB", "rhoSpread"];
+      const CLOCK = ["t0", "threshold", "kA", "kB"];
+      const ALL = [...SPACE, ...CLOCK, "n"];
+
+      // Independent per-stimulus nudges, layered on top of the symmetric dA/dB/
+      // rhoSpread sliders. Kept as separate state (not read fresh from the DOM like
+      // the other sliders) because only one stimulus's Δx/Δy is visible at a time.
+      let nudge = { x: [0, 0, 0, 0], y: [0, 0, 0, 0] };
+
+      const L = {
+        aName: "Dimension A",
+        a1: "A1",
+        a2: "A2",
+        bName: "Dimension B",
+        b1: "B1",
+        b2: "B2",
+      };
+
+      let model = null,
+        cmModel = null,
+        arch = "parallel_exhaustive",
+        lastRun = null;
+
+      async function getModel() {
+        if (model) return model;
+        model = await loadModel("./assets/models/cmrt");
+        return model;
+      }
+
+      /** For the "what did RT actually change" comparison — the CM-only model run
+       * on the SAME simulated data, ignoring its response times, so the only thing
+       * that differs between the two predictions is whether RT was available. */
+      async function getCmModel() {
+        if (cmModel) return cmModel;
+        cmModel = await loadModel("./assets/models/cm");
+        return cmModel;
+      }
+
+      // --- architecture picker -----------------------------------------------------
+      $("arch-choices").innerHTML = Sim.ARCHITECTURES.map((a) => {
+        const d = Sim.ARCH_LABELS[a];
+        return `<label class="choice" data-a="${a}">
+    <input type="radio" name="arch" value="${a}" ${a === arch ? "checked" : ""}>
+    <span><span class="what">${d.name}</span><span class="how">${d.rt}</span></span>
+  </label>`;
+      }).join("");
+
+      function syncChoices() {
+        document
+          .querySelectorAll(".choice")
+          .forEach((el) => el.classList.toggle("on", el.dataset.a === arch));
+      }
+      $("arch-choices").addEventListener("change", (e) => {
+        arch = e.target.value;
+        syncChoices();
+        invalidate("Architecture changed. Run again.");
+        drawSpace();
+      });
+      syncChoices();
+
+      // --- controls ----------------------------------------------------------------
+      function readControls() {
+        const o = {};
+        for (const k of ALL) o[k] = parseFloat($(k).value);
+        return o;
+      }
+      function lbaFrom(c) {
+        return { t0: c.t0, threshold: c.threshold, kA: c.kA, kB: c.kB };
+      }
+
+      /** The actual representation on screen: sliders + the independent nudges. */
+      function currentRep() {
+        return Sim.buildRepresentation({ ...readControls(), nudge });
+      }
+
+      function nudgeSummary() {
+        const active = [0, 1, 2, 3].filter(
+          (i) => nudge.x[i] !== 0 || nudge.y[i] !== 0,
+        );
+        if (!active.length) return "No stimuli nudged.";
+        const names = ["A1/B1", "A1/B2", "A2/B1", "A2/B2"];
+        return (
+          "Nudged: " +
+          active
+            .map(
+              (i) =>
+                `${names[i]} (Δx ${nudge.x[i].toFixed(2)}, Δy ${nudge.y[i].toFixed(2)})`,
+            )
+            .join("; ")
+        );
+      }
+
+      function invalidate(msg) {
+        lastRun = null;
+        $("rt-card").hidden = true;
+        $("infer-card").hidden = true;
+        $("rt-value-card").hidden = true;
+        $("compare-card").hidden = true;
+        if (msg) $("status").textContent = msg;
+      }
+
+      function drawSpace() {
+        const c = readControls();
+        for (const k of ALL)
+          $("v-" + k).textContent = k === "n" ? c[k] : c[k].toFixed(2);
+        $("nudge-summary").textContent = nudgeSummary();
+
+        const rep = currentRep();
+        const stimuli = [0, 1, 2, 3].map((i) => ({
+          zx: rep.zx[i],
+          zy: rep.zy[i],
+          rho: rep.rho[i],
+        }));
+        Plot.renderSpace($("space"), {
+          stimuli,
+          labels: L,
+          showMarginals: true,
+        });
+        Plot.buildLegend($("legend"), L);
+
+        if (!lastRun) {
+          Plot.renderCM(
+            $("cm"),
+            forwardProbabilities([...rep.zx, ...rep.zy, ...rep.rho]),
+            L,
+          );
+          $("cm-cap").textContent =
+            "Exact response probabilities implied by the space.";
+        }
+
+        // Checked against the built vectors (rep), not the sliders (c): a nudge can
+        // break PS(A) on its own even when dA is 0.
+        const t = Sim.trueAssumptions(rep);
+        const pill = (ok, yes, no) =>
+          `<span class="pill ${ok ? "ok" : "warn"}">${ok ? yes : no}</span>`;
+        $("truth").innerHTML = `<div class="row">
+    ${pill(t.psA, "A separable", "A NOT separable")}
+    ${pill(t.psB, "B separable", "B NOT separable")}
+    ${pill(t.pi, "independent", t.rho1 ? "correlated (one ρ)" : "correlated (ρ varies)")}
+  </div>`;
+        return rep;
+      }
+
+      // --- run ---------------------------------------------------------------------
+      async function run() {
+        const c = readControls();
+        const rep = currentRep();
+        $("status").textContent = "Simulating…";
+
+        const data = Sim.simulateRT(rep, c.n, arch, lbaFrom(c));
+        const m = await getModel();
+        const res = await m.predict(data);
+
+        // Same data, ignoring RT -- the counts-only model literally cannot see the
+        // response times, since they're not part of what gets passed to it. That's
+        // the whole comparison: identical stimulus/response outcomes, one model
+        // blind to timing, one not.
+        const cm = await getCmModel();
+        const resCm = await cm.predict({
+          counts: data.counts,
+          trials: data.trials,
+          rtq: null,
+        });
+
+        lastRun = { c, rep, data, res, resCm };
+
+        drawObserved();
+        drawRT();
+        drawInference();
+        drawRtValue();
+
+        $("status").textContent = `Done in ${res.ms.toFixed(1)} ms.`;
+        $("rt-card").hidden = false;
+        $("infer-card").hidden = false;
+        $("rt-value-card").hidden = false;
+        $("compare-card").hidden = true;
+      }
+
+      function drawObserved() {
+        const { data, c } = lastRun;
+        const props = data.counts.map((r, i) =>
+          r.map((v) => v / Math.max(1, data.trials[i])),
+        );
+        Plot.renderCM($("cm"), props, L, { counts: data.counts });
+        $("cm-cap").innerHTML =
+          `Observed from <strong>${c.n} trials per stimulus</strong>.`;
+      }
+
+      function drawRT() {
+        const { data } = lastRun;
+        Plot.renderRT($("rt"), {
+          cellRTs: data.cellRTs,
+          counts: data.counts,
+          labels: L,
+        });
+        Plot.buildLegend($("legend-rt"), L);
+
+        const all = data.trialList.map((t) => t.rt).sort((a, b) => a - b);
+        const med = all[all.length >> 1];
+        const correct = data.trialList.filter((t) => t.stimulus === t.response);
+        const acc = correct.length / data.trialList.length;
+        const cMed =
+          correct.map((t) => t.rt).sort((a, b) => a - b)[correct.length >> 1] ??
+          NaN;
+
+        $("rt-stats").innerHTML = `
+    <div class="est"><div class="lbl">Accuracy</div>
+      <div class="track"><div class="ci" style="left:0;width:${(100 * acc).toFixed(1)}%;opacity:.8"></div></div>
+      <div class="num">${(100 * acc).toFixed(1)}%</div></div>
+    <div class="est"><div class="lbl">Median RT</div>
+      <div class="track"><div class="ci" style="left:0;width:${Math.min(100, (med / 3) * 100).toFixed(1)}%;opacity:.8"></div></div>
+      <div class="num">${med.toFixed(3)} s</div></div>
+    <div class="est"><div class="lbl">Median RT (correct)</div>
+      <div class="track"><div class="ci" style="left:0;width:${Math.min(100, (cMed / 3) * 100).toFixed(1)}%;opacity:.8"></div></div>
+      <div class="num">${cMed.toFixed(3)} s</div></div>`;
+      }
+
+      function drawInference() {
+        const { res, c } = lastRun;
+        const m = model;
+
+        // architecture posterior, with the TRUTH marked
+        $("arch-probs").innerHTML = Sim.ARCHITECTURES.map((a) => {
+          const truth = a === arch ? ' <span class="pill ok">true</span>' : "";
+          return Plot.pbar(Sim.ARCH_LABELS[a].name + truth, res.arch[a]);
+        }).join("");
+
+        const dn = res.dimensionNeglect;
+        const isST = Sim.SELF_TERMINATING.includes(arch);
+        $("neglect").innerHTML = `
+    <div class="note ${dn > 0.5 ? "warn" : ""}">
+      <h4>Dimension neglect: ${dn.toFixed(2)}</h4>
+      <p>
+        The probability that this participant <strong>stopped before processing both
+        dimensions</strong> — which, in an identification task, means they <em>guessed</em> the
+        one they skipped. ${
+          isST
+            ? "That is exactly what you simulated, so a high number here is the model catching a real pathology."
+            : "You simulated exhaustive processing, so this should be low."
+        }
+      </p>
+    </div>`;
+
+        $("constructs").innerHTML =
+          Plot.pbar("A is separable", res.sep.A) +
+          Plot.pbar("B is separable", res.sep.B) +
+          Plot.pbar("Independent (ρ = 0)", res.corr.pi) +
+          Plot.pbar("One shared ρ", res.corr.rho1) +
+          Plot.pbar("ρ varies by stimulus", res.corr.free);
+
+        const truthLBA = {
+          t0: c.t0,
+          threshold_A: c.threshold,
+          drift_k_A: c.kA,
+          drift_k_B: c.kB,
+        };
+        const rows = Object.entries(res.lbaParams)
+          .map(([k, v]) => {
+            const t = truthLBA[k];
+            const shown = Number.isFinite(v) ? v.toFixed(2) : "—";
+            return `<div class="est">
+      <div class="lbl">${k}</div>
+      <div class="track"></div>
+      <div class="num">${shown} <span style="color:var(--mute-soft)">/ ${t.toFixed(2)}</span></div>
+    </div>`;
+          })
+          .join("");
+        $("lba").innerHTML =
+          `<span class="eyebrow" style="font-size:.55rem;margin-top:.8rem">Accumulator (recovered / true)</span>${rows}`;
+
+        renderStub(res);
+      }
+
+      function drawRtValue() {
+        const { res, resCm } = lastRun;
+
+        $("rt-value-cm").innerHTML =
+          Plot.pbar("A is separable", resCm.sep.A) +
+          Plot.pbar("B is separable", resCm.sep.B) +
+          Plot.pbar("Independent (ρ = 0)", resCm.corr.pi);
+        $("rt-value-cmrt").innerHTML =
+          Plot.pbar("A is separable", res.sep.A) +
+          Plot.pbar("B is separable", res.sep.B) +
+          Plot.pbar("Independent (ρ = 0)", res.corr.pi);
+
+        const diffs = [
+          ["A separable", Math.abs(res.sep.A - resCm.sep.A)],
+          ["B separable", Math.abs(res.sep.B - resCm.sep.B)],
+          ["Independent", Math.abs(res.corr.pi - resCm.corr.pi)],
+        ];
+        const maxDiff = diffs.reduce((a, b) => (b[1] > a[1] ? b : a), diffs[0]);
+        const meaningfulShift = maxDiff[1] > 0.15;
+
+        const stubCaveat =
+          res.backend === "stub" || resCm.backend === "stub"
+            ? `<p class="cap" style="margin-top:.6rem">
+         Both columns are currently the MLE stand-in (see the banner above) — and that stand-in
+         never looks at response times either way, so this comparison can't show RT's real benefit
+         yet. Treat any agreement or difference here as an artifact of the stub, not a finding,
+         until the trained RT network is wired in.
+       </p>`
+            : "";
+
+        $("rt-value-verdict").innerHTML = `
+    <div class="note ${meaningfulShift ? "" : "warn"}">
+      <h4>Biggest shift: ${maxDiff[0]}, Δ${maxDiff[1].toFixed(2)}</h4>
+      <p>
+        ${
+          meaningfulShift
+            ? `Adding response times moved this specific conclusion meaningfully for this run — the
+             same counts, on their own, would have left you less (or differently) sure about it.`
+            : `On this run, the two models land in close agreement on the GRT structure itself. That's
+             not a null result — it's the honest answer to "does RT change the GRT conclusions
+             themselves, or mostly add architecture on top of them" for this particular simulated
+             dataset. Try a different trial count or architecture and see if that holds.`
+        }
+      </p>
+    </div>
+    ${stubCaveat}`;
+      }
+
+      function renderStub(res) {
+        $("stub-slot").innerHTML =
+          res.backend === "stub"
+            ? `<div class="stub-banner">
+         <strong>The RT network isn't wired in yet.</strong> The structural estimates below come from
+         a maximum-likelihood stand-in that sees only the confusion matrix — so it is
+         <em>literally blind to the response times</em>. The architecture bars are flat and the
+         accumulator estimates are blank, on purpose: that is an honest picture of what you
+         can know without the RT model. The <strong>Compare all 5</strong> button below still works, and
+         it is where the real point of this page lives.
+       </div>`
+            : "";
+      }
+
+      // --- the demonstration -------------------------------------------------------
+      function compareAll() {
+        const c = readControls();
+        const rep = currentRep();
+        const N = Math.max(400, c.n);
+        const rows = Sim.ARCHITECTURES.map((a) => {
+          const d = Sim.simulateRT(
+            rep,
+            N,
+            a,
+            lbaFrom(c),
+            Sim.makeRNG(20260711),
+          );
+          const rts = d.trialList.map((t) => t.rt).sort((x, y) => x - y);
+          const acc =
+            [0, 1, 2, 3].reduce((s, i) => s + d.counts[i][i], 0) /
+            d.trialList.length;
+          return {
+            a,
+            acc,
+            q10: rts[Math.round(0.1 * (rts.length - 1))],
+            med: rts[Math.round(0.5 * (rts.length - 1))],
+            q90: rts[Math.round(0.9 * (rts.length - 1))],
+            row0: d.counts[0].map((v) => v / N),
+          };
+        });
+
+        let html = `<tr>
+    <th style="text-align:left">Architecture</th><th>Accuracy</th>
+    <th>Confusion matrix, row 1</th>
+    <th>RT 10th</th><th>RT median</th><th>RT 90th</th></tr>`;
+        for (const r of rows) {
+          html += `<tr>
+      <td style="text-align:left;font-family:Inter,sans-serif">${Sim.ARCH_LABELS[r.a].name}</td>
+      <td>${(100 * r.acc).toFixed(1)}%</td>
+      <td style="letter-spacing:.02em">${r.row0.map((v) => v.toFixed(2)).join("  ")}</td>
+      <td>${r.q10.toFixed(2)}s</td>
+      <td><strong>${r.med.toFixed(2)}s</strong></td>
+      <td>${r.q90.toFixed(2)}s</td>
+    </tr>`;
+        }
+        $("compare-table").innerHTML = html;
+
+        // Quantify the claim rather than just asserting it.
+        const exh = rows.filter((r) => !Sim.SELF_TERMINATING.includes(r.a));
+        const accSpread =
+          Math.max(...exh.map((r) => r.acc)) -
+          Math.min(...exh.map((r) => r.acc));
+        const rtRatio =
+          Math.max(...exh.map((r) => r.med)) /
+          Math.min(...exh.map((r) => r.med));
+
+        $("compare-verdict").innerHTML = `
+    <div class="note">
+      <h4>Serial-exhaustive, parallel-exhaustive and coactive are the same experiment</h4>
+      <p>
+        Across those three, accuracy differs by <strong>${(100 * accSpread).toFixed(2)} percentage
+        points</strong> — and that is <em>sampling noise</em>, not signal. They don't merely look alike;
+        they have <strong>identical response probabilities by construction</strong>. Every one of them
+        processes both dimensions and responds with what it found. No confusion matrix, at
+        any sample size, can separate them.
+      </p>
+      <p>
+        Meanwhile the slowest of the three takes <strong>${rtRatio.toFixed(1)}×</strong> as long as the
+        fastest. The information was never missing from the participant — it was missing
+        from the <em>measure</em>.
+      </p>
+      <p style="margin-bottom:0">
+        The two self-terminating rows are different in kind: they <em>do</em> move the confusion
+        matrix, because skipping a dimension means guessing it, and guessing shows up as
+        error. That is why GRIN reports them as <strong>dimension neglect</strong> rather than as just
+        another processing style.
+      </p>
+    </div>`;
+
+        $("compare-card").hidden = false;
+        $("compare-card").scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
+        $("status").textContent =
+          `Compared 5 architectures × ${N} trials/stimulus.`;
+      }
+
+      // --- wiring ------------------------------------------------------------------
+      for (const k of ALL)
+        $(k).addEventListener("input", () => {
+          // invalidate FIRST: drawSpace() only restores the exact confusion matrix when
+          // there is no live run, so clearing has to happen before we redraw.
+          if (lastRun) invalidate("Settings changed. Run again.");
+          drawSpace();
+        });
+      $("run").addEventListener("click", run);
+      $("compare").addEventListener("click", compareAll);
+
+      // --- nudge controls: same pattern as space-builder.html — the dropdown selects
+      // WHICH stimulus the two sliders are currently editing; switching stimuli
+      // must show that stimulus's own stored offset, not reset or leak another's. ---
+      function syncNudgeSliders() {
+        const i = +$("nudgeStim").value;
+        $("nudgeX").value = nudge.x[i];
+        $("nudgeY").value = nudge.y[i];
+        $("v-nudgeX").textContent = nudge.x[i].toFixed(2);
+        $("v-nudgeY").textContent = nudge.y[i].toFixed(2);
+      }
+      $("nudgeStim").addEventListener("change", syncNudgeSliders);
+      $("nudgeX").addEventListener("input", () => {
+        nudge.x[+$("nudgeStim").value] = parseFloat($("nudgeX").value);
+        $("v-nudgeX").textContent = (+$("nudgeX").value).toFixed(2);
+        if (lastRun) invalidate("Settings changed. Run again.");
+        drawSpace();
+      });
+      $("nudgeY").addEventListener("input", () => {
+        nudge.y[+$("nudgeStim").value] = parseFloat($("nudgeY").value);
+        $("v-nudgeY").textContent = (+$("nudgeY").value).toFixed(2);
+        if (lastRun) invalidate("Settings changed. Run again.");
+        drawSpace();
+      });
+      $("nudge-reset").addEventListener("click", () => {
+        nudge = { x: [0, 0, 0, 0], y: [0, 0, 0, 0] };
+        syncNudgeSliders();
+        if (lastRun) invalidate("Settings changed. Run again.");
+        drawSpace();
+      });
+
+      Plot.onThemeChange(() => {
+        drawSpace();
+        if (lastRun) {
+          drawObserved();
+          drawRT();
+        }
+      });
+
+      drawSpace();
+    </script>
+  </body>
+</html>

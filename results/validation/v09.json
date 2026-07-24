@@ -1,0 +1,13 @@
+{
+  "id": "v09",
+  "claim": "out-of-family data is flagged",
+  "result": {
+    "in_dist_median": 14.476147439818696,
+    "threshold95": 44.682623377999754,
+    "ood_median": 47.24603093162506,
+    "detection_rate": 0.6333333333333333,
+    "false_alarm": 0.05
+  },
+  "pass": false,
+  "seconds": 15.6
+}

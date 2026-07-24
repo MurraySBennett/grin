@@ -1,0 +1,8 @@
+# latexmk configuration for the GRIN poster.
+#   latexmk -pdf poster.tex            build
+#   latexmk -pdf -pvc poster.tex       rebuild on save (nice while drafting)
+#   latexmk -c                         clean aux files, keep the PDF
+$pdf_mode = 1;          # pdflatex. lualatex also works if you prefer.
+$pdflatex = 'pdflatex -interaction=nonstopmode -synctex=1 %O %S';
+$clean_ext = 'synctex.gz auxlock fdb_latexmk fls';
+@default_files = ('poster.tex');

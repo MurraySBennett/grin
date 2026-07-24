@@ -1,0 +1,65 @@
+{
+  "id": "cmrt",
+  "label": "GRIN — counts + response times",
+  "description": "As the counts-only model, and additionally infers the processing architecture (SFT) and the LBA accumulator parameters.",
+  "file": "npe_rt_model.onnx",
+  "version": "0.0.0-pending",
+  "exported_by": "scripts/export_onnx.py --rt",
+  "inputs": [
+    { "name": "counts", "dim": 16, "note": "row-major 4x4" },
+    {
+      "name": "rtq",
+      "dim": 80,
+      "note": "4 stimuli x 4 responses x 5 quantiles [.1 .3 .5 .7 .9], RAW SECONDS, 0.0 for empty cells"
+    },
+    { "name": "trials", "dim": 4 }
+  ],
+  "outputs": {
+    "mean": { "dim": 12 },
+    "std": { "dim": 12 },
+    "p_corr": { "dim": 3, "names": ["pi", "rho1", "free"] },
+    "p_sep": { "dim": 2, "names": ["A", "B"] },
+    "p_arch": {
+      "dim": 5,
+      "names": [
+        "serial_exhaustive",
+        "serial_self_terminating",
+        "parallel_exhaustive",
+        "parallel_self_terminating",
+        "coactive"
+      ]
+    },
+    "lba": {
+      "dim": 4,
+      "names": ["t0", "threshold_A", "drift_k_A", "drift_k_B"]
+    }
+  },
+  "params": {
+    "names": [
+      "zx_0",
+      "zx_1",
+      "zx_2",
+      "zx_3",
+      "zy_0",
+      "zy_1",
+      "zy_2",
+      "zy_3",
+      "rho_0",
+      "rho_1",
+      "rho_2",
+      "rho_3"
+    ],
+    "stimulus_order": ["A1B1", "A1B2", "A2B1", "A2B2"]
+  },
+  "training": {
+    "n_per_class": 20000,
+    "trial_range": [1, 1000],
+    "trial_sampling": "log-uniform",
+    "z_max": 3.0,
+    "r_max": 0.9,
+    "rt_seconds_range": [0.1, 10.0],
+    "rt_drift_sd": 0.35,
+    "quantiles": [0.1, 0.3, 0.5, 0.7, 0.9],
+    "seed": 42
+  }
+}

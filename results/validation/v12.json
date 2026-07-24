@@ -1,0 +1,10 @@
+{
+  "id": "v12",
+  "claim": "RT and accuracy are collinear w.r.t. rho (why RTs can't fix PI)",
+  "result": {
+    "corr_rho_medianRT": -0.9869679121708439,
+    "corr_rho_accuracy": 0.9235468563995914
+  },
+  "pass": true,
+  "seconds": 0.0
+}

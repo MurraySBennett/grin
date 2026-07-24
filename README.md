@@ -1,107 +1,236 @@
-**_This is still a work in progress. That is, none of it will work if you try running it in it's current form. Everything below is a hope, not a promise, but feel free to follow along with the mayhem._**
+# GRIN — General Recognition Inference Network
 
-# GRIN: General Recognition Inference Network
+Fast, amortized, uncertainty-calibrated inference of General Recognition Theory (GRT)
+perceptual representations from a 2×2 identification confusion matrix. A neural network,
+trained once on simulated data, replaces per-participant maximum-likelihood fitting:
+milliseconds instead of seconds, with a calibrated posterior and a model-class inference,
+fast enough to run inside the trial loop for adaptive testing.
 
-General Recognition Inference Network (GRIN) is a project designed to rapidly fit data for General Recognition Theory (GRT) models.
-The core idea is to train a neural network to predict GRT parameters and model classes to then bypass the relatively slow process of traditional GRT model fitting via MLE.
+- **What the numbers mean:** `docs/interpreting.md`
+- **The maths (parameterisation, constraints, prior):** `docs/GRT_model_spec.md`
+- **Why every decision was made + validated results:** `docs/DESIGN_RECORD.md`
+- **What each figure says, three ways:** `docs/FIGURE_EXPLAINER.md`
 
-Because it's so fast and efficient (and definitely absolutely most certainly works\*), thereby facilitating a wealth of practical applications and potential, it's sure to make you grin!
+Everything runs **from the project root**. Paths in `src/config.py` are absolute, so outputs
+land in `data/` and `results/` regardless of where you invoke from.
 
-# Table of Contents
+---
 
-[Introduction](#grin-general-recognition-inference-network)
+## 0. One-time setup
 
-[Features](#features)
-
-[Getting Started](#getting-started)
-
-[Project Structure](#project-structurej)
-
-[Contributing](#contributing)
-
-[Contact & Acknowledgments](#contact--acknowledgments)
-
-# Features
-
-**Rapid Data Generation:** Quickly generate large-scale synthetic GRT datasets.
-
-**Efficient Model Fitting:** Use a neural network to "fit" GRT parameters in a fraction of the time required by traditional methods.
-
-**Multi-Task Learning:** Models can be trained to perform both classification (identifying model types) and regression (estimating parameters).
-
-**Modularity:** A clean and organized codebase with separated modules for data generation, model architecture, and evaluation.
-
-**Reproducibility:** A clear project structure and requirements.txt file ensure that others can easily replicate your work.
-
-# Getting Started
-
-## Model training
-
-These instructions will get you a copy of the project up and running on your local machine for reproducing the model training. For using GRIN to fit data, see the following (NOT YET CREATED) section.
-
-Prerequisites
-You will probably need Python 3.9 or newer and probably have `git` installed.
-
-Installation
-Clone the repository:
-
-```
-git clone https://github.com/your-username/GRIN.git
-cd GRIN
+```bash
+python -m venv .venv
+# Windows:  .venv\Scripts\activate       macOS/Linux:  source .venv/bin/activate
+pip install -e .
 ```
 
-Install dependencies:
+GPU (optional but recommended for training):
 
-```
-pip install -r requirements.txt
-```
-
-**Usage**
-
-All configuration content is housed in `src/utils/config.py`.
-The simulated data produces confusion matrices populated with response counts, the generating parameters and model class, and the number of trials (although this can be pulled from the matrices).
-
-<!-- You can try updating things like training hyperparameters, and whether to use pretrained weights or not, as well as others.
-But be careful because this file (and project) still needs a proper review to make clear what content can be or should best not be tampered with. Below is the workflow I followed: -->
-
-Simulate data for the full set of models `--full`, pretraining confusion matrices that only vary particular parameters `--pretraining`, trial-by-trial response data `--tbt`, or all of them `--all`:
-
-```
-python -m src.utils.GRT_data_generator --all
+```bash
+python -c "import torch; print(torch.cuda.is_available())"   # want True
 ```
 
-Pretrain weights on the means, covariance matrices, and decision bounds, then visualise the pretrained state of parameter predictions.
-Figures should save to `results/figures/pretraining` and weights save to `src/models/pretrained`.
+If `False`, reinstall torch with the CUDA build from pytorch.org (the default Windows wheel
+is CPU-only).
+
+**Before any real run, set `TRIAL_RANGE` in `src/config.py`** to bracket the trial count your
+experiment collects. This matters more than any other setting — the network is calibrated for
+the range it trains on. `TRIAL_IMBALANCE` (default 0.35) controls how uneven the four
+per-stimulus counts within a matrix may be; leave it unless your data are unusually balanced
+or unbalanced.
+
+---
+
+## 1. Which model do you need?
+
+| Your data                            | Generator                      | Recovers                                                  |
+| ------------------------------------ | ------------------------------ | --------------------------------------------------------- |
+| Confusion matrix only (incl. legacy) | `src/data/generator.py`        | GRT params, PS, PI                                        |
+| + response times                     | `src/data/rt_lba_generator.py` | the above **plus** processing architecture and LBA params |
+
+Train whichever you need, or both and dispatch on what the participant supplies.
+
+---
+
+## 2. The complete pipeline, in order
+
+Each block is independent given its inputs. The **counts pipeline (2.1–2.2)** is the core;
+everything else builds on the trained model it produces.
+
+### 2.1 — Generate data and train the counts model
+
+```bash
+python scripts/generate_data.py --report     # -> data/simulated/grt_dataset.npz + coverage figures
+python scripts/train.py                       # -> results/models/npe_model.pt
+python scripts/evaluate.py                    # recovery, calibration, model-ID, speed vs MLE
+```
+
+`--report` also writes `results/figures/coverage_report.png` and the per-panel breakdown in
+`results/figures/generation/`.
+
+### 2.2 — Render the counts figure suite
+
+```bash
+python scripts/make_figures.py                # -> results/figures/  (8 core figures)
+```
+
+### 2.3 — (Optional) RT pipeline
+
+Only if your data include response times. Same prior, same trial range — it additionally
+simulates the RTs those trials produced.
+
+```bash
+python scripts/generate_data.py --rt          # -> data/simulated/grt_rt_dataset.npz
+python scripts/train_rt.py                     # -> results/models/npe_rt_model.pt
+python scripts/evaluate_rt.py                  # recovery, architecture, neglect, LBA
+python scripts/make_figures_rt.py             # -> results/figures/rt/  + results/rt_metrics.json
+```
+
+`make_figures_rt.py` writes a full parity suite (every counts figure has an `rt_` twin) plus
+RT-specific figures, and exports `results/rt_metrics.json` — the single source of RT-model
+timing/accuracy that the comparison and poster scripts read. Add `--rt-only` to
+`generate_data.py` to skip regenerating the counts dataset.
+
+### 2.4 — Compare against the R gold standards (grtools / mdsdt)
+
+```bash
+python scripts/export_for_r.py --n 600         # -> data/simulated/test_set_for_R.csv (stratified)
+Rscript scripts/R/fit_baselines.R              # -> results/mle_fits/baseline_fits.csv
+python scripts/compare_to_r.py                 # -> results/figures/comparison_to_r.png + printed table
+```
+
+**The R fits must be run (or re-run) whenever `fit_baselines.R` changes.** A sanity check
+after: in `baseline_fits.csv`, `grtools_zx_0` should be **negative** (A1 sits below the
+bound). If it is positive, the grtools sign convention has regressed — see the note at the
+top of `fit_baselines.R`.
+
+Why a 600-matrix sample and not the whole dataset: R MLE is ~0.1–0.5 s/matrix, so fitting a
+million would take weeks and add nothing — the comparison is a statistical claim, and a few
+hundred stratified matrices give tight intervals. Stratified by trial count, model class, and
+effect size, so the interesting structure is represented rather than averaged away.
+
+### 2.5 — The recovery figure family (per-method deep dive)
+
+```bash
+python scripts/make_recovery_figures.py        # -> results/figures/recovery/
+```
+
+Requires the R fits from 2.4. Produces per-method recovery grids (GRIN / mdsdt / grtools /
+Python-MLE) on identical matrices, plus cross-method summaries. `--no-mle` skips the slow
+Python-MLE reference; `--mle-select` adds its AIC/BIC labels to the classification figures.
+
+### 2.6 — (Optional) Robustness sweeps
+
+```bash
+python scripts/sweeps.py                        # -> results/figures/sweeps.png
+```
+
+Run the sweeps first (they write the JSON the figure reads); missing sweeps show as labelled
+placeholders rather than blank panels.
+
+### 2.7 — (Optional) Real-data check
+
+```bash
+Rscript scripts/R/fit_real_data.R              # -> data/real/real_matrices.csv + mdsdt fits
+```
+
+mdsdt ships five real 2×2 matrices (`thomas01a/b`, `silbert09a/b`, `silbert12`). No ground
+truth, so the check is agreement with the published gold standard.
+
+### 2.8 — Poster figures
+
+```bash
+python presentations/sbi_poster/make_poster_figures.py
+```
+
+Writes poster-scaled figures to `presentations/sbi_poster/figures/` and prints the numbers to
+confirm against the `\chk{}` placeholders in `poster.tex`. If `results/rt_metrics.json` exists
+(from 2.3), the speed-accuracy and crossover figures gain an indicative +RT overlay
+automatically. `accuracy_crossover` is the slow figure (generator runs + MLE fits); pass
+`crossover=False` to `main()` while iterating on layout.
+
+**Two edits `poster.tex` still needs** (see `docs/POSTER_NOTES.md`, if retained): the recovery
+`\includegraphics` filename, and quoting the single-matrix (not batched) latency.
+
+### 2.9 — (Optional) Diagnostics
+
+```bash
+python scripts/check_mle_health.py             # is the MLE baseline separation-limited?
+```
+
+Standalone. Explains why MLE loses to GRIN at low trial counts (empty confusion-matrix cells
+make the likelihood unbounded — a property of the data, not a bad optimiser). Run once if you
+need to defend the accuracy comparison.
+
+### 2.10 — Deploy the browser tools (static, no backend)
+
+```bash
+python scripts/export_onnx.py                  # -> results/models/npe_model.onnx
+python scripts/export_onnx.py --rt             # -> results/models/npe_rt_model.onnx
+```
+
+Copy `web/grt_explorer.html`, `web/analyze.html`, and the `.onnx` to any static host.
+Inference runs in the visitor's browser; nothing is uploaded.
+
+---
+
+## 3. Use it in your own code
+
+```python
+from grin import infer
+result = infer(confusion_matrix, trials)   # trials optional (defaults to row sums)
+result.summary()
+result.as_dict()          # {param: {estimate, sd, ci90}}
+result.model_class        # inferred GRT model
+result.fit_deviance       # goodness-of-fit / OOD flag
+```
+
+Adaptive / real-time:
+
+```python
+from src.adaptive.engine import AdaptiveSession
+sess = AdaptiveSession(model)
+sess.add_trial(stimulus, response)         # inside your trial loop
+theta = sess.estimate()                    # microseconds — fits any ISI
+sess.uncertainty()                         # stop when this crosses your threshold
+```
+
+---
+
+## 4. What lands where
 
 ```
-python -m scripts.pretrain_parameters
-python -m scripts.visualise_pretraining
+data/simulated/     grt_dataset.npz, grt_rt_dataset.npz, test_set_for_R.csv
+results/models/     npe_model.pt, npe_rt_model.pt, *.onnx
+results/mle_fits/   baseline_fits.csv
+results/figures/    core suite
+        /generation/  prior-coverage panels
+        /recovery/    per-method comparison
+        /rt/          RT suite
+results/rt_metrics.json   RT timing/accuracy (read by comparison + poster)
 ```
 
-Training the models on a curriculum schedule that progressively includes the models with greater complexity (i.e., more free parameters) over 4 stages. This script also saves the train/validation/test splits for the simulated matrices. We need this to run before the next component so that the test data can be identified and exported for model fitting in R (or other software). Models should save to `results/models/`, and training figures should save to `results/figures`.
+---
 
-**TODO**: update npz_to_csv to something informative
+## Troubleshooting
+
+**`GRTDataGenerator.__init__() got an unexpected keyword argument 'imbalance'`** — your
+`generator.py` predates the `imbalance` parameter. Use the current `src/data/generator.py`.
+
+**`Missing key(s) in state_dict` on load** — the architecture you built differs from the
+checkpoint. Use `from src.api import load_model` (reads the architecture from the checkpoint)
+rather than constructing `NPEModel` by hand.
+
+**`grtools_zx_0` is positive in `baseline_fits.csv`** — the grtools bound sign has regressed;
+re-check `extract_grtools_params()` in `fit_baselines.R`.
+
+**Figures look weak** — confirm you trained on the full dataset (not a smoke-test subset) and
+that `TRIAL_RANGE` matches your target regime.
+
+**Don't hand-mix numbers across scripts.** Each comparison script scores all its methods on
+one shared set and prints its own fair table; read each number off the script that computed
+it, never transplant between scripts or evaluation regimes.
 
 ```
-python -m scripts.train_models
-python -m src.utils.npz_to_csv
+
 ```
-
-At this point, you now have trained networks capable of making predictions on model classes and their parameters. From here, I shift into an R workspace to fit the simulated test data using [`grtools`](https://github.com/fsotoc/grtools/). This requires the [`grtools`](https://github.com/fsotoc/grtools/), [`here`](https://here.r-lib.org/) and [`tidyverse`](https://www.tidyverse.org/) libraries.
-
-# Contributing
-
-Fork the Project
-
-Create your Feature Branch
-`git checkout -b feature/AmazingFeature`
-
-Commit your Changes `git commit -m 'Add some AmazingFeature'`
-
-Push to the Branch `git push origin feature/AmazingFeature`
-
-Open a Pull Request
-
-# Contact & Acknowledgments
-
-Project Link: https://github.com/murraysbennett/grin

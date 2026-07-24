@@ -1,0 +1,216 @@
+%% ============================================================================
+%%  pipeline.tex — THE HERO FIGURE
+%%
+%%  A fragment, not a document. \input it from poster.tex, or compile
+%%  pipeline_preview.tex to iterate on it on its own (much faster).
+%%
+%%  Canvas is 114.3 cm wide = 45 in = the poster's \textwidth at 1.5 in margins,
+%%  and ~29 cm tall. Coordinates are in cm at 1:1, so every font size below is a
+%%  REAL point size on the printed poster. Do NOT wrap this in \resizebox — that
+%%  would scale the type away from the sizes set in grinposter.sty.
+%%
+%%  Left to right: five numbered stages. The dashed backdrops split them into
+%%  what happens ONCE, OFFLINE (stages 1-3) and what happens PER TRIAL, ONLINE
+%%  (stages 4-5). That split IS the amortisation argument, so it is drawn first
+%%  and given the most contrast.
+%%
+%%  LAYOUT BUDGET (x, cm):  band1 0.2-68.6 | gap | band2 70.6-114.2
+%%    S1 frame  2.2-18.2      arrow 19.6-27.0
+%%    S2 matrix 28.4-39.6     arrow 40.8-48.4
+%%    S3 net    50.0-63.8     arrow 65.4-75.4  (crosses the offline/online line)
+%%    S4 frame  77.0-93.0     arrow 94.4-99.0
+%%    S5 tiles  98.8-113.3
+%% ============================================================================
+
+\usetikzlibrary{decorations.pathmorphing}
+
+%% --- reusable pieces -------------------------------------------------------
+
+% A GRT perceptual space: 4 stimulus distributions, axis-aligned (DS) bounds.
+% Drawn inside a local 16 x 12 box with origin at bottom-left.
+\newcommand{\grtframe}{%
+  \draw[gmute, line width=1.6pt] (0,0) rectangle (16,12);
+  % Decision bounds — axis aligned (that is DS). Their POSITION is free, and
+  % that freedom is exactly what response bias is.
+  \draw[greddeep, line width=2.2pt, dash pattern=on 7mm off 4mm] (8.4,0) -- (8.4,12);
+  \draw[greddeep, line width=2.2pt, dash pattern=on 7mm off 4mm] (0,5.6) -- (16,5.6);
+  \node[font=\fontsize{22}{22}\selectfont, text=gink] at (8,-0.95)
+       {dimension A\ \ (e.g.\ border)};
+  \node[font=\fontsize{22}{22}\selectfont, text=gink, rotate=90] at (-0.95,6)
+       {dimension B\ \ (e.g.\ colour)};
+}
+
+% Single-contour version — the true, generating representation (stage 1).
+\newcommand{\grtsingle}{%
+  \foreach \cx/\cy/\rot in {4.4/2.9/0, 4.4/8.9/0, 12.2/2.9/34, 12.2/8.9/0}{%
+    \draw[gbluedeep, line width=2.4pt, fill=gblue, fill opacity=0.45,
+          rotate around={\rot:(\cx,\cy)}] (\cx,\cy) ellipse (2.15 and 1.55);
+    \fill[greddeep] (\cx,\cy) circle (0.16);}
+  \node[font=\fontsize{21}{21}\selectfont, text=greddeep] at (14.2,0.85) {$\rho \neq 0$};
+}
+
+% Nested-contour version — a posterior, with its uncertainty (stage 4).
+\newcommand{\grtposterior}{%
+  \foreach \cx/\cy/\rot in {4.4/2.9/0, 4.4/8.9/0, 12.2/2.9/34, 12.2/8.9/0}{%
+    \foreach \s/\o in {1.34/0.13, 1.00/0.22, 0.66/0.38}{%
+      \draw[gbluedeep, line width=1.4pt, fill=gblue, fill opacity=\o,
+            rotate around={\rot:(\cx,\cy)}]
+            (\cx,\cy) ellipse ({2.15*\s} and {1.55*\s});}
+    \fill[greddeep] (\cx,\cy) circle (0.16);}
+}
+
+% A 4 x 4 identification confusion matrix. #1 = cell size in cm.
+% Rows listed bottom-up so the diagonal runs the right way.
+\newcommand{\cmgrid}[1]{%
+  \foreach \row [count=\ri from 0] in {%
+      {0.04,0.13,0.15,0.68},{0.10,0.05,0.68,0.17},%
+      {0.14,0.66,0.05,0.15},{0.72,0.16,0.09,0.03}}{%
+    \foreach \v [count=\ci from 0] in \row {%
+      \fill[gbluedeep, opacity=\v] (\ci*#1, \ri*#1) rectangle ++(#1,#1);
+      \draw[gmute, line width=0.7pt] (\ci*#1, \ri*#1) rectangle ++(#1,#1);}}
+  \draw[gink, line width=1.6pt] (0,0) rectangle (4*#1,4*#1);
+}
+
+% A small multilayer perceptron.
+\newcommand{\mlplayer}[4]{% #1 name  #2 x  #3 how many nodes  #4 y centre
+  \foreach \i in {1,...,#3}{%
+    \coordinate (#1-\i) at (#2, {#4 + (\i - (#3+1)/2)*1.6});}}
+
+\newcommand{\mlpedges}[4]{% #1 name A  #2 count A  #3 name B  #4 count B
+  \foreach \i in {1,...,#2}{\foreach \j in {1,...,#4}{%
+    \draw[gmute, line width=0.5pt, opacity=0.5] (#1-\i) -- (#3-\j);}}}
+
+\newcommand{\mlpnodes}[3]{% #1 name  #2 count  #3 colour
+  \foreach \i in {1,...,#2}{%
+    \filldraw[fill=#3, draw=gbluedeep, line width=1.2pt] (#1-\i) circle (0.5);}}
+
+%% --- the figure ------------------------------------------------------------
+\begin{tikzpicture}[x=1cm, y=1cm,
+    flow/.style   ={-{Stealth[length=9mm,width=6.5mm]}, line width=3.2pt, draw=gbluedeep},
+    loop/.style   ={-{Stealth[length=9mm,width=6.5mm]}, line width=3.8pt, draw=gred},
+    flowlab/.style={font=\fontsize{21}{25}\selectfont, text=gink, align=center},
+    stagett/.style={font=\fontsize{33}{38}\selectfont\bfseries, text=gink, anchor=west},
+    stagecap/.style={font=\fontsize{24}{31}\selectfont, text=gink, align=left,
+                     anchor=north west, text width=19.0cm},
+    band/.style   ={draw=gmute, line width=1.6pt, dash pattern=on 9mm off 6mm,
+                     rounded corners=14pt},
+    bandlab/.style={font=\fontsize{27}{31}\selectfont\bfseries, text=gmute}]
+
+  %% ---- the offline / online split, drawn first so everything sits on top ---
+  \draw[band] (0.2,1.2) rectangle (68.6,24.4);
+  \draw[band, draw=gred, opacity=0.85] (70.6,1.2) rectangle (114.2,24.4);
+  \node[bandlab, anchor=west]            at (0.8,25.0)
+        {OFFLINE\ \ \textbullet\ \ done ONCE\ \ \textbullet\ \ hours on one GPU};
+  \node[bandlab, anchor=west, text=gred] at (71.2,25.0)
+        {ONLINE\ \ \textbullet\ \ EVERY TRIAL\ \ \textbullet\ \ microseconds};
+
+  %% ======================= STAGE 1 — the representation ===================
+  \begin{scope}[shift={(2.2,11.4)}]
+    \grtframe \grtsingle
+  \end{scope}
+  \node[circle,fill=gred,text=gpaper,minimum size=1.5cm,inner sep=0pt,
+        font=\fontsize{34}{34}\selectfont\bfseries] at (2.9,9.2) {1};
+  \node[stagett] at (4.0,9.2) {Sample a representation};
+  \node[stagecap] at (2.2,7.8) {%
+    Locations and noise of the four stimuli in perceptual space and where
+    the decision bounds fall.};
+
+  \draw[flow] (19.6,17.4) -- (27.0,17.4);
+  \node[flowlab] at (23.3,19.5) {exact\\forward model};
+
+  %% ======================= STAGE 2 — simulate =============================
+  \begin{scope}[shift={(28.4,12.2)}]
+    \cmgrid{2.8}
+    \node[font=\fontsize{21}{21}\selectfont, text=gink] at (5.6,-0.95) {response};
+    \node[font=\fontsize{21}{21}\selectfont, text=gink, rotate=90] at (-0.95,5.6) {stimulus};
+    \node[font=\fontsize{22}{26}\selectfont, text=gred, align=center] at (5.6,11.6)
+         {+ RT quantiles \emph{(optional)}};
+  \end{scope}
+  \node[circle,fill=gred,text=gpaper,minimum size=1.5cm,inner sep=0pt,
+        font=\fontsize{34}{34}\selectfont\bfseries] at (29.1,9.2) {2};
+  \node[stagett] at (30.2,9.2) {Simulate the data};
+  \node[stagecap] at (28.4,7.8) {%
+    Pushing $\theta$ through the exact forward model to produce matrices is cheap to generate \textbf{millions} of $(\theta,x)$ pairs.};
+
+  \draw[flow] (40.8,17.4) -- (48.4,17.4);
+  \node[flowlab] at (44.6,19.5) {$1.2\times10^{6}$\\pairs};
+
+  %% ======================= STAGE 3 — train ================================
+  \begin{scope}[shift={(50.0,17.4)}]
+    \mlplayer{LA}{0}{5}{0}   \mlplayer{LB}{4.6}{7}{0}
+    \mlplayer{LC}{9.2}{7}{0} \mlplayer{LD}{13.8}{4}{0}
+    \mlpedges{LA}{5}{LB}{7} \mlpedges{LB}{7}{LC}{7} \mlpedges{LC}{7}{LD}{4}
+    \mlpnodes{LA}{5}{gpaper} \mlpnodes{LB}{7}{gblue}
+    \mlpnodes{LC}{7}{gblue}  \mlpnodes{LD}{4}{gred}
+    \node[font=\fontsize{21}{21}\selectfont, text=gink] at (0,-6.2)    {data};
+    \node[font=\fontsize{21}{21}\selectfont, text=gink] at (13.8,-6.2) {$q(\theta \mid x)$};
+  \end{scope}
+  \node[circle,fill=gred,text=gpaper,minimum size=1.5cm,inner sep=0pt,
+        font=\fontsize{34}{34}\selectfont\bfseries] at (50.7,9.2) {3};
+  \node[stagett] at (51.8,9.2) {Learn the inverse};
+  \node[stagecap] at (50.0,7.8) {%
+    Train a network to map data back to $\theta$ with a
+    \textbf{full posterior}. Expensive, but paid \textbf{once}.};
+
+  \draw[flow, draw=gred] (65.4,17.4) -- (75.4,17.4);
+  \node[flowlab, text=gred, align=center] at (70.4,20.3)
+       {\textbf{amortised:} trained once,\\reused for every participant};
+
+  %% ======================= STAGE 4 — infer ================================
+  \begin{scope}[shift={(77.0,11.4)}]
+    \grtframe \grtposterior
+  \end{scope}
+  \node[circle,fill=gred,text=gpaper,minimum size=1.5cm,inner sep=0pt,
+        font=\fontsize{34}{34}\selectfont\bfseries] at (77.7,9.2) {4};
+  \node[stagett] at (78.8,9.2) {Infer, in microseconds};
+  \node[stagecap, text width=16.0cm] at (77.0,7.8) {%
+    A real matrix in, a calibrated posterior out in \chk{$\sim$3\,\textmu s}.
+    MLE needs \chk{$\sim$90\,ms} and sometimes fails; this \textbf{always}
+    answers.};
+
+  \draw[loop] (93.8,17.4) -- (96.2,17.4);
+  \node[flowlab, text=gred] at (95.0,19.8) {where is\\this person\\confused?};
+
+  %% ======================= STAGE 5 — act ==================================
+  \begin{scope}[shift={(97.6,12.4)}]
+    % four stimuli of a 2 x 2 design; one is selected for the next trial
+    \foreach \tx/\ty/\wob/\two in {0/5.7/0/0, 5.7/5.7/1/0, 0/0/0/1, 5.7/0/1/1}{
+      \draw[gmute, line width=1.2pt, rounded corners=3pt]
+            (\tx,\ty) rectangle ++(4.8,4.8);
+      \ifnum\wob=1
+        \draw[greddeep, line width=1.8pt, fill=gred, fill opacity=0.55,
+              decorate, decoration={random steps, segment length=2.4mm, amplitude=0.9mm}]
+              (\tx+2.4,\ty+2.4) circle (1.5);
+      \else
+        \draw[greddeep, line width=1.8pt, fill=gred, fill opacity=0.55]
+              (\tx+2.4,\ty+2.4) circle (1.5);
+      \fi
+      \ifnum\two=1
+        \fill[greddeep, opacity=0.75] (\tx+2.4,\ty+2.4) circle (0.78);
+      \fi}
+    % the one chosen for the next trial
+    \draw[gbluedeep, line width=3.4pt, rounded corners=3pt] (5.7,0) rectangle ++(4.8,4.8);
+    \node[font=\fontsize{21}{21}\selectfont\bfseries, text=gbluedeep] at (8.1,-0.95)
+         {next trial};
+    % the learner
+    \begin{scope}[shift={(13.3,3.1)}]
+      \filldraw[fill=gblue, draw=gbluedeep, line width=1.8pt] (0,1.5) circle (1.1);
+      \filldraw[fill=gblue, draw=gbluedeep, line width=1.8pt]
+        (-1.8,-1.8) .. controls (-1.8,0.3) and (1.8,0.3) .. (1.8,-1.8) -- cycle;
+    \end{scope}
+    \draw[flow, draw=gred, line width=2.6pt] (10.8,3.1) -- (11.4,3.1);
+  \end{scope}
+  \node[circle,fill=gred,text=gpaper,minimum size=1.5cm,inner sep=0pt,
+        font=\fontsize{34}{34}\selectfont\bfseries] at (98.3,9.2) {5};
+  \node[stagett] at (99.4,9.2) {Choose the next stimulus};
+  \node[stagecap, text width=15.0cm] at (97.6,7.8) {%
+    Present the stimulus that targets the confusion we just measured --- then
+    re-infer, and go again.};
+
+  %% ---- the closed loop ---------------------------------------------------
+  \draw[loop, rounded corners=22pt]
+        (104.8,4.6) -- (104.8,2.6) -- (85.0,2.6) -- (85.0,4.6);
+  \node[font=\fontsize{25}{29}\selectfont\bfseries, text=gred, align=center] at (94.9,1.7)
+       {every response updates the matrix, and the posterior moves with it};
+
+\end{tikzpicture}

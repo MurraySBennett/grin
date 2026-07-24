@@ -1,0 +1,1549 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- Anti-flash: apply the theme class on <html> SYNCHRONOUSLY, before first
+         paint. Must stay inline and right after <meta charset> — grin-shell.js is
+         an ES module and runs too late to prevent the flash. Reads the SAME key
+         the rest of the site uses ("msb-dark-mode"), so a dark/light choice made
+         anywhere carries across; falls back to the OS preference. Keep in sync
+         with grin-shell.js resolve(). -->
+    <script>
+      (function () {
+        try {
+          var s = localStorage.getItem("msb-dark-mode");
+          var dark =
+            s === "dark" ||
+            (s !== "light" &&
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) document.documentElement.classList.add("is-dark");
+        } catch (e) {
+          /* storage blocked (private mode) -- fall through to light */
+        }
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Analyse — GRIN</title>
+    <meta
+      name="description"
+      content="Upload identification data and get GRT parameter estimates, model comparison, and a maximum-likelihood reference fit, side by side, entirely in your browser."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Press+Start+2P&family=Rye&family=VT323&family=Kalam:wght@400;700&family=Bungee&family=Orbitron:wght@600&family=Playfair+Display:wght@600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./assets/css/grin.css" />
+  </head>
+  <body data-page="analyse">
+    <header class="site">
+      <h1>Analyse</h1>
+      <p class="tagline">Bring your own data. Nothing leaves your browser.</p>
+      <div id="nav-placeholder"></div>
+    </header>
+
+    <main class="container">
+      <div class="tool">
+        <!-- ================================================================ -->
+        <aside class="panel sticky">
+          <span class="eyebrow">1. Get your data in</span>
+
+          <div
+            id="dropzone"
+            tabindex="0"
+            role="button"
+            aria-label="Upload a CSV file"
+            style="
+              border: 2px dashed var(--line);
+              border-radius: var(--radius-sm);
+              padding: 1.4rem 1rem;
+              text-align: center;
+              cursor: pointer;
+              font-size: 0.85rem;
+              color: var(--mute);
+              transition:
+                border-color 0.15s ease,
+                background 0.15s ease;
+            "
+          >
+            Drop a CSV here, or click to choose a file
+            <input
+              type="file"
+              id="file-input"
+              accept=".csv,text/csv"
+              style="display: none"
+            />
+          </div>
+
+          <details style="margin-top: 0.9rem">
+            <summary>...or paste CSV text</summary>
+            <div class="details-body">
+              <textarea
+                id="paste-area"
+                rows="6"
+                placeholder="participant,stimulus,response,rt&#10;p01,A1B1,A1B1,0.61&#10;..."
+              ></textarea>
+              <button id="parse-paste" class="wide" style="margin-top: 0.6rem">
+                Parse pasted text
+              </button>
+            </div>
+          </details>
+
+          <details style="margin-top: 0.6rem">
+            <summary>...or type in a 4×4 matrix</summary>
+            <div class="details-body">
+              <table class="cm grid" id="manual-grid"></table>
+              <button id="use-manual" class="wide" style="margin-top: 0.6rem">
+                Use this matrix
+              </button>
+              <p class="cap">
+                Counts only — response times need trial-level data.
+              </p>
+            </div>
+          </details>
+
+          <hr class="hr" />
+          <span class="eyebrow">Or load a published example</span>
+          <p class="cap" style="margin-top: 0">
+            Real confusion matrices from the GRT literature, so you can see GRIN
+            and a classical maximum-likelihood fit — the same estimator
+            <code>grtools</code> and <code>mdsdt</code> implement — land on the
+            same answer for data someone else already published.
+          </p>
+          <div class="row">
+            <select id="example-select" style="flex: 1">
+              <option value="soto">
+                Emotion / Gender — Soto et al. (2017)
+              </option>
+              <option value="silbert_FD">
+                Frequency / Duration — Silbert et al. (2009)
+              </option>
+              <option value="silbert_PT">
+                Pitch / Timbre — Silbert et al. (2009)
+              </option>
+            </select>
+            <button id="load-example" class="ghost">Load</button>
+          </div>
+          <div id="citation-box"></div>
+
+          <hr class="hr" />
+          <span class="eyebrow">Format</span>
+          <p class="cap" style="margin-top: 0">
+            One row per <strong>trial</strong>: <code>stimulus</code>,
+            <code>response</code> (as <code>A1B1</code>-style codes, your own
+            labels like <code>Happy/Male</code>, or 0–3), optional
+            <code>participant</code>, optional <code>rt</code> in
+            <strong>seconds</strong>. Include <code>rt</code> to get
+            architecture and accumulator estimates; omit it for the faster
+            counts-only model.
+          </p>
+          <div class="row">
+            <button class="ghost" id="dl-template-cm">Template (counts)</button>
+            <button class="ghost" id="dl-template-rt">Template (+RT)</button>
+          </div>
+
+          <div id="file-status" class="status" style="margin-top: 0.9rem"></div>
+        </aside>
+
+        <!-- ================================================================ -->
+        <section id="results" hidden>
+          <div class="card" id="validation-card"></div>
+
+          <div class="card" id="participant-card">
+            <span class="eyebrow">2. Choose who to analyse</span>
+            <div class="row">
+              <select
+                id="participant-select"
+                style="flex: 1; min-width: 10rem"
+              ></select>
+              <button id="analyse-one">Analyse</button>
+              <button id="analyse-all" class="ghost">
+                Analyse everyone (batch)
+              </button>
+            </div>
+            <p class="status" id="analysis-status"></p>
+          </div>
+
+          <div class="card" id="cm-card" hidden>
+            <span class="eyebrow">Confusion matrix</span>
+            <div class="viz-2">
+              <div>
+                <table class="cm" id="obs-cm"></table>
+              </div>
+              <div id="cm-stats"></div>
+            </div>
+          </div>
+
+          <div class="card" id="figure-card" hidden>
+            <span class="eyebrow">The classic GRT plot</span>
+            <div class="viz-2">
+              <div>
+                <canvas id="space" width="460" height="460"></canvas>
+                <div class="legend" id="space-legend"></div>
+                <div class="row">
+                  <button id="export-png" class="ghost">Download PNG</button>
+                </div>
+              </div>
+              <div>
+                <div class="checkrow">
+                  <input type="checkbox" id="fig-show-predicted" checked />
+                  <label for="fig-show-predicted" style="margin: 0"
+                    >Show comparison ellipses (dashed)</label
+                  >
+                </div>
+                <label>Compare GRIN's estimate against</label>
+                <select id="overlay-select">
+                  <option value="mle">MLE, unconstrained fit</option>
+                  <option value="class">
+                    GRIN's own best-fitting model class
+                  </option>
+                </select>
+                <p class="cap" id="overlay-cap" style="margin-top: 0.3rem"></p>
+
+                <div class="checkrow">
+                  <input type="checkbox" id="fig-marginals" checked />
+                  <label for="fig-marginals" style="margin: 0"
+                    >Show marginal distributions</label
+                  >
+                </div>
+
+                <hr class="hr" />
+                <span class="eyebrow" style="font-size: 0.6rem"
+                  >Style this export</span
+                >
+                <p class="cap" style="margin-top: 0">
+                  Only changes this one figure — the site keeps its own colours
+                  everywhere else.
+                </p>
+                <label>Colour palette</label>
+                <select id="fig-palette">
+                  <option value="site">Site colours (default)</option>
+                  <optgroup label="Clean / professional">
+                    <option value="blackOnWhite">Black on white</option>
+                    <option value="whiteOnBlack">White on black</option>
+                    <option value="grayscalePrint">
+                      Grayscale, print-safe
+                    </option>
+                    <option value="colorblindSafe">
+                      Colour-blind safe (Okabe–Ito)
+                    </option>
+                    <option value="apaStyle">
+                      Clean &amp; muted (APA-style)
+                    </option>
+                  </optgroup>
+                  <optgroup label="Just for fun">
+                    <option value="trueGrit">True GRiT (wanted poster)</option>
+                    <option value="matrixConsole">
+                      The (Confusion) Matrix
+                    </option>
+                    <option value="synthwave">Neon Synthwave</option>
+                    <option value="chalkboard">Chalkboard</option>
+                    <option value="blueprint">Blueprint</option>
+                    <option value="independenceDay">
+                      Perceptual Independence Day
+                    </option>
+                    <option value="senseAndSeparability">
+                      Sense and separability
+                    </option>
+                    <option value="perceptualSpace">Perceptual Space</option>
+                    <option value="spursModern" id="opt-spurs-modern" hidden>
+                      Spurs
+                    </option>
+                    <option
+                      value="spursRetroFiesta"
+                      id="opt-spurs-retro"
+                      hidden
+                    >
+                      Spurs (Retro Fiesta)
+                    </option>
+                  </optgroup>
+                  <option value="custom">Custom…</option>
+                </select>
+                <p
+                  class="cap"
+                  id="fig-palette-note"
+                  style="margin-top: 0.3rem"
+                ></p>
+
+                <div id="fig-custom-colors" hidden>
+                  <div class="row2">
+                    <div>
+                      <label style="margin-top: 0">Estimate colour</label>
+                      <input type="color" id="fig-color-stim" value="#2a1f5e" />
+                    </div>
+                    <div>
+                      <label style="margin-top: 0">Comparison colour</label>
+                      <input type="color" id="fig-color-pred" value="#b06080" />
+                    </div>
+                  </div>
+                </div>
+
+                <label>Background</label>
+                <select id="fig-background">
+                  <option value="transparent">Transparent</option>
+                  <option value="white">White</option>
+                  <option value="black">Black</option>
+                  <option value="palette">Match palette</option>
+                </select>
+
+                <label>Figure title</label>
+                <input type="text" id="fig-title" placeholder="(none)" />
+                <p
+                  class="cap"
+                  id="spurs-unlock-note"
+                  style="margin-top: 0.3rem"
+                ></p>
+
+                <div id="spurs-extra" hidden>
+                  <div class="checkrow">
+                    <input type="checkbox" id="fig-spurs-marker" />
+                    <label for="fig-spurs-marker" style="margin: 0"
+                      >Use the spur as the mean marker</label
+                    >
+                  </div>
+                </div>
+
+                <div class="checkrow">
+                  <input type="checkbox" id="fig-mono-stim" />
+                  <label for="fig-mono-stim" style="margin: 0"
+                    >One colour for all 4 stimuli</label
+                  >
+                </div>
+                <p class="cap" style="margin-top: 0.3rem">
+                  The four stimuli are told apart by <em>position</em> either
+                  way — colour is a bonus cue, not the only one, so this is safe
+                  to turn off if it's more distracting than helpful.
+                </p>
+
+                <div class="checkrow">
+                  <input type="checkbox" id="fig-legend-on-png" checked />
+                  <label for="fig-legend-on-png" style="margin: 0"
+                    >Bake legend into the PNG</label
+                  >
+                </div>
+                <div class="checkrow">
+                  <input type="checkbox" id="fig-show-axis-names" checked />
+                  <label for="fig-show-axis-names" style="margin: 0"
+                    >Show axis names</label
+                  >
+                </div>
+                <div class="checkrow">
+                  <input type="checkbox" id="fig-show-ticks" checked />
+                  <label for="fig-show-ticks" style="margin: 0"
+                    >Show level labels (A1/A2/B1/B2)</label
+                  >
+                </div>
+                <div class="row">
+                  <button id="fig-style-reset" class="ghost wide">
+                    Reset style to site default
+                  </button>
+                </div>
+
+                <hr class="hr" />
+                <span class="eyebrow" style="font-size: 0.6rem"
+                  >Edit labels for this figure</span
+                >
+                <div class="row2">
+                  <div>
+                    <label style="margin-top: 0">Dimension A</label>
+                    <input type="text" id="fig-aName" value="Dimension A" />
+                  </div>
+                  <div>
+                    <label style="margin-top: 0">Levels (A1, A2)</label>
+                    <input type="text" id="fig-aLevels" value="A1, A2" />
+                  </div>
+                </div>
+                <div class="row2">
+                  <div>
+                    <label>Dimension B</label>
+                    <input type="text" id="fig-bName" value="Dimension B" />
+                  </div>
+                  <div>
+                    <label>Levels (B1, B2)</label>
+                    <input type="text" id="fig-bLevels" value="B1, B2" />
+                  </div>
+                </div>
+                <p class="cap">
+                  Renames the axes, the confusion matrix headers, and the export
+                  — for this session only, doesn't touch your uploaded file.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" id="compare-card" hidden>
+            <span class="eyebrow">GRIN vs. maximum likelihood</span>
+            <div id="stub-slot"></div>
+            <div class="viz-2">
+              <div>
+                <h3
+                  style="font-size: 0.68rem; color: var(--steel); margin-top: 0"
+                >
+                  GRIN posterior <span class="pill neutral" id="grin-ms"></span>
+                </h3>
+                <div id="grin-ests"></div>
+                <h3 style="font-size: 0.68rem; color: var(--steel)">
+                  Structural conclusions
+                </h3>
+                <div id="grin-constructs"></div>
+                <div id="grin-verdict"></div>
+                <div id="grin-rt-block"></div>
+              </div>
+              <div>
+                <h3
+                  style="font-size: 0.68rem; color: var(--steel); margin-top: 0"
+                >
+                  MLE, full model <span class="pill neutral" id="mle-ms"></span>
+                </h3>
+                <p class="cap" style="margin-top: 0">
+                  Point estimates only — MLE has no calibrated uncertainty to
+                  offer here, which is the comparison this whole page is trying
+                  to make honestly.
+                </p>
+                <div id="mle-ests"></div>
+                <h3 style="font-size: 0.68rem; color: var(--steel)">
+                  MLE model selection (BIC)
+                </h3>
+                <div style="overflow-x: auto">
+                  <table
+                    class="cm"
+                    id="mle-table"
+                    style="font-size: 0.76rem"
+                  ></table>
+                </div>
+                <p class="cap" id="mle-rt-note"></p>
+              </div>
+            </div>
+            <div id="agree-note"></div>
+          </div>
+
+          <div class="card" id="batch-card" hidden>
+            <span class="eyebrow">Batch results</span>
+            <p class="status" id="batch-status"></p>
+            <p class="cap" style="margin-top: 0">
+              Click any row's participant ID to pull up their individual figure
+              and full comparison above.
+            </p>
+            <div style="overflow-x: auto">
+              <table
+                class="cm"
+                id="batch-table"
+                style="font-size: 0.76rem"
+              ></table>
+            </div>
+            <div class="row">
+              <button id="dl-batch-csv" class="ghost">
+                Download results CSV
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site">
+      <p>GRIN — amortised Bayesian inference for General Recognition Theory.</p>
+      <p class="fine">
+        <a href="https://murraysbennett.com"
+          >Part of Murray S. Bennett's research</a
+        >
+      </p>
+      <p class="fine">
+        Everything runs client-side. Your data are never uploaded anywhere.
+      </p>
+    </footer>
+
+    <script type="module">
+      import * as IO from "./assets/js/grt-io.js";
+      import * as Fit from "./assets/js/grt-fit.js";
+      import * as Core from "./assets/js/grt-core.js";
+      import * as Plot from "./assets/js/grt-plot.js";
+      import { loadModel } from "./assets/js/grin-model.js";
+      import "./assets/js/grin-shell.js";
+
+      const $ = (id) => document.getElementById(id);
+
+      // --------------------------------------------------------------------------- //
+      // State
+      // --------------------------------------------------------------------------- //
+      let parsed = null; // result of IO.parseCSV
+      let groups = null; // Map participant -> trials[]  (long format)
+      let hasRT = false;
+      let cmModel = null,
+        cmrtModel = null;
+      let currentLabels = {
+        aName: "Dimension A",
+        a1: "A1",
+        a2: "A2",
+        bName: "Dimension B",
+        b1: "B1",
+        b2: "B2",
+      };
+      let currentParticipant = null; // whoever the figure/label controls currently act on
+      const cache = new Map(); // participant id -> { agg, checks, grin, mleFull, mleSel, ms }
+
+      async function getModel(rt) {
+        if (rt) {
+          if (!cmrtModel) cmrtModel = await loadModel("./assets/models/cmrt");
+          return cmrtModel;
+        }
+        if (!cmModel) cmModel = await loadModel("./assets/models/cm");
+        return cmModel;
+      }
+
+      // --------------------------------------------------------------------------- //
+      // Manual matrix entry
+      // --------------------------------------------------------------------------- //
+      function buildManualGrid() {
+        const lab = Core.STIMULUS_ORDER;
+        let html = `<tr><th></th>${lab.map((l) => `<th>${l}</th>`).join("")}</tr>`;
+        for (let i = 0; i < 4; i++) {
+          html += `<tr><th>${lab[i]}</th>`;
+          for (let j = 0; j < 4; j++)
+            html += `<td><input type="number" min="0" step="1" value="0" data-i="${i}" data-j="${j}"></td>`;
+          html += "</tr>";
+        }
+        $("manual-grid").innerHTML = html;
+      }
+      buildManualGrid();
+
+      $("use-manual").addEventListener("click", () => {
+        const counts = [
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+        ];
+        document.querySelectorAll("#manual-grid input").forEach((el) => {
+          counts[+el.dataset.i][+el.dataset.j] = Math.max(
+            0,
+            Math.round(+el.value) || 0,
+          );
+        });
+        loadParsed(
+          {
+            format: "matrix",
+            counts,
+            levels: null,
+            hasRT: false,
+            warnings: [],
+          },
+          "typed matrix",
+        );
+      });
+
+      // --------------------------------------------------------------------------- //
+      // Published examples — real confusion matrices from the GRT literature. Not
+      // here to claim GRIN is faster or better; here so the GRIN-vs-MLE comparison
+      // above can be run on data someone else already published, with a citation
+      // attached, so "different methods land on the same answer" is checkable
+      // against a real result rather than only simulated ones.
+      // --------------------------------------------------------------------------- //
+      const EXAMPLES = {
+        soto: {
+          label: "Emotion / Gender — Soto et al. (2017)",
+          matrix: [
+            [140, 34, 36, 40],
+            [85, 90, 5, 70],
+            [89, 4, 91, 66],
+            [20, 8, 59, 163],
+          ],
+          Aname: "Emotion",
+          A: ["Happy", "Sad"],
+          Bname: "Gender",
+          B: ["Male", "Female"],
+          citation: `Soto, F. A., Zheng, E., Fonseca, J., &amp; Ashby, F. G. (2017).
+      Testing separability and independence of perceptual dimensions with general
+      recognition theory: A tutorial and new R package (<em>grtools</em>).
+      <em>Frontiers in Psychology</em>, 8, 696.
+      <a href="https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2017.00696/full"
+         target="_blank" rel="noopener">View paper</a>
+      — data reproduced from Table 1 (emotion/gender face identification).`,
+        },
+        silbert_FD: {
+          label: "Frequency / Duration — Silbert et al. (2009)",
+          matrix: [
+            [159, 33, 46, 12],
+            [20, 186, 5, 39],
+            [21, 9, 191, 29],
+            [3, 22, 22, 203],
+          ],
+          Aname: "Frequency",
+          A: ["490\u20131490Hz", "510\u20131510Hz"],
+          Bname: "Duration",
+          B: ["250ms", "300ms"],
+          citation: `Silbert, N. H., Townsend, J. T., &amp; Lentz, J. J. (2009).
+      Independence and separability in the perception of complex nonspeech sounds.
+      <em>Attention, Perception, &amp; Psychophysics</em>, 71(8), 1900\u20131915.
+      <a href="https://link.springer.com/article/10.3758/APP.71.8.1900"
+         target="_blank" rel="noopener">View paper</a>
+      — reproduced from their frequency/duration identification experiment. Values
+      transcribed manually; worth a spot check against the original table before citing.`,
+        },
+        silbert_PT: {
+          label: "Pitch / Timbre — Silbert et al. (2009)",
+          matrix: [
+            [186, 22, 41, 1],
+            [16, 180, 26, 28],
+            [42, 32, 149, 27],
+            [1, 28, 13, 208],
+          ],
+          Aname: "Pitch",
+          A: ["150Hz", "152Hz"],
+          Bname: "Timbre",
+          B: ["850Hz", "1050Hz"],
+          citation: `Silbert, N. H., Townsend, J. T., &amp; Lentz, J. J. (2009).
+      Independence and separability in the perception of complex nonspeech sounds.
+      <em>Attention, Perception, &amp; Psychophysics</em>, 71(8), 1900\u20131915.
+      <a href="https://link.springer.com/article/10.3758/APP.71.8.1900"
+         target="_blank" rel="noopener">View paper</a>
+      — reproduced from their pitch/timbre identification experiment. Values
+      transcribed manually; worth a spot check against the original table before citing.`,
+        },
+      };
+
+      $("load-example").addEventListener("click", () => {
+        const ex = EXAMPLES[$("example-select").value];
+        loadParsed(
+          {
+            format: "matrix",
+            counts: ex.matrix,
+            levels: { A: ex.A, B: ex.B, Aname: ex.Aname, Bname: ex.Bname },
+            hasRT: false,
+            warnings: [],
+          },
+          ex.label,
+          `<div class="note"><h4>Source</h4><p style="margin-bottom:0">${ex.citation}</p></div>`,
+        );
+      });
+
+      // --------------------------------------------------------------------------- //
+      // File / paste input
+      // --------------------------------------------------------------------------- //
+      const dz = $("dropzone");
+      dz.addEventListener("click", () => $("file-input").click());
+      dz.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") $("file-input").click();
+      });
+      ["dragover", "dragenter"].forEach((ev) =>
+        dz.addEventListener(ev, (e) => {
+          e.preventDefault();
+          dz.style.borderColor = "var(--slate)";
+          dz.style.background = "var(--line-soft)";
+        }),
+      );
+      ["dragleave", "drop"].forEach((ev) =>
+        dz.addEventListener(ev, () => {
+          dz.style.borderColor = "var(--line)";
+          dz.style.background = "transparent";
+        }),
+      );
+      dz.addEventListener("drop", (e) => {
+        e.preventDefault();
+        const f = e.dataTransfer.files?.[0];
+        if (f) readFile(f);
+      });
+      $("file-input").addEventListener("change", (e) => {
+        const f = e.target.files?.[0];
+        if (f) readFile(f);
+      });
+      function readFile(f) {
+        const reader = new FileReader();
+        reader.onload = () => loadParsed(IO.parseCSV(reader.result), f.name);
+        reader.onerror = () => {
+          $("file-status").innerHTML =
+            `<span class="pill bad">Could not read the file.</span>`;
+        };
+        reader.readAsText(f);
+      }
+      $("parse-paste").addEventListener("click", () => {
+        const txt = $("paste-area").value;
+        if (!txt.trim()) return;
+        loadParsed(IO.parseCSV(txt), "pasted text");
+      });
+      $("dl-template-cm").addEventListener("click", () =>
+        downloadText(
+          IO.templateCSV({ withRT: false }),
+          "grin_template_counts.csv",
+        ),
+      );
+      $("dl-template-rt").addEventListener("click", () =>
+        downloadText(IO.templateCSV({ withRT: true }), "grin_template_rt.csv"),
+      );
+
+      function downloadText(text, filename) {
+        const blob = new Blob([text], { type: "text/csv" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+
+      // --------------------------------------------------------------------------- //
+      // Loading a parse result into state
+      // --------------------------------------------------------------------------- //
+      function loadParsed(result, sourceName, citationHTML = null) {
+        cache.clear();
+        $("results").hidden = true;
+        $("cm-card").hidden = true;
+        $("figure-card").hidden = true;
+        $("compare-card").hidden = true;
+        $("batch-card").hidden = true;
+        $("citation-box").innerHTML = citationHTML || "";
+
+        if (result.error) {
+          $("file-status").innerHTML =
+            `<span class="pill bad">${escapeHTML(result.error)}</span>`;
+          return;
+        }
+        parsed = result;
+        hasRT = !!result.hasRT;
+        if (result.levels)
+          currentLabels = {
+            aName: result.levels.Aname || "Dimension A",
+            a1: result.levels.A[0],
+            a2: result.levels.A[1],
+            bName: result.levels.Bname || "Dimension B",
+            b1: result.levels.B[0],
+            b2: result.levels.B[1],
+          };
+
+        const nBadge =
+          result.format === "long"
+            ? `${result.trials.length} trials`
+            : "1 matrix";
+        $("file-status").innerHTML =
+          `<span class="pill ok">Parsed ${escapeHTML(sourceName)} — ${nBadge}${hasRT ? ", with RT" : ""}</span>` +
+          (result.warnings?.length
+            ? `<br><span class="pill warn" style="margin-top:.4rem">${result.warnings.length} warning(s)</span>`
+            : "");
+
+        if (result.format === "matrix") {
+          groups = new Map([["matrix", { __matrix: result.counts }]]);
+        } else {
+          groups = IO.byParticipant(result);
+        }
+
+        const sel = $("participant-select");
+        sel.innerHTML = [...groups.keys()]
+          .map(
+            (id) =>
+              `<option value="${escapeAttr(id)}">${escapeHTML(id)}</option>`,
+          )
+          .join("");
+        const multi = groups.size > 1;
+        sel.style.display = multi ? "" : "none";
+        $("analyse-all").style.display = multi ? "" : "none";
+
+        renderValidationSummary(result);
+        $("results").hidden = false;
+        $("results").scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+        // convenience: analyse immediately if there's exactly one group
+        if (groups.size === 1) analyseOne([...groups.keys()][0]);
+      }
+
+      function renderValidationSummary(result) {
+        const el = $("validation-card");
+        if (!result.warnings?.length) {
+          el.innerHTML = "";
+          return;
+        }
+        el.innerHTML =
+          `<span class="eyebrow">Parsing notes</span>` +
+          result.warnings
+            .map((w) => `<div class="note warn"><p>${escapeHTML(w)}</p></div>`)
+            .join("");
+      }
+
+      // --------------------------------------------------------------------------- //
+      // Per-participant aggregation + analysis
+      // --------------------------------------------------------------------------- //
+      function aggFor(id) {
+        const g = groups.get(id);
+        if (g.__matrix) {
+          const counts = g.__matrix;
+          return {
+            counts,
+            trials: counts.map((r) => r.reduce((a, b) => a + b, 0)),
+            rtq: null,
+          };
+        }
+        return IO.aggregate(g, { hasRT });
+      }
+
+      async function analyseOne(id) {
+        $("analysis-status").textContent = `Analysing ${id}…`;
+        const agg = aggFor(id);
+        const checks = IO.checkInputs(agg, {
+          hasRT,
+          rawRTs:
+            hasRT && !groups.get(id).__matrix
+              ? groups
+                  .get(id)
+                  .map((t) => t.rt)
+                  .filter((v) => v !== null)
+              : [],
+        });
+
+        renderChecks(checks);
+        if (checks.errors.length) {
+          $("cm-card").hidden = true;
+          $("figure-card").hidden = true;
+          $("compare-card").hidden = true;
+          $("analysis-status").innerHTML =
+            `<span class="pill bad">Cannot analyse ${escapeHTML(id)} — see notes above.</span>`;
+          return;
+        }
+
+        const t0 = performance.now();
+        const m = await getModel(hasRT);
+        const grin = await m.predict(agg);
+        const t1 = performance.now();
+        const mleFull = Fit.fitClass(agg.counts, agg.trials, "ds");
+        const mleSel = Fit.fitAndSelect(agg.counts, agg.trials, "bic");
+        const mleMs = performance.now() - t1;
+
+        cache.set(id, { agg, checks, grin, mleFull, mleSel, mleMs });
+        renderParticipant(id);
+        $("analysis-status").innerHTML =
+          `<span class="pill ok">${escapeHTML(id)}: GRIN ${grin.ms.toFixed(2)} ms · MLE (12 classes) ${mleMs.toFixed(1)} ms</span>`;
+      }
+
+      function renderChecks(checks) {
+        const parts = [];
+        for (const e of checks.errors)
+          parts.push(`<div class="note bad"><p>${escapeHTML(e)}</p></div>`);
+        for (const w of checks.warnings)
+          parts.push(`<div class="note warn"><p>${escapeHTML(w)}</p></div>`);
+        $("validation-card").innerHTML =
+          (parsed.warnings?.length
+            ? `<span class="eyebrow">Parsing notes</span>` +
+              parsed.warnings
+                .map(
+                  (w) => `<div class="note warn"><p>${escapeHTML(w)}</p></div>`,
+                )
+                .join("")
+            : "") +
+          (parts.length
+            ? `<span class="eyebrow">This participant</span>${parts.join("")}`
+            : "");
+      }
+
+      function renderParticipant(id) {
+        currentParticipant = id;
+        const { agg, grin, mleFull, mleSel, mleMs } = cache.get(id);
+        const L = currentLabels;
+
+        // keep the label-editing inputs in sync with whatever labels are active,
+        // without clobbering an edit the user is mid-typing on a different field
+        if (document.activeElement?.id?.indexOf("fig-") !== 0) {
+          $("fig-aName").value = L.aName;
+          $("fig-aLevels").value = `${L.a1}, ${L.a2}`;
+          $("fig-bName").value = L.bName;
+          $("fig-bLevels").value = `${L.b1}, ${L.b2}`;
+        }
+
+        // confusion matrix
+        const props = agg.counts.map((r, i) =>
+          r.map((v) => v / Math.max(1, agg.trials[i])),
+        );
+        Plot.renderCM($("obs-cm"), props, L, { counts: agg.counts });
+        const acc = Plot.cmAccuracy(props);
+        const total = agg.trials.reduce((a, b) => a + b, 0);
+        $("cm-stats").innerHTML = `
+    <div class="est"><div class="lbl">Total trials</div><div class="track"></div><div class="num">${total}</div></div>
+    <div class="est"><div class="lbl">Accuracy</div>
+      <div class="track"><div class="ci" style="left:0;width:${(100 * acc).toFixed(1)}%;opacity:.8"></div></div>
+      <div class="num">${(100 * acc).toFixed(1)}%</div></div>`;
+        $("cm-card").hidden = false;
+
+        renderFigure(id);
+
+        // GRIN column
+        const names = grin.mean.length === 12 ? Core.PARAM_NAMES : [];
+        $("grin-ms").textContent = `${grin.ms.toFixed(2)} ms`;
+        $("grin-ests").innerHTML = names
+          .map((n, i) => {
+            const range = i < 8 ? [-3, 3] : [-1, 1];
+            return Plot.estRow(n, grin.mean[i], grin.std[i], range);
+          })
+          .join("");
+        $("grin-constructs").innerHTML =
+          Plot.pbar("A separable", grin.sep.A) +
+          Plot.pbar("B separable", grin.sep.B) +
+          Plot.pbar("Independent (PI)", grin.corr.pi) +
+          Plot.pbar("One shared ρ", grin.corr.rho1) +
+          Plot.pbar("ρ varies by stimulus", grin.corr.free);
+        const mc = grin.modelClass;
+        $("grin-verdict").innerHTML =
+          `<div class="note ${mc.joint >= 0.5 ? "" : "warn"}">
+    <h4>Best-supported class: <code>${mc.name}</code> <span class="cap">(${Core.modelLabel(mc.name)})</span></h4>
+    <p>Joint probability ${mc.joint.toFixed(2)}.${
+      mc.joint < 0.5
+        ? " Not decisive — treat the structural conclusion as tentative."
+        : ""
+    }</p>
+  </div>`;
+
+        if (hasRT && grin.archBest) {
+          $("grin-rt-block").innerHTML = `
+      <h3 style="font-size:.68rem;color:var(--steel)">Processing architecture</h3>
+      ${Object.entries(grin.arch)
+        .map(([k, v]) => Plot.pbar(k.replace(/_/g, " "), v))
+        .join("")}
+      <div class="note ${grin.dimensionNeglect > 0.5 ? "warn" : ""}">
+        <h4>Dimension neglect: ${grin.dimensionNeglect.toFixed(2)}</h4>
+        <p>Probability this participant stopped before processing both dimensions.</p>
+      </div>`;
+        } else {
+          $("grin-rt-block").innerHTML = "";
+        }
+        renderStub(grin);
+
+        // MLE column: full (unconstrained) fit, comparable term-for-term to GRIN's posterior
+        $("mle-ms").textContent = `${mleFull.ms.toFixed(2)} ms`;
+        $("mle-ests").innerHTML = mleFull.params
+          .map(
+            (v, i) =>
+              `<div class="est"><div class="lbl">${Core.PARAM_NAMES[i]}</div>
+      <div class="track"></div><div class="num">${v.toFixed(3)}</div></div>`,
+          )
+          .join("");
+
+        // MLE model selection table
+        const rows = mleSel.fits
+          .slice(0, 6)
+          .map(
+            (f) => `<tr>
+    <td style="text-align:left;font-family:Inter,sans-serif">${f.model}</td>
+    <td>${f.k}</td><td>${f.loglik.toFixed(1)}</td>
+    <td>${f.bic.toFixed(1)}</td><td>${f.weight.toFixed(3)}</td>
+    <td>${Number.isFinite(f.p) ? f.p.toFixed(3) : "—"}</td>
+  </tr>`,
+          )
+          .join("");
+        $("mle-table").innerHTML =
+          `<tr><th style="text-align:left">Model</th><th>k</th>
+    <th>log L</th><th>BIC</th><th>weight</th><th>G² p</th></tr>${rows}`;
+        $("mle-rt-note").textContent = hasRT
+          ? "MLE has no response-time model here — grtools and mdsdt don't fit RT either. This comparison is counts-only by nature."
+          : "";
+
+        // honest agreement check: GRIN posterior mean vs the unconstrained MLE fit
+        let maxDiff = 0,
+          worst = "";
+        Core.PARAM_NAMES.forEach((n, i) => {
+          const d = Math.abs(grin.mean[i] - mleFull.params[i]);
+          if (d > maxDiff) {
+            maxDiff = d;
+            worst = n;
+          }
+        });
+        const nSD =
+          maxDiff / Math.max(1e-6, grin.std[Core.PARAM_NAMES.indexOf(worst)]);
+        $("agree-note").innerHTML = `<div class="note ${nSD > 2 ? "warn" : ""}">
+    <h4>Agreement</h4>
+    <p>
+      Largest gap between GRIN's posterior mean and the unconstrained MLE fit is on
+      <strong>${worst}</strong>: ${maxDiff.toFixed(3)} (${nSD.toFixed(1)} GRIN posterior SDs).
+      ${
+        nSD > 2
+          ? "That's a bigger gap than GRIN's own uncertainty would predict — worth a second look, especially if trial counts are low or this matrix is unusual."
+          : "That's well within GRIN's stated uncertainty, which is what you want to see."
+      }
+    </p>
+  </div>`;
+
+        $("compare-card").hidden = false;
+      }
+
+      function renderStub(res) {
+        $("stub-slot").innerHTML =
+          res.backend === "stub"
+            ? `<div class="stub-banner">
+         <strong>Placeholder inference.</strong> The trained network isn't wired in yet, so "GRIN
+         posterior" above is a maximum-likelihood stand-in dressed in the same interface —
+         the parameter values are real, but the <em>uncertainty intervals are only a rough
+         approximation</em>, not the network's calibrated output. Swap in the real weights to
+         get the real comparison.
+       </div>`
+            : "";
+      }
+
+      // --------------------------------------------------------------------------- //
+      // The classic GRT plot: GRIN's per-stimulus estimate (solid), against a chosen
+      // reference (dashed) — either the unconstrained MLE fit (the "different methods,
+      // same answer" comparison) or GRIN's own estimate projected onto its best-fitting
+      // model class (how much adjustment getting to a clean structural model cost).
+      // Redraws from cache only — never refits, so toggling the overlay or editing
+      // labels is instant.
+      // --------------------------------------------------------------------------- //
+      // --------------------------------------------------------------------------- //
+      const PALETTE_NOTES = {
+        site: "",
+        custom: "",
+        blackOnWhite:
+          "All-black lines — stimuli are told apart by position, not colour.",
+        whiteOnBlack:
+          "All-white lines — stimuli are told apart by position, not colour.",
+        grayscalePrint:
+          "Four distinguishable grays. Photocopies and prints cleanly.",
+        colorblindSafe:
+          "Okabe–Ito palette — safe under deuteranopia, protanopia, and tritanopia.",
+        apaStyle: "Muted, high-contrast, minimal decoration.",
+        trueGrit: "Sepia + a wanted-poster title font. Purely for fun.",
+        matrixConsole:
+          "Neon terminal green on black, with scanlines. Purely for fun.",
+        synthwave: "Uses the site's own arcade font. Purely for fun.",
+        chalkboard:
+          "Chalk-on-slate, with a handwritten title font. Purely for fun.",
+        blueprint: "White-on-blue technical drafting look.",
+        independenceDay:
+          "Red, white, and blue. Try downloading a PNG with this one on.",
+        senseAndSeparability:
+          "A Regency-era reading of separability. Purely for fun.",
+        perceptualSpace: "A perceptual space, in space. Purely for fun.",
+        spursModern: "Go Spurs Go. Silver and black.",
+        spursRetroFiesta: "Go Spurs Go. The 90s Fiesta colours.",
+      };
+
+      // --------------------------------------------------------------------------- //
+      // A small easter egg: typing "Go Spurs Go" (case-insensitive) as the figure
+      // title unlocks a Spurs palette + two image-based rendering options. Once
+      // unlocked in a session it stays unlocked, even if the title is changed
+      // afterward — this is a one-time reveal, not something that flickers on and
+      // off as the user types.
+      // --------------------------------------------------------------------------- //
+      let spursUnlocked = false;
+      const spursImages = { spur: null };
+
+      /** Loads once, reused on every subsequent render. Resolves to null (never
+       * rejects) on a missing file or decode error, so a caller can just check
+       * truthiness rather than wrapping every call in try/catch. */
+      function loadImageOnce(cacheKey, src) {
+        if (spursImages[cacheKey])
+          return Promise.resolve(spursImages[cacheKey]);
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            spursImages[cacheKey] = img;
+            resolve(img);
+          };
+          img.onerror = () => resolve(null);
+          img.src = src;
+        });
+      }
+
+      function checkSpursUnlock() {
+        if (spursUnlocked) return;
+        if ($("fig-title").value.trim().toLowerCase() !== "go spurs go") return;
+        spursUnlocked = true;
+        $("opt-spurs-modern").hidden = false;
+        $("opt-spurs-retro").hidden = false;
+        $("spurs-extra").hidden = false;
+        $("spurs-unlock-note").innerHTML =
+          `<span class="pill ok">🏀 Go Spurs Go! — Spurs palettes unlocked below.</span>`;
+      }
+
+      /** Read the "Style this export" panel into renderSpace-ready options. */
+      function figureStyle() {
+        const palette = $("fig-palette").value;
+        let themeOverride = null;
+        if (palette === "custom") {
+          const stim = $("fig-color-stim").value;
+          themeOverride = {
+            stim: [stim, stim, stim, stim],
+            predicted: $("fig-color-pred").value,
+          };
+        } else if (palette !== "site") {
+          // CLONE, never reference directly: FIGURE_PALETTES entries are shared
+          // module-level objects reused on every render, on every page. Handing out
+          // a live reference and then mutating .stim below (for the mono-colour
+          // toggle) would permanently corrupt that preset for everyone, forever.
+          const preset = Plot.FIGURE_PALETTES[palette];
+          themeOverride = preset ? { ...preset, stim: [...preset.stim] } : null;
+        }
+
+        if ($("fig-mono-stim").checked) {
+          const base = themeOverride
+            ? themeOverride.stim[0]
+            : Plot.theme().stim[0];
+          themeOverride = {
+            ...(themeOverride || {}),
+            stim: [base, base, base, base],
+          };
+        }
+
+        let background = $("fig-background").value;
+        if (background === "palette") {
+          // "Match palette": resolve to that theme's own paper colour. For "site" (no
+          // override) this falls back to transparent, since the live site theme's
+          // --paper already shows through the page CSS behind the canvas anyway.
+          background = themeOverride?.paper ?? "transparent";
+        }
+
+        return {
+          theme: themeOverride,
+          background,
+          title: $("fig-title").value.trim() || null,
+          showAxisNames: $("fig-show-axis-names").checked,
+          showLevelTicks: $("fig-show-ticks").checked,
+          bakeLegend: $("fig-legend-on-png").checked,
+        };
+      }
+
+      // Rapid palette-switching can fire several renders whose font-preload promises
+      // resolve out of order; a token guard makes sure only the LAST one triggered
+      // ever actually paints, so the canvas can't flicker back to a stale style.
+      let figureRenderToken = 0;
+
+      async function renderFigure(id) {
+        const myToken = ++figureRenderToken;
+        const entry = cache.get(id);
+        if (!entry) return;
+        const { grin, mleFull } = entry;
+        const L = currentLabels;
+
+        const stimuli = Plot.toStimuli(grin.mean);
+        const showPredicted = $("fig-show-predicted").checked;
+        $("overlay-select").disabled = !showPredicted;
+
+        const overlay = $("overlay-select").value;
+        const predicted = showPredicted
+          ? overlay === "mle"
+            ? Plot.toStimuli(mleFull.params)
+            : Plot.toStimuli(Core.constrain(grin.mean, grin.modelClass.name))
+          : null;
+        const predictedLabel =
+          overlay === "mle"
+            ? "MLE (unconstrained)"
+            : `Best model (${grin.modelClass.name})`;
+
+        $("overlay-cap").textContent = !showPredicted
+          ? "Comparison ellipses are hidden — just GRIN's own estimate below."
+          : overlay === "mle"
+            ? "How far GRIN's posterior mean sits from the classical maximum-likelihood fit on the same data."
+            : "How much GRIN's free per-stimulus estimate had to move to satisfy its own best-fitting structural model.";
+
+        const style = figureStyle();
+        $("fig-palette-note").textContent =
+          PALETTE_NOTES[$("fig-palette").value] || "";
+
+        // A webfont used ONLY on canvas (never applied via CSS to any DOM element)
+        // is not guaranteed to be loaded yet — fillText() would silently fall back
+        // to the default font for that draw, with no error. Explicitly request it
+        // first; if the load fails (offline, blocked font host, older browser
+        // without the Font Loading API), draw anyway with whatever font resolves.
+        // Skip this for a palette like "blueprint" whose titleFont is already a
+        // system font stack (contains a comma) — there's nothing to fetch.
+        const wf = style.theme?.titleFont;
+        if (wf && !wf.includes(",") && document.fonts?.load) {
+          try {
+            await document.fonts.load(`16px "${wf}"`);
+          } catch {
+            /* fall back silently */
+          }
+        }
+        if (myToken !== figureRenderToken) return; // a newer render started meanwhile
+
+        // Same pattern as the font preload just above: an image needs to be loaded
+        // before drawImage() will show it (a not-yet-loaded Image just draws
+        // nothing, silently) — request it first, respect the render token after.
+        let stimMarkerImage = null;
+        if (spursUnlocked && $("fig-spurs-marker").checked) {
+          stimMarkerImage = await loadImageOnce(
+            "spur",
+            "./assets/images/spur-icon.svg",
+          );
+        }
+        if (myToken !== figureRenderToken) return; // a newer render started meanwhile
+
+        Plot.renderSpace($("space"), {
+          stimuli,
+          predicted,
+          labels: L,
+          showMarginals: $("fig-marginals").checked,
+          theme: style.theme,
+          background: style.background,
+          title: style.title,
+          showAxisNames: style.showAxisNames,
+          showLevelTicks: style.showLevelTicks,
+          stimMarkerImage,
+          legend: style.bakeLegend
+            ? {
+                stimuli: [0, 1, 2, 3].map((i) => Plot.stimLabel(L, i)),
+                predictedLabel: showPredicted ? predictedLabel : null,
+              }
+            : null,
+        });
+        // the DOM legend below the canvas always shows (cheap, always readable on
+        // screen), independent of whether it's ALSO baked into the exported PNG
+        Plot.buildLegend($("space-legend"), L, {
+          predictedLabel,
+          theme: style.theme,
+        });
+        $("figure-card").hidden = false;
+      }
+
+      function applyFigureLabels() {
+        const [a1, a2] = Plot.parseLevels(
+          $("fig-aLevels").value,
+          currentLabels.a1
+            ? [currentLabels.a1, currentLabels.a2]
+            : ["A1", "A2"],
+        );
+        const [b1, b2] = Plot.parseLevels(
+          $("fig-bLevels").value,
+          currentLabels.b1
+            ? [currentLabels.b1, currentLabels.b2]
+            : ["B1", "B2"],
+        );
+        currentLabels = {
+          aName: $("fig-aName").value || "Dimension A",
+          a1,
+          a2,
+          bName: $("fig-bName").value || "Dimension B",
+          b1,
+          b2,
+        };
+        if (currentParticipant && cache.has(currentParticipant))
+          renderParticipant(currentParticipant);
+      }
+      ["fig-aName", "fig-aLevels", "fig-bName", "fig-bLevels"].forEach((id) =>
+        $(id).addEventListener("input", applyFigureLabels),
+      );
+
+      $("overlay-select").addEventListener("change", () => {
+        if (currentParticipant) renderFigure(currentParticipant);
+      });
+      $("fig-show-predicted").addEventListener("change", () => {
+        if (currentParticipant) renderFigure(currentParticipant);
+      });
+      $("fig-marginals").addEventListener("change", () => {
+        if (currentParticipant) renderFigure(currentParticipant);
+      });
+      // --------------------------------------------------------------------------- //
+      // An easter egg. Plays the real recording; if it's missing, blocked, or fails
+      // to decode for any reason, does nothing — no synthesized substitute.
+      // --------------------------------------------------------------------------- //
+      const EAGLE_AUDIO_SRC = "./assets/audio/eagle-screech.mp3";
+      let eagleAudio = null;
+
+      function playEagleScreech() {
+        try {
+          if (!eagleAudio) {
+            eagleAudio = new Audio(EAGLE_AUDIO_SRC);
+            eagleAudio.volume = 0.65;
+            eagleAudio.preload = "auto";
+          }
+          eagleAudio.currentTime = 0;
+          const p = eagleAudio.play();
+          if (p?.catch) p.catch(() => {}); // missing file, autoplay block, decode error — just skip it
+        } catch {
+          /* no audio support — it's an easter egg, not a feature */
+        }
+      }
+
+      /** A brief on-screen firework flourish. Lives entirely outside the exported
+       * PNG — the PNG gets its own static spark decoration via the "fireworks"
+       * texture; this is purely a viewport celebration, and removes itself. Fades
+       * through navy rather than clearing to transparent each frame, which leaves
+       * short glowing trails behind each spark instead of hard-edged dots. */
+      function celebrateFireworks() {
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.style.cssText =
+            "position:fixed;inset:0;pointer-events:none;z-index:9999;";
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+          document.body.appendChild(canvas);
+          const g = canvas.getContext("2d");
+          const colors = ["#ff5a5a", "#5a8dff", "#ffe14d", "#ffffff"];
+          let particles = [];
+
+          const burst = (x, y) => {
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            for (let i = 0; i < 40; i++) {
+              const ang = (i / 40) * Math.PI * 2;
+              const speed = 2 + Math.random() * 3;
+              particles.push({
+                x,
+                y,
+                vx: Math.cos(ang) * speed,
+                vy: Math.sin(ang) * speed,
+                life: 1,
+                color,
+              });
+            }
+          };
+          burst(canvas.width * 0.3, canvas.height * 0.3);
+          setTimeout(
+            () => burst(canvas.width * 0.7, canvas.height * 0.25),
+            250,
+          );
+          setTimeout(
+            () => burst(canvas.width * 0.5, canvas.height * 0.42),
+            500,
+          );
+
+          const start = performance.now();
+          function frame(t) {
+            g.globalAlpha = 0.2;
+            g.fillStyle = "#002868";
+            g.fillRect(0, 0, canvas.width, canvas.height);
+            for (const p of particles) {
+              p.x += p.vx;
+              p.y += p.vy;
+              p.vy += 0.04;
+              p.life -= 0.012;
+              g.globalAlpha = Math.max(0, p.life);
+              g.fillStyle = p.color;
+              g.beginPath();
+              g.arc(p.x, p.y, 2, 0, Math.PI * 2);
+              g.fill();
+            }
+            g.globalAlpha = 1;
+            particles = particles.filter((p) => p.life > 0);
+            if (t - start < 2200) requestAnimationFrame(frame);
+            else canvas.remove();
+          }
+          requestAnimationFrame(frame);
+        } catch {
+          /* also just an easter egg */
+        }
+      }
+
+      $("export-png").addEventListener("click", () => {
+        const name = currentParticipant
+          ? `grin_${currentParticipant}_space.png`
+          : "grin_space.png";
+        Plot.exportPNG($("space"), name);
+        if ($("fig-palette").value === "independenceDay") {
+          playEagleScreech();
+          celebrateFireworks();
+        }
+      });
+
+      // --- figure style panel -------------------------------------------------- //
+      $("fig-palette").addEventListener("change", () => {
+        const val = $("fig-palette").value;
+        $("fig-custom-colors").hidden = val !== "custom";
+        // Themed palettes (True GRiT's sepia, Matrix's black, etc.) look wrong on a
+        // transparent or mismatched background, so suggest the matching one — but
+        // only as a default; the user can still pick something else afterward.
+        if (val !== "site" && val !== "custom")
+          $("fig-background").value = "palette";
+        // Picking a Spurs palette is a pretty strong signal you want the spur
+        // marker too — suggest it on, but leave it fully overridable.
+        if (
+          spursUnlocked &&
+          (val === "spursModern" || val === "spursRetroFiesta")
+        ) {
+          $("fig-spurs-marker").checked = true;
+        }
+        if (currentParticipant) renderFigure(currentParticipant);
+      });
+      [
+        "fig-background",
+        "fig-legend-on-png",
+        "fig-show-axis-names",
+        "fig-show-ticks",
+        "fig-mono-stim",
+        "fig-color-stim",
+        "fig-color-pred",
+        "fig-spurs-marker",
+      ].forEach((id) =>
+        $(id).addEventListener("input", () => {
+          if (currentParticipant) renderFigure(currentParticipant);
+        }),
+      );
+
+      $("fig-title").addEventListener("input", () => {
+        checkSpursUnlock();
+        if (currentParticipant) renderFigure(currentParticipant);
+      });
+
+      $("fig-style-reset").addEventListener("click", () => {
+        $("fig-palette").value = "site";
+        $("fig-custom-colors").hidden = true;
+        $("fig-background").value = "transparent";
+        $("fig-title").value = "";
+        $("fig-mono-stim").checked = false;
+        $("fig-legend-on-png").checked = true;
+        $("fig-show-axis-names").checked = true;
+        $("fig-show-ticks").checked = true;
+        if (spursUnlocked) {
+          $("fig-spurs-marker").checked = false;
+        }
+        if (currentParticipant) renderFigure(currentParticipant);
+      });
+
+      $("analyse-one").addEventListener("click", () =>
+        analyseOne($("participant-select").value),
+      );
+
+      // --------------------------------------------------------------------------- //
+      // Batch mode
+      // --------------------------------------------------------------------------- //
+      async function analyseAll() {
+        const ids = [...groups.keys()];
+        $("batch-card").hidden = false;
+        $("batch-card").scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
+        $("batch-status").textContent = `Analysing 0 / ${ids.length}…`;
+        const rows = [];
+        let skipped = 0;
+
+        for (let i = 0; i < ids.length; i++) {
+          const id = ids[i];
+          const agg = aggFor(id);
+          const checks = IO.checkInputs(agg, { hasRT });
+          if (checks.errors.length) {
+            skipped++;
+            $("batch-status").textContent =
+              `Analysing ${i + 1} / ${ids.length}… (${skipped} skipped)`;
+            continue;
+          }
+
+          const m = await getModel(hasRT);
+          const grin = await m.predict(agg);
+          const mleFull = Fit.fitClass(agg.counts, agg.trials, "ds");
+          const mleSel = Fit.fitAndSelect(agg.counts, agg.trials, "bic");
+          cache.set(id, {
+            agg,
+            checks,
+            grin,
+            mleFull,
+            mleSel,
+            mleMs: mleSel.ms,
+          });
+
+          const total = agg.trials.reduce((a, b) => a + b, 0);
+          const acc =
+            [0, 1, 2, 3].reduce((s, k) => s + agg.counts[k][k], 0) /
+            Math.max(1, total);
+          rows.push({ id, total, acc, grin, mleFull, mleSel });
+          $("batch-status").textContent = `Analysing ${i + 1} / ${ids.length}…`;
+          // yield to the UI thread so the status text actually paints
+          await new Promise((r) => setTimeout(r, 0));
+        }
+
+        renderBatch(rows, skipped);
+      }
+
+      function renderBatch(rows, skipped) {
+        const header = `<tr><th style="text-align:left">Participant</th><th>n</th><th>Acc.</th>
+    <th>GRIN class</th><th>P(joint)</th><th>GRIN ms</th>
+    <th>MLE class (BIC)</th><th>MLE weight</th><th>MLE ms</th></tr>`;
+        const body = rows
+          .map(
+            (r) => `<tr>
+    <td style="text-align:left"><a href="#" class="batch-row-link" data-id="${escapeAttr(r.id)}"
+        style="font-family:Inter,sans-serif">${escapeHTML(r.id)}</a></td>
+    <td>${r.total}</td><td>${(100 * r.acc).toFixed(1)}%</td>
+    <td>${r.grin.modelClass.name}</td><td>${r.grin.modelClass.joint.toFixed(2)}</td>
+    <td>${r.grin.ms.toFixed(2)}</td>
+    <td>${r.mleSel.best.model}</td><td>${r.mleSel.best.weight.toFixed(2)}</td>
+    <td>${r.mleSel.ms.toFixed(1)}</td>
+  </tr>`,
+          )
+          .join("");
+        $("batch-table").innerHTML = header + body;
+        $("batch-status").innerHTML =
+          `<span class="pill ok">${rows.length} analysed</span>` +
+          (skipped
+            ? ` <span class="pill warn">${skipped} skipped (see per-participant notes)</span>`
+            : "");
+        window.__grinBatchRows = rows; // for CSV export
+
+        // batch mode already populated `cache` for every non-skipped participant, so
+        // jumping to one's figure is a cache-only redraw — no refit.
+        document.querySelectorAll(".batch-row-link").forEach((a) => {
+          a.addEventListener("click", (e) => {
+            e.preventDefault();
+            const id = a.dataset.id;
+            $("participant-select").value = id;
+            renderParticipant(id);
+            $("figure-card").scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          });
+        });
+      }
+
+      $("analyse-all").addEventListener("click", analyseAll);
+      $("dl-batch-csv").addEventListener("click", () => {
+        const rows = window.__grinBatchRows || [];
+        if (!rows.length) return;
+        const cols = [
+          "participant",
+          "n_trials",
+          "accuracy",
+          "grin_model",
+          "grin_joint_p",
+          "grin_ms",
+          "mle_bic_model",
+          "mle_bic_weight",
+          "mle_ms",
+          ...Core.PARAM_NAMES.map((n) => "grin_" + n),
+          ...Core.PARAM_NAMES.map((n) => "mle_" + n),
+        ];
+        const lines = [cols.join(",")];
+        for (const r of rows) {
+          lines.push(
+            [
+              csvEscape(r.id),
+              r.total,
+              r.acc.toFixed(4),
+              r.grin.modelClass.name,
+              r.grin.modelClass.joint.toFixed(3),
+              r.grin.ms.toFixed(3),
+              r.mleSel.best.model,
+              r.mleSel.best.weight.toFixed(3),
+              r.mleSel.ms.toFixed(2),
+              ...r.grin.mean.map((v) => v.toFixed(4)),
+              ...r.mleFull.params.map((v) => v.toFixed(4)),
+            ].join(","),
+          );
+        }
+        downloadText(lines.join("\n") + "\n", "grin_batch_results.csv");
+      });
+
+      // --------------------------------------------------------------------------- //
+      // Small helpers
+      // --------------------------------------------------------------------------- //
+      function escapeHTML(s) {
+        return String(s).replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      }
+      function escapeAttr(s) {
+        return escapeHTML(s);
+      }
+      function csvEscape(s) {
+        const t = String(s);
+        return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+      }
+
+      Plot.onThemeChange(() => {
+        const id = $("participant-select").value;
+        if (id && cache.has(id)) renderParticipant(id);
+      });
+    </script>
+  </body>
+</html>

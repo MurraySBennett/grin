@@ -1,0 +1,1081 @@
+/* =============================================================================
+   grin.css — the GRIN web app.
+
+   DESIGN PRINCIPLE
+   ----------------
+   The chrome is Murray's site: slate-blue header, Press Start 2P headings,
+   pastel scanlines, dark mode, Konami. The chrome FRAMES the science; it does
+   not compete with it. So inside a panel, chart, or table there are no glows,
+   no text-shadows, no animations. Numbers are numbers. Personality lives at the
+   edges, seriousness lives in the middle.
+
+   Tokens are lifted from site.css so the two stay in sync. If site.css changes,
+   change these.
+   ============================================================================= */
+
+:root {
+  /* --- Murray's palette (from site.css) --- */
+  --slate: #7b68ee;
+  --slate-deep: #6a5acd;
+  --slate-dark: #5a4fcc;
+  --steel: #4682b4;
+  --rose: #e8a0b8;
+  --rose-deep: #b06080;
+  --cream: #fffff0;
+  --ice: #e0ffff;
+  --ink: #1a1a2e;
+
+  /* --- data / status --- */
+  --good: #2d6a4a;
+  --good-bg: #d4edda;
+  --warn: #856404;
+  --warn-bg: #fff3cd;
+  --bad: #c0392b;
+  --bad-bg: #fdecea;
+
+  /* --- surfaces --- */
+  --paper: #ffffff;
+  --panel: #f8f8ff;
+  --line: #e0e0ff;
+  --line-soft: #f0f0ff;
+  --mute: #6f6a8f;
+  --mute-soft: #9a95b8;
+
+  /* --- the GRT plot convention, in Murray's colours ---
+     SOLID = the representation you specified / the raw estimate  (slate, 4 shades)
+     DASHED = what was recovered / what the model predicts        (rose)
+     This is fixed across every page and figure. */
+  --stim-0: #2a1f5e;
+  --stim-1: #5a4fcc;
+  --stim-2: #7b68ee;
+  --stim-3: #b8aef5;
+  --predicted: #b06080;
+  --predicted-soft: #e8a0b8;
+
+  --radius: 0.62rem;
+  --radius-sm: 0.4rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--cream);
+  color: var(--ink);
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+  line-height: 1.6;
+}
+
+/* --- the pastel scanline drift, straight from site.css --- */
+@keyframes pastelFlickerDrift {
+  0% {
+    opacity: 0.25;
+    background-position:
+      0 0,
+      0 0;
+  }
+  50% {
+    opacity: 0.3;
+    background-position:
+      0 3.12rem,
+      0 0;
+  }
+  100% {
+    opacity: 0.25;
+    background-position:
+      0 6.25rem,
+      0 0;
+  }
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.02) 0px,
+      rgba(0, 0, 0, 0.02) 1px,
+      transparent 1px,
+      transparent 2px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(106, 90, 205, 0.1) 0px,
+      rgba(106, 90, 205, 0.1) 2px,
+      rgba(85, 205, 252, 0.06) 2px,
+      rgba(85, 205, 252, 0.06) 4px,
+      rgba(255, 255, 255, 0.06) 4px,
+      rgba(255, 255, 255, 0.06) 6px,
+      rgba(247, 168, 184, 0.07) 6px,
+      rgba(247, 168, 184, 0.07) 8px,
+      rgba(106, 90, 205, 0.1) 8px,
+      rgba(106, 90, 205, 0.1) 10px
+    );
+  background-blend-mode: overlay;
+  animation: pastelFlickerDrift 15s linear infinite;
+}
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+h1,
+h2,
+h3,
+summary {
+  font-family: "Press Start 2P", cursive;
+}
+a {
+  color: var(--slate-deep);
+}
+a:hover {
+  color: var(--slate-dark);
+}
+
+code,
+.mono,
+.num {
+  font-family: "SF Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+code {
+  background: var(--line-soft);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+  font-size: 0.88em;
+}
+
+/* =============================================================================
+   SHELL — header / nav / footer (matches the main site)
+   ============================================================================= */
+header.site {
+  background-color: var(--slate);
+  color: var(--ice);
+  padding: 1.1rem 0 0.9rem;
+  text-align: center;
+  box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.2);
+  border-radius: 0 0 0.9375rem 0.9375rem;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+header.site h1 {
+  margin: 0;
+  font-size: 1.15rem;
+  text-shadow: 0.1875rem 0.1875rem 0 rgba(0, 0, 0, 0.2);
+}
+header.site .tagline {
+  font-family: "Inter", sans-serif;
+  font-size: 0.85rem;
+  margin: 0.5rem auto 0;
+  max-width: 46rem;
+  padding: 0 1rem;
+  opacity: 0.92;
+}
+
+nav.site {
+  margin-top: 0.9rem;
+}
+nav.site ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+nav.site a {
+  color: var(--ice);
+  text-decoration: none;
+  font-family: "Press Start 2P", cursive;
+  font-size: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  border: 0.12rem solid var(--ice);
+  border-radius: 0.5rem;
+  display: block;
+  text-shadow:
+    -0.062rem -0.062rem 0 black,
+    0.062rem -0.062rem 0 black,
+    -0.062rem 0.062rem 0 black,
+    0.062rem 0.062rem 0 black;
+  transition:
+    transform 0.15s steps(2, start),
+    box-shadow 0.15s steps(2, start);
+}
+nav.site a:hover,
+nav.site a.active {
+  background-color: var(--rose);
+  color: #fff;
+  border-color: var(--rose-deep);
+  transform: translateY(-0.25rem);
+  box-shadow: 0.12rem 0.12rem 0 #333;
+}
+
+footer.site {
+  background-color: var(--slate);
+  color: var(--ice);
+  text-align: center;
+  padding: 1.1rem 1rem;
+  margin-top: auto;
+  border-radius: 0.9375rem 0.9375rem 0 0;
+  box-shadow: 0 -0.25rem 0.5rem rgba(0, 0, 0, 0.2);
+  font-size: 0.85rem;
+}
+footer.site a {
+  color: var(--ice);
+}
+footer.site .fine {
+  max-width: 48rem;
+  margin: 0.5rem auto 0;
+  opacity: 0.85;
+  font-size: 0.78rem;
+}
+
+.container {
+  max-width: 75rem;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.25rem;
+  flex-grow: 1;
+}
+
+/* =============================================================================
+   TOOL LAYOUT
+   ============================================================================= */
+.tool {
+  display: grid;
+  grid-template-columns: 21rem 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+@media (max-width: 62rem) {
+  .tool {
+    grid-template-columns: 1fr;
+  }
+}
+
+.viz-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+@media (max-width: 56rem) {
+  .viz-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* control panel */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.1rem;
+  box-shadow: 0 0.12rem 0.12rem rgba(0, 0, 0, 0.06);
+}
+.panel.sticky {
+  position: sticky;
+  top: 6.5rem;
+}
+
+/* content card */
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.1rem;
+  margin-bottom: 1.1rem;
+  box-shadow: 0 0.12rem 0.12rem rgba(0, 0, 0, 0.06);
+}
+
+/* Section titles: retro font, but SMALL and quiet — a label, not a shout. */
+.eyebrow {
+  font-family: "Press Start 2P", cursive;
+  font-size: 0.6rem;
+  letter-spacing: 0.03em;
+  color: var(--slate-deep);
+  text-transform: uppercase;
+  margin: 0 0 0.9rem;
+  display: block;
+}
+.card > .eyebrow:first-child,
+.panel > .eyebrow:first-child {
+  margin-top: 0;
+}
+
+/* =============================================================================
+   CONTROLS — plain Inter, no decoration. These are instruments.
+   ============================================================================= */
+label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin: 0.9rem 0 0.25rem;
+}
+label:first-child {
+  margin-top: 0;
+}
+.val {
+  float: right;
+  font-family: "SF Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--slate-deep);
+  font-weight: 700;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--slate);
+}
+input[type="text"],
+input[type="number"],
+input:not([type]),
+select,
+textarea {
+  width: 100%;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.85rem;
+  background: #fff;
+  color: var(--ink);
+}
+input[type="checkbox"],
+input[type="radio"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--slate);
+}
+input[type="file"] {
+  font-size: 0.8rem;
+  width: 100%;
+}
+
+.row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 0.6rem;
+}
+.row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+.checkrow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+/* buttons — the site's .button, but usable at control density */
+button,
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background-color: var(--slate);
+  color: #fff;
+  border: 2px solid var(--slate-dark);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.9rem;
+  font-family: "Press Start 2P", cursive;
+  font-size: 0.6rem;
+  line-height: 1.5;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    transform 0.1s ease;
+}
+button:hover,
+.button:hover {
+  background-color: var(--slate-deep);
+  transform: translateY(-1px);
+}
+button:active,
+.button:active {
+  transform: scale(0.97);
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+button.ghost {
+  background: #fff;
+  color: var(--slate-deep);
+  border-color: var(--slate);
+}
+button.ghost:hover {
+  background: var(--line-soft);
+}
+button.wide {
+  width: 100%;
+}
+
+/* radio group used for the architecture picker */
+.choices {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+.choice {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.82rem;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.choice:hover {
+  border-color: var(--slate);
+  background: var(--line-soft);
+}
+.choice input {
+  flex: none;
+}
+.choice.on {
+  border-color: var(--slate);
+  background: var(--line-soft);
+}
+.choice .what {
+  font-weight: 600;
+}
+.choice .how {
+  display: block;
+  font-family: "SF Mono", ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: var(--mute);
+}
+
+/* =============================================================================
+   DATA DISPLAY — deliberately plain
+   ============================================================================= */
+.status {
+  font-size: 0.8rem;
+  color: var(--mute);
+  margin-top: 0.7rem;
+}
+.status.err {
+  color: var(--bad);
+}
+
+canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.cap {
+  font-size: 0.78rem;
+  color: var(--mute);
+  margin-top: 0.5rem;
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--mute);
+}
+.dot {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  margin-right: 0.3rem;
+  vertical-align: middle;
+}
+
+/* confusion matrix */
+table.cm {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: "SF Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+}
+table.cm th {
+  color: var(--mute);
+  font-weight: 600;
+  font-size: 0.66rem;
+  font-family: "Inter", sans-serif;
+  padding: 0.3rem;
+}
+table.cm td {
+  text-align: center;
+  padding: 0.55rem 0.25rem;
+  border: 1px solid #fff;
+}
+
+/* editable count grid */
+table.grid {
+  border-collapse: separate;
+  border-spacing: 0.15rem;
+}
+table.grid th {
+  font-size: 0.62rem;
+  color: var(--mute);
+  font-weight: 600;
+  padding: 0.2rem;
+}
+table.grid td input {
+  width: 3.4rem;
+  text-align: center;
+  padding: 0.35rem;
+  font-family: "SF Mono", ui-monospace, monospace;
+}
+
+/* estimate rows with credible intervals */
+.est {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0.5rem 0;
+}
+.est .lbl {
+  width: 10rem;
+  font-size: 0.82rem;
+  flex: none;
+}
+.est .track {
+  flex: 1;
+  height: 0.6rem;
+  position: relative;
+  background: var(--line-soft);
+  border-radius: 0.3rem;
+}
+.est .ci {
+  position: absolute;
+  height: 100%;
+  background: var(--predicted-soft);
+  opacity: 0.55;
+  border-radius: 0.3rem;
+}
+.est .pt {
+  position: absolute;
+  height: 100%;
+  width: 2px;
+  background: var(--slate-dark);
+  border-radius: 1px;
+}
+.est .zero {
+  position: absolute;
+  height: 100%;
+  width: 1px;
+  background: var(--mute-soft);
+}
+.est .num {
+  width: 7rem;
+  flex: none;
+  text-align: right;
+  font-family: "SF Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+  color: var(--mute);
+}
+
+/* probability bars (constructs, architectures) */
+.pbar {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0.4rem 0;
+}
+.pbar .lbl {
+  width: 11rem;
+  flex: none;
+  font-size: 0.8rem;
+}
+.pbar .track {
+  flex: 1;
+  height: 0.75rem;
+  background: var(--line-soft);
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+.pbar .fill {
+  height: 100%;
+  background: var(--slate);
+  border-radius: 0.375rem;
+}
+.pbar .fill.dim {
+  background: var(--mute-soft);
+}
+.pbar .num {
+  width: 3.2rem;
+  flex: none;
+  text-align: right;
+  font-family: "SF Mono", ui-monospace, monospace;
+  font-size: 0.78rem;
+  color: var(--mute);
+}
+.pbar-hit {
+  background: var(--good-bg);
+  border-radius: var(--radius-sm);
+  padding: 0.15rem 0.4rem;
+  margin-left: -0.4rem;
+  margin-right: -0.4rem;
+  outline: 1px solid #c3e6cb;
+}
+.pbar-hit .lbl {
+  font-weight: 700;
+  color: var(--good);
+}
+.pbar-hit .fill {
+  background: var(--good);
+}
+
+/* pills / badges — reuse the site's status-badge look, but readable */
+.pill {
+  display: inline-block;
+  font-family: "Press Start 2P", cursive;
+  font-size: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.25rem;
+  letter-spacing: 0.03em;
+  vertical-align: middle;
+  border: 1px solid transparent;
+}
+.pill.ok {
+  background: var(--good-bg);
+  color: var(--good);
+  border-color: #c3e6cb;
+}
+.pill.warn {
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-color: #ffeeba;
+}
+.pill.bad {
+  background: var(--bad-bg);
+  color: var(--bad);
+  border-color: #f5c6cb;
+}
+.pill.neutral {
+  background: #e2e3e5;
+  color: #383d41;
+  border-color: #d6d8db;
+}
+
+/* callouts */
+.note {
+  background: var(--panel);
+  border-left: 4px solid var(--slate);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 0.8rem 1rem;
+  margin: 0.9rem 0;
+  font-size: 0.88rem;
+}
+.note.warn {
+  border-left-color: #d8a13a;
+  background: #fffbe6;
+}
+.note.bad {
+  border-left-color: var(--bad);
+  background: var(--bad-bg);
+}
+.note p:first-child {
+  margin-top: 0;
+}
+.note p:last-child {
+  margin-bottom: 0;
+}
+.note h4 {
+  font-family: "Inter", sans-serif;
+  margin: 0 0 0.35rem;
+  font-size: 0.9rem;
+}
+
+/* the plain-English box */
+.plain {
+  background: #fff7fa;
+  border: 1px solid #f3d9e4;
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+}
+.plain .eyebrow {
+  color: var(--rose-deep);
+}
+.plain p {
+  margin: 0.5rem 0;
+}
+
+/* the "this is a stub / not the real network" banner. Loud on purpose. */
+.stub-banner {
+  background: repeating-linear-gradient(
+    45deg,
+    #fff3cd,
+    #fff3cd 10px,
+    #ffeeba 10px,
+    #ffeeba 20px
+  );
+  border: 2px dashed #d8a13a;
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 1rem;
+  font-size: 0.82rem;
+  color: #6b5310;
+}
+
+/* details/summary, matching the site */
+details {
+  margin: 0.8rem 0 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: #fff;
+}
+details[open] {
+  border-color: #b8b0f0;
+}
+summary {
+  font-size: 0.6rem;
+  color: var(--slate-deep);
+  padding: 0.7rem 0.8rem;
+  cursor: pointer;
+  background: var(--panel);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  user-select: none;
+}
+summary::-webkit-details-marker {
+  display: none;
+}
+summary::before {
+  content: "▶";
+  font-size: 0.5rem;
+  color: var(--mute-soft);
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+details[open] summary::before {
+  transform: rotate(90deg);
+}
+summary:hover {
+  background: var(--line-soft);
+  color: var(--slate-dark);
+}
+.details-body {
+  padding: 0.9rem;
+}
+
+/* landing page doors */
+.doors {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1.25rem;
+  margin: 1.5rem 0;
+}
+.door {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.2rem;
+  box-shadow: 0 0.25rem 0.62rem rgba(65, 60, 60, 0.08);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+.door:hover {
+  transform: translateY(-0.15rem);
+  box-shadow: 0 0.5rem 0.9375rem rgba(0, 0, 0, 0.15);
+  border-color: var(--rose);
+}
+.door h3 {
+  margin: 0 0 0.6rem;
+  font-size: 0.72rem;
+  color: var(--steel);
+}
+.door p {
+  margin: 0;
+  font-size: 0.87rem;
+  color: #555;
+}
+.door .kicker {
+  display: block;
+  margin-top: 0.7rem;
+  font-family: "Press Start 2P", cursive;
+  font-size: 0.5rem;
+  color: var(--slate-deep);
+}
+
+.lede {
+  font-size: 1rem;
+  max-width: 46rem;
+}
+.hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 1.5rem 0;
+}
+
+/* =============================================================================
+   DARK MODE — mirrors site.css. A single class, `.is-dark`, is set on <body> by
+   grin-theme.js (which reads the OS preference and the saved override). Driving
+   it from one class means the CSS and the <canvas> drawing code can never
+   disagree about which theme is active — which they would if the CSS used a
+   media query the canvas couldn't see.
+   ============================================================================= */
+html.is-dark {
+  background-color: #0f0d1a;
+  color: #d4cef8;
+
+  --paper: #1a1530;
+  --panel: #1e1838;
+  --line: #3d3470;
+  --line-soft: #252050;
+  --ink: #d4cef8;
+  --mute: #9990c8;
+  --mute-soft: #6a6290;
+
+  --stim-0: #c4b8ff;
+  --stim-1: #a899f0;
+  --stim-2: #7b68ee;
+  --stim-3: #5a4fcc;
+  --predicted: #e8a0b8;
+  --predicted-soft: #b06080;
+
+  --good: #6fcf97;
+  --good-bg: #1a3a2a;
+  --warn: #f0c040;
+  --warn-bg: #3a2e10;
+  --bad: #e57373;
+  --bad-bg: #3a1a1a;
+}
+/* The body carries an OPAQUE background (var(--cream)), so the dark colour on
+   <html> above is hidden behind it unless we repaint the body too. Without this,
+   night mode reads as light ivory. Mirrors site.css's body.dark-mode background. */
+html.is-dark body {
+  background-color: #0f0d1a;
+}
+/* Dark scanline texture. Targets body::before — the pseudo-element that actually
+   has `content`, fixed positioning and the drift animation — so it overrides the
+   light texture. (The previous html.is-dark::before selector set no `content`
+   and therefore never rendered.) */
+html.is-dark body::before {
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.015) 0px,
+      rgba(255, 255, 255, 0.015) 1px,
+      transparent 1px,
+      transparent 2px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(123, 104, 238, 0.08) 0px,
+      rgba(123, 104, 238, 0.08) 2px,
+      rgba(85, 205, 252, 0.05) 2px,
+      rgba(85, 205, 252, 0.05) 4px,
+      rgba(255, 255, 255, 0.03) 4px,
+      rgba(255, 255, 255, 0.03) 6px,
+      rgba(247, 168, 184, 0.05) 6px,
+      rgba(247, 168, 184, 0.05) 8px,
+      rgba(123, 104, 238, 0.08) 8px,
+      rgba(123, 104, 238, 0.08) 10px
+    );
+  opacity: 0.45;
+}
+html.is-dark header.site,
+html.is-dark footer.site {
+  background-color: #2a1f5e;
+}
+html.is-dark canvas {
+  background: #16122b;
+}
+html.is-dark table.cm td {
+  border-color: #16122b;
+}
+html.is-dark .plain {
+  background: #2a1c26;
+  border-color: #4a2f3d;
+}
+html.is-dark .note.warn {
+  background: #2a2010;
+  border-left-color: #6a5218;
+}
+html.is-dark .stub-banner {
+  background: repeating-linear-gradient(
+    45deg,
+    #2a2010,
+    #2a2010 10px,
+    #332612 10px,
+    #332612 20px
+  );
+  color: #f0c040;
+  border-color: #6a5218;
+}
+html.is-dark button.ghost {
+  background: var(--panel);
+}
+html.is-dark input,
+html.is-dark select,
+html.is-dark textarea,
+html.is-dark .choice,
+html.is-dark details {
+  background: var(--panel);
+  color: var(--ink);
+}
+html.is-dark a {
+  color: #a899f0;
+}
+
+/* theme toggle, borrowed from the site */
+#theme-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.35rem 0 0.1rem;
+  opacity: 0.65;
+  transition: opacity 0.2s ease;
+}
+#theme-row:hover {
+  opacity: 1;
+}
+#theme-toggle {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--ice);
+  width: 2rem;
+  height: 2rem;
+  padding: 0.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: transform 0.1s steps(2, start);
+}
+#theme-toggle:hover {
+  transform: scale(1.25);
+  background: transparent;
+}
+
+/* =============================================================================
+   KONAMI — kept, because it costs the science nothing and it is his site.
+   ============================================================================= */
+body.konami-mode {
+  background-color: #0d0f1a !important;
+  color: #00ff00 !important;
+}
+body.konami-mode .panel,
+body.konami-mode .card,
+body.konami-mode .door,
+body.konami-mode details {
+  background-color: #1a1a2e !important;
+  color: #00ff00 !important;
+  border-color: #00ff00 !important;
+  box-shadow: 0 0 0.5rem rgba(0, 255, 0, 0.3) !important;
+}
+body.konami-mode h1,
+body.konami-mode h2,
+body.konami-mode h3,
+body.konami-mode summary,
+body.konami-mode .eyebrow {
+  color: #00ff00 !important;
+  text-shadow:
+    0 0 0.1875rem lime,
+    0 0 0.37rem lime;
+}
+body.konami-mode header.site,
+body.konami-mode footer.site {
+  background-color: lime !important;
+  color: black !important;
+}
+body.konami-mode nav.site a {
+  color: black !important;
+  background-color: lime !important;
+  border-color: black !important;
+  text-shadow: none !important;
+}
+body.konami-mode canvas {
+  background: #0d0f1a !important;
+  border-color: #00ff00 !important;
+}
+
+/* =============================================================================
+   ACCESSIBILITY
+   ============================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  body::before {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+:focus-visible {
+  outline: 3px solid var(--rose);
+  outline-offset: 2px;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 40rem) {
+  header.site h1 {
+    font-size: 0.85rem;
+  }
+  .container {
+    padding: 0.75rem;
+  }
+  .est .lbl {
+    width: 7rem;
+  }
+  .pbar .lbl {
+    width: 8rem;
+  }
+}

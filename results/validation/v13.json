@@ -1,0 +1,16 @@
+{
+  "id": "v13",
+  "claim": "RT gain (real but modest)",
+  "result": {
+    "counts_only": {
+      "rho_MAE": 0.3165707581271652,
+      "z_MAE": 0.3997555554547845
+    },
+    "plus_RT": {
+      "rho_MAE": 0.30916866904294515,
+      "z_MAE": 0.4369513455323824
+    }
+  },
+  "pass": true,
+  "seconds": 11.3
+}

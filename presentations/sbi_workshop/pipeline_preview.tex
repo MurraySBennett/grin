@@ -1,0 +1,11 @@
+%% Compile THIS to iterate on the hero figure without rebuilding the poster.
+%%   latexmk -pdf pipeline_preview.tex
+%% Page is exactly the hero figure's footprint, so what you see is what lands
+%% on the poster at 1:1.
+\documentclass{article}
+\usepackage[paperwidth=48in, paperheight=14in, margin=1.5in]{geometry}
+\usepackage{grinposter}
+\pagestyle{empty}
+\begin{document}
+\noindent\input{pipeline}
+\end{document}

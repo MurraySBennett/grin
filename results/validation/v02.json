@@ -1,0 +1,20 @@
+{
+  "id": "v02",
+  "claim": "prior coverage is broad and verified",
+  "result": {
+    "accuracy_range": [
+      0.31978278251599146,
+      0.9973958333333334
+    ],
+    "bias_range": [
+      -0.2826179890560876,
+      0.33223684210526316
+    ],
+    "congruency_range": [
+      -0.6690685045948204,
+      0.5465988434254689
+    ]
+  },
+  "pass": true,
+  "seconds": 0.0
+}

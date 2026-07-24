@@ -1,0 +1,18 @@
+{
+  "id": "v14",
+  "claim": "architecture recovery (5-way SFT); dimension-neglect detection",
+  "result": {
+    "overall": 0.8614583333333333,
+    "per_architecture": {
+      "serial_exhaustive": 0.6256410256410256,
+      "serial_self_terminating": 0.949748743718593,
+      "parallel_exhaustive": 0.7821782178217822,
+      "parallel_self_terminating": 0.985,
+      "coactive": 0.9817073170731707
+    },
+    "self_terminating_mean": 0.9673743718592964,
+    "chance": 0.2
+  },
+  "pass": true,
+  "seconds": 7.5
+}
