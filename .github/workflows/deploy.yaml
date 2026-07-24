@@ -1,0 +1,106 @@
+name: Deploy to S3
+
+# Triggers on every push to the main branch.
+# To deploy: commit your changes and push to main (or merge a PR into main).
+#
+# UNLIKE a repo where the root IS the site: grin's deployable content lives in
+# web/ only. src/, data/, results/, scripts/, and everything else at the repo
+# root is the model/training project and must NEVER be synced to the bucket —
+# every command below is scoped to web/ specifically, on purpose. If you ever
+# add a step here, keep that scoping; a bare `aws s3 sync . s3://...` in this
+# repo would publish the entire private source tree.
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Sync web/ to S3 and invalidate CloudFront
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Configure AWS credentials from GitHub Secrets.
+      #    You must add these three secrets in your GitHub repo:
+      #    Settings → Secrets and variables → Actions → New repository secret
+      #    - AWS_ACCESS_KEY_ID
+      #    - AWS_SECRET_ACCESS_KEY
+      #    - AWS_REGION (e.g. us-east-1)
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # 3. Sync web/ to S3, in three passes by how long a given file is safe
+      #    to cache. This is the one place this workflow deviates from the
+      #    plain "HTML no-cache, everything else 1 year" pattern: the JS/CSS/
+      #    manifests here change on nearly every deploy right now, and
+      #    CloudFront invalidation only clears the CDN edge, never a
+      #    visitor's own browser cache. A 1-year immutable header on files
+      #    that are NOT actually immutable means a returning visitor can
+      #    silently keep running week-old JS against today's HTML, with no
+      #    error anywhere. Reserve the long cache for things that only change
+      #    when you deliberately replace them.
+
+      # 3a. HTML: no-cache, always revalidated. A deploy must be visible
+      #     immediately, since the HTML is what references everything else.
+      - name: Sync HTML (no-cache)
+        run: |
+          aws s3 sync web/ s3://${{ secrets.S3_BUCKET_NAME }} \
+            --exclude "*" \
+            --include "*.html" \
+            --cache-control "no-cache, no-store, must-revalidate" \
+            --delete
+
+      # 3b. Genuinely immutable binaries: the vendored ONNX runtime and the
+      #     trained model weights. These only change when you intentionally
+      #     replace them -- if you ever DO replace an .onnx file without
+      #     renaming it, drop this step's cache TTL for that one deploy, or
+      #     CloudFront/browsers will keep serving the old weights.
+      - name: Sync model weights + ONNX runtime (long cache)
+        run: |
+          aws s3 sync web/assets/models s3://${{ secrets.S3_BUCKET_NAME }}/assets/models \
+            --cache-control "public, max-age=31536000, immutable" \
+            --content-type "application/octet-stream" \
+            --exclude "*" --include "*.onnx" \
+            --delete
+
+          aws s3 cp web/assets/vendor/ort/ort-wasm-simd.wasm \
+            s3://${{ secrets.S3_BUCKET_NAME }}/assets/vendor/ort/ort-wasm-simd.wasm \
+            --cache-control "public, max-age=31536000, immutable" \
+            --content-type "application/wasm"
+
+          aws s3 cp web/assets/vendor/ort/ort.min.js \
+            s3://${{ secrets.S3_BUCKET_NAME }}/assets/vendor/ort/ort.min.js \
+            --cache-control "public, max-age=31536000, immutable" \
+            --content-type "application/javascript"
+
+      # 3c. Everything else: JS, CSS, JSON manifests, images, audio. Short
+      #     cache, so a stale copy in a visitor's browser self-corrects
+      #     within the hour instead of persisting for up to a year.
+      - name: Sync remaining assets (short cache)
+        run: |
+          aws s3 sync web/assets s3://${{ secrets.S3_BUCKET_NAME }}/assets \
+            --exclude "*.html" \
+            --exclude "models/*.onnx" \
+            --exclude "vendor/ort/ort-wasm-simd.wasm" \
+            --exclude "vendor/ort/ort.min.js" \
+            --cache-control "public, max-age=3600" \
+            --delete
+
+      # 4. Invalidate the CloudFront distribution so the CDN edge sees the
+      #    new HTML immediately. (This does not reach visitors' own browser
+      #    caches -- see the cache-tiering note above.) Add this secret too:
+      #    - CLOUDFRONT_DISTRIBUTION_ID
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+
