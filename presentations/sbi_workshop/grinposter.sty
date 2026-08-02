@@ -22,8 +22,9 @@
 \RequirePackage{calc}
 \RequirePackage{qrcode}
 \RequirePackage[most]{tcolorbox}
+\RequirePackage{fontawesome5}
 \usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds,shapes.geometric,%
-                decorations.pathreplacing,shadows.blur}
+                decorations.pathreplacing,shadows.blur,shadows}
 
 %% ---------------------------------------------------------------------------
 %%  FONT
@@ -64,7 +65,7 @@
 \newcommand{\authorfont}   {\fontsize{44}{54}\selectfont}
 \newcommand{\afflfont}     {\fontsize{32}{40}\selectfont\itshape}
 \newcommand{\sectionfont}  {\fontsize{44}{50}\selectfont\bfseries}
-\newcommand{\bodyfont}     {\fontsize{28}{38}\selectfont}
+\newcommand{\bodyfont}     {\fontsize{30}{40}\selectfont}
 \newcommand{\smallfont}    {\fontsize{26}{34}\selectfont}
 \newcommand{\capfont}      {\fontsize{22}{28}\selectfont\itshape}
 \newcommand{\reffont}      {\fontsize{22}{26}\selectfont}
@@ -109,43 +110,58 @@
   \par\vspace{0.16in}%
 }
 
-% A figure with a caption underneath, sized to the column.
-% \panelfig{recovery.png}{1.0}{Caption text.}
-\newcommand{\panelfig}[3]{%
-  \par\vspace{0.10in}
-  \noindent\includegraphics[width=#2\linewidth]{#1}%
-  \par\vspace{0.06in}
-  {\capfont\color{gink}#3\par}
-  \vspace{0.11in}
-}
+%% ---------------------------------------------------------------------------
+%%  FIGURE SLOTS  (standardised: same width, height a function of ROW COUNT)
+%%
+%%  The problem this solves: if you just \includegraphics{fig} at a fixed
+%%  width, each PNG's own pixel aspect ratio decides its height, so figures
+%%  with different aspects reserve different vertical space and shove the
+%%  columns around. Instead we reserve a slot whose height is
+%%
+%%        \figheadh  +  rows * \figrowh
+%%
+%%  and drop the image into it. Every 1-row figure is therefore EXACTLY the
+%%  same height on the poster, every 2-row figure exactly the same, and so on
+%%  — regardless of the PNG's real dimensions, or whether it exists yet.
+%%
+%%  \figheadh is the once-per-figure title strip; \figrowh is one row of
+%%  panels plus its axis labels. Tune these TWO lengths to make every figure
+%%  taller or shorter together. make_poster_figures.py reads the same numbers
+%%  (see COL_W_IN there) so the rendered PNGs match these slots exactly and
+%%  fill them with no letterboxing.
+%% ---------------------------------------------------------------------------
+\newlength{\figheadh}\setlength{\figheadh}{0.60in}  % title + top breathing room
+\newlength{\figrowh} \setlength{\figrowh}{1.75in}   % one row of panels
+\newlength{\figsloth}
+\newcommand{\setfigslot}[1]{\setlength{\figsloth}{\dimexpr\figheadh+#1\figrowh\relax}}
 
-% \gfig{recovery.png}{1.0}{Caption.}
-% Looks in figures/ first (poster-specific re-renders), then in the live
-% results/figures/ directory, and if it finds neither it draws a labelled
-% placeholder instead of failing. So the poster ALWAYS compiles, and any
-% missing figure is obvious on the page rather than buried in the log.
-\newlength{\gfigw}
-\newlength{\gfigh}
-\newcommand{\missingfig}[3]{%
-  \setlength{\gfigw}{\dimexpr #2\linewidth - 3pt\relax}%
-  \setlength{\gfigh}{#3\gfigw}%
+% caption, rendered identically whether the figure is present or missing, so
+% the column height does not change when you swap a placeholder for the real PNG
+\newcommand{\figcap}[1]{\par\vspace{0.05in}{\capfont\color{gink}#1\par}\vspace{0.12in}}
+
+% the fixed-height slot itself; content is top-aligned and horizontally centred
+\newcommand{\figbox}[1]{%
   \par\vspace{0.10in}\noindent
-  \begin{tikzpicture}
-    \node[draw=gmute, line width=2pt, dashed, fill=gtint, rounded corners=6pt,
-          minimum width=\gfigw, minimum height=\gfigh,
-          align=center, font=\smallfont, text=gmute]
-         {figure not found:\\\texttt{\detokenize{#1}}};
-  \end{tikzpicture}\par\vspace{0.16in}}
+  \begin{minipage}[t][\figsloth][t]{\linewidth}\centering #1\end{minipage}\par}
 
-% #1 (optional) = height/width aspect, used ONLY to size the placeholder so the
-% layout can be checked before the real figures are in place. Real figures use
-% their own aspect. Defaults to 0.45, which is typical of this figure suite.
-\newcommand{\gfig}[4][0.45]{%
+% \gfig[rows]{file}{caption}   — rows defaults to 1.
+% NOTE the signature changed: the old {width} argument is gone (width is always
+% the full column now — that IS the standardisation). Looks in figures/ first,
+% then results/figures/, and draws a labelled placeholder of the correct slot
+% height if neither exists, so the poster always compiles and the layout is
+% identical before and after the figures are generated.
+\newcommand{\gfig}[3][1]{%
+  \setfigslot{#1}%
   \IfFileExists{figures/#2}%
-    {\panelfig{figures/#2}{#3}{#4}}%
+    {\figbox{\includegraphics[width=\linewidth,height=\figsloth,keepaspectratio]{figures/#2}}\figcap{#3}}%
     {\IfFileExists{../../results/figures/#2}%
-      {\panelfig{../../results/figures/#2}{#3}{#4}}%
-      {\missingfig{#2}{#3}{#1}}}}
+      {\figbox{\includegraphics[width=\linewidth,height=\figsloth,keepaspectratio]{../../results/figures/#2}}\figcap{#3}}%
+      {\figbox{\tikz\node[draw=gmute,line width=2pt,dashed,fill=gtint,
+          rounded corners=6pt, inner sep=0pt,
+          minimum width=\dimexpr\linewidth-3pt\relax, minimum height=\figsloth,
+          align=center, font=\smallfont, text=gmute]
+         {figure not found:\\\texttt{\detokenize{#2}}\\\emph{(#1-row slot)}};}%
+       \figcap{#3}}}}
 
 % Tinted callout, used sparingly (twice on the poster).
 \newtcolorbox{callout}[1][]{%
@@ -157,10 +173,29 @@
 % \bignum{55\%}{of trials saved by adaptive stopping}
 \newcommand{\bignum}[2]{%
   \par\vspace{0.06in}\noindent
-  {\hugenumfont\color{greddeep}#1}\par
-  {\smallfont\color{gink}#2\par}\vspace{0.10in}}
+  \begin{center}%
+    {\hugenumfont\color{greddeep}#1}\par
+  \end{center}%
+  \noindent{\smallfont\color{gink}#2\par}\vspace{0.10in}}
 
 \setlist[itemize]{leftmargin=1.1em, itemsep=0.10in, topsep=0.06in,
                   parsep=0pt, label=\textcolor{gred}{\rule[0.28ex]{0.5em}{0.5em}}}
+
+% A tilted "profile pic" polaroid for the title band in-joke. Robust if the file
+% is absent (shows a faint placeholder), so the poster still compiles.
+% \murraypolaroid[1.2in]{caption}
+\newcommand{\murraypolaroid}[2][1.2in]{%
+  \IfFileExists{murray.png}{%
+    \begin{tikzpicture}[rotate=-4]
+      \node[fill=gpaper, draw=gmute, line width=1.5pt, inner sep=7pt,
+            drop shadow={shadow xshift=2pt, shadow yshift=-2pt, opacity=0.25}] {%
+        \begin{tikzpicture}
+          \node[inner sep=0] (im) {\includegraphics[width=#1]{murray.png}};
+          \node[below=3pt of im, font=\fontsize{20}{22}\selectfont\itshape,
+                text=gink] {#2};
+        \end{tikzpicture}};
+    \end{tikzpicture}}{%
+    \textcolor{gmute}{\smallfont[ murray.png ]}}%
+}
 
 \endinput

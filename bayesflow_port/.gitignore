@@ -1,0 +1,7 @@
+# Generated run artifacts (regenerate via train_and_diagnose.py,
+# train_multiparticipant.py, compare_frameworks.py). Keep the diagnostic
+# evidence -- metrics.csv, history.json, report.md -- but not the large
+# binary checkpoint or the regenerable figures, mirroring the root
+# .gitignore's results/models|figures convention.
+results/*/checkpoints/
+results/*/*.png

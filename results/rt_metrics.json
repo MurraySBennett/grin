@@ -1,21 +1,21 @@
 {
   "n_timed": 150,
   "rt_model": {
-    "batched_ms": 0.10425726572672527,
-    "single_ms": 2.195296287536621,
+    "batched_ms": 0.04000663757324219,
+    "single_ms": 2.030301094055176,
     "mae": 0.3085517778529775,
     "mae_se": 0.013803517224732012
   },
   "grin_counts": {
-    "single_ms": 0.6250095367431641,
+    "single_ms": 0.8400058746337891,
     "mae": 0.44860716541360335,
     "mae_se": 0.020287363716403526
   },
   "mle_selected": {
-    "ms": 570.6514771779379,
+    "ms": 556.3467884063721,
     "mae": 0.9300810047286014,
     "mae_se": 0.04948155420057746
   },
-  "speedup_vs_mle_single": 259.9428060885009,
+  "speedup_vs_mle_single": 274.02181382622683,
   "note": "RT model timed on the same held-out matrices as counts GRIN; MAE is per-matrix mean +/- SE across the timed subset."
 }

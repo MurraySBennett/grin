@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- Anti-flash: apply the theme class on <html> SYNCHRONOUSLY, before first
+         paint. Must stay inline and right after <meta charset>, grin-shell.js is
+         an ES module and runs too late to prevent the flash. Reads the SAME key
+         the rest of the site uses ("msb-dark-mode"), so a dark/light choice made
+         anywhere carries across; falls back to the OS preference. Keep in sync
+         with grin-shell.js resolve(). -->
+    <script>
+      (function () {
+        try {
+          var s = localStorage.getItem("msb-dark-mode");
+          var dark =
+            s === "dark" ||
+            (s !== "light" &&
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) document.documentElement.classList.add("is-dark");
+        } catch (e) {
+          /* storage blocked (private mode) -- fall through to light */
+        }
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>An independence problem - GRIN</title>
+    <meta
+      name="description"
+      content="Whether two perceptual dimensions are independent is the hard part of a General Recognition Theory fit. This page shows why, live, and what it suggests for study design."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./assets/css/grin.css" />
+  </head>
+  <body data-page="independence">
+    <header class="site">
+      <h1>An independence problem</h1>
+      <p class="tagline">
+        The correlation is the hard part. Here is why, and what to do about it.
+      </p>
+      <div id="nav-placeholder"></div>
+    </header>
+
+    <main class="container">
+      <div class="plain" style="margin-bottom: 1.25rem">
+        <span class="eyebrow">The one hard piece</span>
+        <p>
+          GRIN recovers most of a General Recognition Theory representation
+          well. One piece is genuinely hard: whether the two dimensions are
+          perceptually independent, which is to say whether the within-stimulus
+          correlation is zero. This page walks through why, using the same live
+          machinery as the rest of the site, and what it suggests for how you
+          design a study. Everything here points to the difficulty being a
+          feature of the data and the task rather than of a particular way of
+          fitting, so it is worth understanding rather than working around.
+          <a href="./validate.html">Validate</a> shows the recovery and
+          calibration that hold across the rest of the representation; this page
+          is about the one place to be careful.
+        </p>
+      </div>
+
+      <!-- ============================ Section 1 ============================ -->
+      <div class="card">
+        <span class="eyebrow">1. Two spaces, one matrix</span>
+        <p class="cap" style="margin-top: 0">
+          On the left, the two dimensions are independent. On the right, they
+          carry a correlation you set. The perceptual pictures are clearly
+          different. The confusion matrices they produce are almost the same,
+          and that is the whole problem: identification data sees the matrix,
+          not the picture.
+        </p>
+
+        <div class="row" style="gap: 1.5rem; flex-wrap: wrap">
+          <label style="flex: 1; min-width: 150px"
+            >Correlation ρ <span class="val" id="v-rhoA">0.40</span></label
+          >
+          <label style="flex: 1; min-width: 150px"
+            >Trials per stimulus <span class="val" id="v-nA">100</span></label
+          >
+        </div>
+        <div class="row" style="gap: 1.5rem; flex-wrap: wrap">
+          <input
+            style="flex: 1; min-width: 150px"
+            type="range"
+            id="rhoA"
+            min="0"
+            max="0.85"
+            step="0.05"
+            value="0.4"
+          />
+          <input
+            style="flex: 1; min-width: 150px"
+            type="range"
+            id="nA"
+            min="10"
+            max="500"
+            step="10"
+            value="100"
+          />
+        </div>
+
+        <div class="viz-2" style="margin-top: 1rem">
+          <div>
+            <canvas id="space-indep" width="565" height="565"></canvas>
+          </div>
+          <div>
+            <canvas id="space-corr" width="565" height="565"></canvas>
+          </div>
+        </div>
+        <div class="viz-2">
+          <div>
+            <table class="cm" id="cm-indep"></table>
+            <p class="cap" style="text-align: center">Independent (ρ = 0)</p>
+          </div>
+          <div>
+            <table class="cm" id="cm-corr"></table>
+            <p class="cap" style="text-align: center">Correlated</p>
+          </div>
+        </div>
+        <div id="compare-note"></div>
+      </div>
+
+      <!-- ============================ Section 2 ============================ -->
+      <div class="tool">
+        <aside class="panel sticky">
+          <span class="eyebrow">2. Run the frontier</span>
+          <p class="cap" style="margin-top: 0">
+            Simulate many participants across the full range of true
+            correlations, fit each with GRIN, and record how often it reports a
+            correlation at all. The result is the recovery frontier for
+            independence.
+          </p>
+          <label
+            >Trials per stimulus <span class="val" id="v-nB">100</span></label
+          >
+          <input
+            type="range"
+            id="nB"
+            min="10"
+            max="500"
+            step="10"
+            value="100"
+          />
+          <label
+            >Simulated participants
+            <span class="val" id="v-mB">300</span></label
+          >
+          <input
+            type="range"
+            id="mB"
+            min="50"
+            max="600"
+            step="50"
+            value="300"
+          />
+          <hr class="hr" />
+          <div class="row"><button id="runB" class="wide">Run</button></div>
+          <div class="track" style="height: 0.5rem; margin-top: 0.6rem">
+            <div
+              class="fill"
+              id="progressB"
+              style="width: 0%; transition: width 0.1s linear"
+            ></div>
+          </div>
+          <p class="status" id="statusB">Set the batch, then run.</p>
+        </aside>
+
+        <section>
+          <div class="card">
+            <span class="eyebrow">The recovery frontier for independence</span>
+            <canvas id="frontier" width="560" height="320"></canvas>
+            <p class="cap" style="margin-top: 0.3rem">
+              How often GRIN reports a correlation, against the true |ρ|. Near
+              zero it should stay low, correctly calling the dimensions
+              independent. It climbs only as the correlation grows. The stretch
+              in between, where real but weak correlations are missed, is the
+              recovery frontier for independence.
+            </p>
+            <div id="frontier-note"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ============================ Section 3 ============================ -->
+      <div class="card">
+        <span class="eyebrow">3. Why response times don't rescue it</span>
+        <p style="margin: 0">
+          It is tempting to hope that adding response times pins down the
+          correlation the counts cannot. Our results suggest they mostly do not,
+          and the reason is collinearity. As the correlation changes it moves
+          accuracy and response time together, so the timing carries little
+          information about the correlation beyond what accuracy already
+          reported. Adding the full response-time model helps, but modestly. The
+          <a href="./space-builder-time-attack.html">+RT</a> page is where that
+          counts-versus-timing comparison lives. The short version is that
+          timing sharpens the architecture question far more than it sharpens
+          the correlation.
+        </p>
+      </div>
+
+      <!-- ============================ Section 4 ============================ -->
+      <div class="card">
+        <span class="eyebrow">4. What this suggests</span>
+        <p>
+          Based on our own results, recovering the perceptual correlation from a
+          single identification matrix looks like a hard problem, and the
+          difficulty appears to sit in the data and the task rather than in any
+          particular estimator. We would expect approaches built on the same
+          measurements to meet the same wall, so we read this as a feature of
+          the setup, not a shortcoming of one method.
+        </p>
+        <p>
+          Given that, a few directions seem reasonable to us. Treat the
+          correlation as a distribution over the options rather than a single
+          winner, and keep it separate from the separability decision, which is
+          identified far more firmly. An unresolved correlation is best read as
+          unresolved, not as independence and not as a failed fit.
+        </p>
+        <p>
+          Where the correlation genuinely matters, the leverage seems to lie in
+          the data you collect more than the method you fit. Asking participants
+          for confidence ratings, or having them respond to the two dimensions
+          separately or in sequence rather than as one joint response, would add
+          information a single joint matrix does not carry. These are directions
+          our work points toward rather than settled prescriptions, and they are
+          worth testing rather than assuming.
+        </p>
+        <p style="margin-bottom: 0">
+          Finally, methods designed to bring in extra information are worth
+          reaching for where they apply. Approaches that pool across
+          participants, such as GRT-wIND, can recover structure no single matrix
+          holds, and where that kind of design or data is available it is the
+          better tool for the job. None of this counts against maximum
+          likelihood or the existing GRT software. On the parts of the model
+          that are identified, they and GRIN land in the same place.
+        </p>
+      </div>
+    </main>
+
+    <footer class="site">
+      <p>GRIN, amortised Bayesian inference for General Recognition Theory.</p>
+      <p class="fine">
+        <a href="https://murraysbennett.com"
+          >Part of Murray S. Bennett's research</a
+        >
+      </p>
+      <p class="fine">
+        Everything runs client-side. No data leaves your machine.
+      </p>
+    </footer>
+
+    <script type="module">
+      import * as Core from "./assets/js/grt-core.js";
+      import * as Sim from "./assets/js/grt-sim.js";
+      import * as Plot from "./assets/js/grt-plot.js";
+      import { loadModel } from "./assets/js/grin-model.js";
+      import "./assets/js/grin-shell.js";
+
+      const $ = (id) => document.getElementById(id);
+      const L = Plot.DEFAULT_LABELS;
+
+      // ---------------------------------------------------------------- shared
+      function ctxFor(canvas, w, h) {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = w + "px";
+        canvas.style.maxWidth = "100%";
+        canvas.style.height = "auto";
+        const g = canvas.getContext("2d");
+        g.setTransform(dpr, 0, 0, dpr, 0, 0);
+        g.clearRect(0, 0, w, h);
+        return g;
+      }
+
+      // ================================================ Section 1: two spaces
+      function repVec(rho) {
+        const rep = Sim.buildRepresentation({
+          mA: 1.2,
+          mB: 1.2,
+          rho,
+          dA: 0,
+          dB: 0,
+        });
+        return [...rep.zx, ...rep.zy, ...rep.rho];
+      }
+
+      function renderCompare() {
+        const rho = +$("rhoA").value;
+        const n = +$("nA").value;
+        $("v-rhoA").textContent = rho.toFixed(2);
+        $("v-nA").textContent = n;
+
+        const v0 = repVec(0);
+        const vr = repVec(rho);
+        const P0 = Core.forwardProbabilities(v0);
+        const Pr = Core.forwardProbabilities(vr);
+
+        Plot.renderSpace($("space-indep"), {
+          stimuli: Plot.toStimuli(v0),
+          labels: L,
+          title: "ρ = 0",
+        });
+        Plot.renderSpace($("space-corr"), {
+          stimuli: Plot.toStimuli(vr),
+          labels: L,
+          title: `ρ = ${rho.toFixed(2)}`,
+        });
+        Plot.renderCM($("cm-indep"), P0, L);
+        Plot.renderCM($("cm-corr"), Pr, L);
+
+        let maxd = 0;
+        let pAt = 0;
+        for (let i = 0; i < 4; i++)
+          for (let j = 0; j < 4; j++) {
+            const d = Math.abs(P0[i][j] - Pr[i][j]);
+            if (d > maxd) {
+              maxd = d;
+              pAt = Pr[i][j];
+            }
+          }
+        const noise95 = 1.96 * Math.sqrt((pAt * (1 - pAt)) / n);
+        const tellable = maxd > noise95;
+        $("compare-note").innerHTML = `
+    <div class="note ${tellable ? "" : "warn"}">
+      <h4>${tellable ? "Just about distinguishable" : "Hard to tell apart"} at ${n} trials per stimulus</h4>
+      <p>The largest change any cell shows between ρ = 0 and ρ = ${rho.toFixed(2)} is
+      ${(100 * maxd).toFixed(1)} percentage points. At ${n} trials per stimulus, ordinary
+      sampling noise on that cell is about &plusmn;${(100 * noise95).toFixed(1)} points.
+      ${
+        tellable
+          ? "The signal is a little larger than the noise here, so with enough participants the correlation is recoverable."
+          : "The signal sits inside the noise, so the two matrices look the same to the data and the correlation cannot be read off with any confidence."
+      }</p>
+    </div>`;
+      }
+
+      // ================================================ Section 2: frontier
+      let model = null;
+      async function getModel() {
+        if (!model) model = await loadModel("./assets/models/cm");
+        return model;
+      }
+
+      let frontierData = null;
+
+      function drawFrontier(canvas, pts, T) {
+        const W = 560,
+          H = 320,
+          m = 44,
+          pad = 16;
+        const g = ctxFor(canvas, W, H);
+        const x0 = m,
+          y0 = H - m,
+          plotW = W - m - pad,
+          plotH = H - m - pad;
+        const X = (v) => x0 + (v / 0.9) * plotW;
+        const Y = (v) => y0 - v * plotH;
+
+        g.strokeStyle = T.line;
+        g.lineWidth = 1;
+        g.strokeRect(x0, pad, plotW, plotH);
+
+        // y gridlines at 0.5 and 1
+        g.strokeStyle = T.line;
+        g.setLineDash([2, 4]);
+        [0.5].forEach((yy) => {
+          g.beginPath();
+          g.moveTo(x0, Y(yy));
+          g.lineTo(x0 + plotW, Y(yy));
+          g.stroke();
+        });
+        g.setLineDash([]);
+
+        // curve
+        g.strokeStyle = T.predicted;
+        g.fillStyle = T.predicted;
+        g.lineWidth = 2;
+        g.beginPath();
+        pts.forEach(([px, py], i) =>
+          i ? g.lineTo(X(px), Y(py)) : g.moveTo(X(px), Y(py)),
+        );
+        g.stroke();
+        for (const [px, py] of pts) {
+          g.beginPath();
+          g.arc(X(px), Y(py), 3, 0, Math.PI * 2);
+          g.fill();
+        }
+
+        // axes labels
+        g.fillStyle = T.mute;
+        g.font = "11px Inter, system-ui, sans-serif";
+        g.textAlign = "center";
+        ["0", "0.3", "0.6", "0.9"].forEach((t) =>
+          g.fillText(t, X(+t), H - m + 15),
+        );
+        g.fillText("true |ρ|", (x0 + X(0.9)) / 2, H - 6);
+        g.textAlign = "right";
+        g.fillText("100%", x0 - 6, Y(1) + 3);
+        g.fillText("50%", x0 - 6, Y(0.5) + 3);
+        g.fillText("0%", x0 - 6, Y(0) + 3);
+        g.save();
+        g.translate(12, (pad + y0) / 2);
+        g.rotate(-Math.PI / 2);
+        g.textAlign = "center";
+        g.fillText("reports a correlation", 0, 0);
+        g.restore();
+      }
+
+      function renderFrontier() {
+        if (!frontierData) return;
+        const T = Plot.theme();
+        const edges = [0, 0.1, 0.2, 0.3, 0.45, 0.6, 0.75, 0.9];
+        const pts = [];
+        for (let b = 0; b < edges.length - 1; b++) {
+          const lo = edges[b],
+            hi = edges[b + 1];
+          const inBin = frontierData.data.filter(([r]) => r >= lo && r < hi);
+          if (inBin.length) {
+            const rate = inBin.reduce((a, [, v]) => a + v, 0) / inBin.length;
+            pts.push([(lo + hi) / 2, rate]);
+          }
+        }
+        drawFrontier($("frontier"), pts, T);
+
+        const truePI = frontierData.data.filter(([r]) => r < 0.05);
+        const spec = truePI.length
+          ? 1 - truePI.reduce((a, [, v]) => a + v, 0) / truePI.length
+          : NaN;
+        const strong = frontierData.data.filter(([r]) => r >= 0.6);
+        const det = strong.length
+          ? strong.reduce((a, [, v]) => a + v, 0) / strong.length
+          : NaN;
+        $("frontier-note").innerHTML = `
+    <div class="note">
+      <h4>Read from ${frontierData.M} participants at ${frontierData.n} trials per stimulus</h4>
+      <p>When the dimensions truly are independent, GRIN kept that call about
+      ${(100 * spec).toFixed(0)}% of the time. By |ρ| around 0.6 and above it reported the
+      correlation about ${(100 * det).toFixed(0)}% of the time. The climb between the two is
+      where weak correlations live, and they are close to invisible at this sample size.
+      More trials per stimulus shift that climb slowly, which is the point.</p>
+    </div>`;
+      }
+
+      async function runFrontier() {
+        const n = +$("nB").value;
+        const M = +$("mB").value;
+        let mdl;
+        try {
+          mdl = await getModel();
+        } catch (e) {
+          $("statusB").innerHTML =
+            `<span class="pill bad">Couldn't load the model (${e.message}).</span>`;
+          return;
+        }
+        $("runB").disabled = true;
+        $("statusB").textContent = "Simulating…";
+        $("progressB").style.width = "0%";
+
+        const rng = Sim.makeRNG();
+        const U = (lo, hi) => lo + (hi - lo) * rng.uniform();
+        const data = [];
+        for (let k = 0; k < M; k++) {
+          const rho = U(0, 0.9);
+          const rep = Sim.buildRepresentation({
+            mA: U(0.6, 2.0),
+            mB: U(0.6, 2.0),
+            rho,
+            dA: 0,
+            dB: 0,
+          });
+          const sim = Sim.simulateCounts(rep, n, rng);
+          const res = await mdl.predict(sim);
+          const notPI = !(
+            res.corr.pi >= res.corr.rho1 && res.corr.pi >= res.corr.free
+          );
+          data.push([rho, notPI ? 1 : 0]);
+          if (k % 25 === 0) {
+            $("statusB").textContent = `Simulating… ${k} / ${M}`;
+            $("progressB").style.width = `${((100 * k) / M).toFixed(0)}%`;
+            await new Promise((r) => setTimeout(r, 0));
+          }
+        }
+        $("progressB").style.width = "100%";
+        frontierData = { n, M, data };
+        renderFrontier();
+        $("runB").disabled = false;
+        $("statusB").innerHTML =
+          `<span class="pill ok">${M} participants &times; ${n} trials/stimulus.</span>`;
+      }
+
+      // ---------------------------------------------------------------- wiring
+      ["rhoA", "nA"].forEach((id) =>
+        $(id).addEventListener("input", renderCompare),
+      );
+      $("nB").addEventListener(
+        "input",
+        () => ($("v-nB").textContent = $("nB").value),
+      );
+      $("mB").addEventListener(
+        "input",
+        () => ($("v-mB").textContent = $("mB").value),
+      );
+      $("runB").addEventListener("click", runFrontier);
+      Plot.onThemeChange(() => {
+        renderCompare();
+        renderFrontier();
+      });
+
+      renderCompare(); // draw section 1 immediately; section 2 waits for Run
+    </script>
+  </body>
+</html>

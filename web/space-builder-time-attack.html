@@ -2,20 +2,29 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <!-- Anti-flash: apply the theme class on <html> SYNCHRONOUSLY, before first
+         paint. Must stay inline and right after <meta charset>, grin-shell.js is
+         an ES module and runs too late to prevent the flash. Reads the SAME key
+         the rest of the site uses ("msb-dark-mode"), so a dark/light choice made
+         anywhere carries across; falls back to the OS preference. Keep in sync
+         with grin-shell.js resolve(). -->
     <script>
       (function () {
         try {
-          var s = localStorage.getItem("grin-theme");
-          var d =
+          var s = localStorage.getItem("msb-dark-mode");
+          var dark =
             s === "dark" ||
             (s !== "light" &&
+              window.matchMedia &&
               window.matchMedia("(prefers-color-scheme: dark)").matches);
-          if (d) document.documentElement.classList.add("is-dark");
-        } catch (e) {}
+          if (dark) document.documentElement.classList.add("is-dark");
+        } catch (e) {
+          /* storage blocked (private mode) -- fall through to light */
+        }
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Space Builder: Time Attack — GRIN</title>
+    <title>Space Builder: +RT - GRIN</title>
     <meta
       name="description"
       content="Three processing architectures produce identical confusion matrices. Only response times can tell them apart. See it happen."
@@ -30,7 +39,7 @@
   </head>
   <body data-page="time-attack">
     <header class="site">
-      <h1>Space Builder: Time Attack</h1>
+      <h1>Space Builder: +RT</h1>
       <p class="tagline">The thing accuracy cannot tell you.</p>
       <div id="nav-placeholder"></div>
     </header>
@@ -40,16 +49,16 @@
         <span class="eyebrow">The point of this page</span>
         <p>
           A confusion matrix tells you <em>what</em> someone perceived. It
-          cannot tell you <em>how</em> they got there — whether they processed
+          cannot tell you <em>how</em> they got there, whether they processed
           the two dimensions one after another or at the same time, whether they
           waited for both or stopped as soon as one was settled.
         </p>
         <p>
           That isn't a limitation of the method. It's a limitation of the
           <strong>data</strong>. Below, three of the five architectures produce
-          <em>the same confusion matrix</em> — not similar, the same. No amount
-          of accuracy data, and no cleverer statistics, could ever separate
-          them. But they finish at visibly different times.
+          <em>the same confusion matrix</em>, not similar, the same. No amount
+          of accuracy data could separate them, however it is analysed. But they
+          finish at visibly different times.
           <strong
             >Response times are not a nice extra here; they are the only channel
             the information is in.</strong
@@ -62,7 +71,7 @@
         <div class="viz-2">
           <div>
             <p class="cap" style="margin-top: 0">
-              <strong>Counts alone</strong> — just the aggregate 4×4 table.
+              <strong>Counts alone</strong>, just the aggregate 4×4 table.
             </p>
             <table class="cm" style="font-size: 0.75rem">
               <tr>
@@ -104,7 +113,7 @@
           </div>
           <div>
             <p class="cap" style="margin-top: 0">
-              <strong>Counts + response times</strong> — every trial,
+              <strong>Counts + response times</strong>, every trial,
               individually, with a timestamp.
             </p>
             <table class="cm" style="font-size: 0.75rem">
@@ -143,7 +152,7 @@
         </div>
         <p class="cap" style="margin-bottom: 0">
           That's a genuinely different data-collection commitment, not just "the
-          same experiment, analysed more thoroughly" — every trial needs its own
+          same experiment, analysed more thoroughly", every trial needs its own
           timestamp, not just its outcome. The per-trial table gets compressed
           down to 5 quantiles per cell (80 numbers total) before it reaches the
           model; that compression is shown live in the
@@ -236,7 +245,7 @@
               <hr class="hr" />
               <p class="cap" style="margin-top: 0">
                 <strong>The sliders above move a matched pair together</strong>
-                — the textbook pattern. Real separability failures are often
+                , the textbook pattern. Real separability failures are often
                 messier: <strong>one stimulus</strong>
                 wanders on its own. This moves just one:
               </p>
@@ -401,7 +410,7 @@
                 <p class="cap" style="margin-top: 0">
                   One curve per stimulus, over the times of
                   <strong>correct</strong> responses. Each curve is scaled by
-                  that stimulus's accuracy, so the area under it is P(correct) —
+                  that stimulus's accuracy, so the area under it is P(correct),
                   a curve that is both <em>low</em> and <em>fast</em> is the
                   signature of guessing, not of skill.
                 </p>
@@ -419,7 +428,6 @@
 
           <div class="card" id="infer-card" hidden>
             <span class="eyebrow">What the model recovers</span>
-            <div id="stub-slot"></div>
             <div class="viz-2">
               <div>
                 <span class="eyebrow" style="font-size: 0.55rem"
@@ -444,11 +452,11 @@
             >
             <p class="cap" style="margin-top: 0">
               Architecture and the accumulator parameters are things
-              <em>only</em> the RT model can see at all — there's no
-              "counts-only version" of those to compare against. But the GRT
-              question underneath — separable? independent? — is something BOTH
-              models answer. Same simulated data, same question, two models:
-              this is that comparison, live, not just asserted.
+              <em>only</em> the RT model can see at all, there's no "counts-only
+              version" of those to compare against. But the GRT question
+              underneath, separable? independent?, is something BOTH models
+              answer. Same simulated data, same question, two models: this is
+              that comparison, live, not just asserted.
             </p>
             <div class="viz-2">
               <div>
@@ -488,7 +496,7 @@
     </main>
 
     <footer class="site">
-      <p>GRIN — amortised Bayesian inference for General Recognition Theory.</p>
+      <p>GRIN, amortised Bayesian inference for General Recognition Theory.</p>
       <p class="fine">
         <a href="https://murraysbennett.com"
           >Part of Murray S. Bennett's research</a
@@ -536,7 +544,7 @@
         return model;
       }
 
-      /** For the "what did RT actually change" comparison — the CM-only model run
+      /** For the "what did RT actually change" comparison, the CM-only model run
        * on the SAME simulated data, ignoring its response times, so the only thing
        * that differs between the two predictions is whether RT was available. */
       async function getCmModel() {
@@ -741,7 +749,7 @@
       <h4>Dimension neglect: ${dn.toFixed(2)}</h4>
       <p>
         The probability that this participant <strong>stopped before processing both
-        dimensions</strong> — which, in an identification task, means they <em>guessed</em> the
+        dimensions</strong>, which, in an identification task, means they <em>guessed</em> the
         one they skipped. ${
           isST
             ? "That is exactly what you simulated, so a high number here is the model catching a real pathology."
@@ -766,7 +774,7 @@
         const rows = Object.entries(res.lbaParams)
           .map(([k, v]) => {
             const t = truthLBA[k];
-            const shown = Number.isFinite(v) ? v.toFixed(2) : "—";
+            const shown = Number.isFinite(v) ? v.toFixed(2) : ", ";
             return `<div class="est">
       <div class="lbl">${k}</div>
       <div class="track"></div>
@@ -776,8 +784,6 @@
           .join("");
         $("lba").innerHTML =
           `<span class="eyebrow" style="font-size:.55rem;margin-top:.8rem">Accumulator (recovered / true)</span>${rows}`;
-
-        renderStub(res);
       }
 
       function drawRtValue() {
@@ -800,46 +806,21 @@
         const maxDiff = diffs.reduce((a, b) => (b[1] > a[1] ? b : a), diffs[0]);
         const meaningfulShift = maxDiff[1] > 0.15;
 
-        const stubCaveat =
-          res.backend === "stub" || resCm.backend === "stub"
-            ? `<p class="cap" style="margin-top:.6rem">
-         Both columns are currently the MLE stand-in (see the banner above) — and that stand-in
-         never looks at response times either way, so this comparison can't show RT's real benefit
-         yet. Treat any agreement or difference here as an artifact of the stub, not a finding,
-         until the trained RT network is wired in.
-       </p>`
-            : "";
-
         $("rt-value-verdict").innerHTML = `
     <div class="note ${meaningfulShift ? "" : "warn"}">
       <h4>Biggest shift: ${maxDiff[0]}, Δ${maxDiff[1].toFixed(2)}</h4>
       <p>
         ${
           meaningfulShift
-            ? `Adding response times moved this specific conclusion meaningfully for this run — the
+            ? `Adding response times moved this specific conclusion meaningfully for this run, the
              same counts, on their own, would have left you less (or differently) sure about it.`
             : `On this run, the two models land in close agreement on the GRT structure itself. That's
-             not a null result — it's the honest answer to "does RT change the GRT conclusions
+             not a null result, it's the answer to "does RT change the GRT conclusions
              themselves, or mostly add architecture on top of them" for this particular simulated
              dataset. Try a different trial count or architecture and see if that holds.`
         }
       </p>
-    </div>
-    ${stubCaveat}`;
-      }
-
-      function renderStub(res) {
-        $("stub-slot").innerHTML =
-          res.backend === "stub"
-            ? `<div class="stub-banner">
-         <strong>The RT network isn't wired in yet.</strong> The structural estimates below come from
-         a maximum-likelihood stand-in that sees only the confusion matrix — so it is
-         <em>literally blind to the response times</em>. The architecture bars are flat and the
-         accumulator estimates are blank, on purpose: that is an honest picture of what you
-         can know without the RT model. The <strong>Compare all 5</strong> button below still works, and
-         it is where the real point of this page lives.
-       </div>`
-            : "";
+    </div>`;
       }
 
       // --- the demonstration -------------------------------------------------------
@@ -899,14 +880,14 @@
       <h4>Serial-exhaustive, parallel-exhaustive and coactive are the same experiment</h4>
       <p>
         Across those three, accuracy differs by <strong>${(100 * accSpread).toFixed(2)} percentage
-        points</strong> — and that is <em>sampling noise</em>, not signal. They don't merely look alike;
+        points</strong>, and that is <em>sampling noise</em>, not signal. They don't merely look alike;
         they have <strong>identical response probabilities by construction</strong>. Every one of them
         processes both dimensions and responds with what it found. No confusion matrix, at
         any sample size, can separate them.
       </p>
       <p>
         Meanwhile the slowest of the three takes <strong>${rtRatio.toFixed(1)}×</strong> as long as the
-        fastest. The information was never missing from the participant — it was missing
+        fastest. The information was never missing from the participant, it was missing
         from the <em>measure</em>.
       </p>
       <p style="margin-bottom:0">
@@ -937,7 +918,7 @@
       $("run").addEventListener("click", run);
       $("compare").addEventListener("click", compareAll);
 
-      // --- nudge controls: same pattern as space-builder.html — the dropdown selects
+      // --- nudge controls: same pattern as space-builder.html, the dropdown selects
       // WHICH stimulus the two sliders are currently editing; switching stimuli
       // must show that stimulus's own stored offset, not reset or leak another's. ---
       function syncNudgeSliders() {

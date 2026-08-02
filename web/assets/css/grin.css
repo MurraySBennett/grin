@@ -190,6 +190,21 @@ header.site .tagline {
   opacity: 0.92;
 }
 
+.site-crumb {
+  text-align: center;
+  font-size: 0.65rem;
+  margin-top: 0.6rem;
+}
+.site-crumb a {
+  color: var(--mute);
+  text-decoration: none;
+  opacity: 0.75;
+}
+.site-crumb a:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
 nav.site {
   margin-top: 0.9rem;
 }

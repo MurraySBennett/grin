@@ -711,7 +711,9 @@ def speed_accuracy_tradeoff(labels, ms, ms_err, mae, mae_err, path, families=Non
 
 
 def construct_probabilities(results, truth, true_maxrho, path, threshold=0.5, regime="",
-                            min_per_bin=15, frontier_step=0.05, scale=1.0):
+                            min_per_bin=15, frontier_step=0.05, scale=1.0,
+                            suptitle=True, legend_loc="upper left", chance_side="right",
+                            wspace=None, width=13.0, extra_frontier=None):
     """Are the per-construct probabilities honest, and where does PI become identifiable?
 
     Ground truth comes from MODEL_SPECS via _model_constructs(), NOT from substring tests on
@@ -739,7 +741,8 @@ def construct_probabilities(results, truth, true_maxrho, path, threshold=0.5, re
     p_b = np.array([r["p_sep_B"] for r in results], dtype=float)
 
     fs = max(1.0, 0.55 + 0.45 * scale)
-    fig, ax = plt.subplots(1, 2, figsize=(13 * fs, 5.6 * fs))
+    gkw = {"wspace": wspace} if wspace is not None else None
+    fig, ax = plt.subplots(1, 2, figsize=(width * fs, 5.6 * fs), gridspec_kw=gkw)
 
     # ---------------- reliability ----------------
     specs = [(p_pi, tc == 0, "independence (PI)", RED_DEEP),
@@ -768,67 +771,175 @@ def construct_probabilities(results, truth, true_maxrho, path, threshold=0.5, re
         ax[0].scatter(xs, ys, s=12 + 34 * np.sqrt(ns / ns.max()), color=col,
                       edgecolors="white", linewidth=0.6, zorder=3)
     ax[0].plot([0, 1], [0, 1], ls=(0, (4, 3)), color=MUTE)
-    ax[0].set_xlabel("predicted probability"); ax[0].set_ylabel("empirical frequency")
+    ax[0].set_xlabel("Predicted probability"); ax[0].set_ylabel("Empirical frequency")
     ax[0].set_title("Probability calibration")
     ax[0].set_xlim(0, 1); ax[0].set_ylim(0, 1); ax[0].set_box_aspect(1)
     ax[0].legend(fontsize=9 * scale)
-    ax[0].set_xlabel("predicted probability\n"
+    ax[0].set_xlabel("Predicted probability\n"
                      r"marker area $\propto$ bin count; bars = Wilson 95%")
 
-    # ---------------- PI identifiability frontier ----------------
-    called_pi = p_pi > threshold
+    # ------------- Detecting independence: P(labelled PI) vs true |rho| -------------
+    # Reframed from "PI-call accuracy" (which had no sensible chance line, because on the
+    # non-PI subset a trivial always-say-not-PI scorer hits 100%). Instead we plot, for each
+    # method, the probability it LABELS a matrix independent as a function of the true |rho|:
+    #   * at rho = 0 (genuinely independent) we WANT this high  -> the hit rate,
+    #   * for rho > 0 we WANT it to fall to 0  -> the false-alarm rate,
+    #   * the gap between the two IS the identifiability. No chance line needed.
     is_pi = tc == 0
-    correct = called_pi == is_pi
-
-    n_pi = int(is_pi.sum())
-    if n_pi:
-        k = int(correct[is_pi].sum())
-        lo, hi = _wilson(k, n_pi)
-        ax[1].errorbar([0.0], [k / n_pi], yerr=[[max(k / n_pi - lo, 0)], [max(hi - k / n_pi, 0)]],
-                       fmt="D", color=MUTE, ms=8, capsize=3, elinewidth=1.1,
-                       label=fr"true PI ($\rho \equiv 0$), $n$={n_pi}")
-
     nz = ~is_pi
-    xs, ys, los, his, ns = [], [], [], [], []
-    if nz.sum():
-        # FIXED-WIDTH bins in |rho|, not quantiles. Quantile bins put the x positions
-        # wherever the data happen to be dense, which makes the frontier's SHAPE an
-        # artefact of the sampling. Even steps mean the curve's steepness is readable as
-        # steepness. Bins below min_per_bin are dropped rather than drawn thin.
-        hi_edge = float(np.nanmax(true_maxrho[nz])) if nz.any() else frontier_step
-        qs = np.arange(0.0, hi_edge + frontier_step, frontier_step)
-        for lo_e, hi_e in zip(qs[:-1], qs[1:]):
-            m = nz & (true_maxrho >= lo_e) & (true_maxrho < hi_e)
-            n = int(m.sum())
-            if n < min_per_bin:
-                continue
-            k = int(correct[m].sum())
-            l, h = _wilson(k, n)
-            xs.append(true_maxrho[m].mean()); ys.append(k / n)
-            los.append(l); his.append(h); ns.append(n)
-    if xs:
-        xs, ys = np.array(xs), np.array(ys)
-        err = np.vstack([np.clip(ys - np.array(los), 0, None),
-                         np.clip(np.array(his) - ys, 0, None)])
-        ax[1].errorbar(xs, ys, yerr=err, fmt="o-", color=RED_DEEP, lw=2.0, ms=5.0,
-                       capsize=2, elinewidth=0.9,
-                       label=fr"true non-PI, {frontier_step:g} steps in $|\rho|$")
-        ax[1].axhline(0.5, color=MUTE, lw=1.2, ls=(0, (1, 3)))
-        ax[1].text(0.99, 0.505, "chance", transform=ax[1].get_yaxis_transform(),
-                   ha="right", va="bottom", fontsize=8 * scale, color=MUTE)
-    ax[1].set_xlabel(r"true correlation magnitude $|\rho|$")
-    ax[1].set_ylabel("PI call accuracy")
-    ax[1].set_title("PI identifiability frontier")
-    ax[1].set_ylim(0, 1.04); ax[1].set_box_aspect(1)
-    ax[1].legend(fontsize=8.5 * scale, loc="upper left", framealpha=0.9)
-    ax[1].set_xlabel(ax[1].get_xlabel() +
-                     f"\ndecision rule: call PI when $p > {threshold:g}$")
+    hi_edge = float(np.nanmax(true_maxrho[nz])) if nz.any() else frontier_step
+    qs = np.arange(0.0, hi_edge + frontier_step, frontier_step)
+    xmid = 0.5 * (qs[:-1] + qs[1:])
 
-    fig.suptitle("Construct probabilities", x=0.02, ha="left", fontweight="bold",
-                 fontsize=15 * scale, color=INK)
+    def _pcall(called_pi, valid):
+        """P(method labels PI) per |rho| bin: (x, p, lo, hi, n). Bins under min_per_bin
+        are NaN so a sparse baseline shows as a break + wide band, not a hidden gap."""
+        x, p, lo, hi, ns = [], [], [], [], []
+        for lo_e, hi_e, xm in zip(qs[:-1], qs[1:], xmid):
+            m = nz & valid & (true_maxrho >= lo_e) & (true_maxrho < hi_e)
+            n = int(m.sum())
+            x.append(xm); ns.append(n)
+            if n < min_per_bin:
+                p.append(np.nan); lo.append(np.nan); hi.append(np.nan); continue
+            k = int(called_pi[m].sum()); l, h = _wilson(k, n)
+            p.append(k / n); lo.append(l); hi.append(h)
+        return (np.array(x), np.array(p), np.array(lo), np.array(hi), np.array(ns))
+
+    def _hit(called_pi, valid):
+        """P(labels PI | truly PI): the rho==0 hit rate, with a Wilson interval."""
+        m = is_pi & valid
+        n = int(m.sum())
+        if not n:
+            return None
+        k = int(called_pi[m].sum()); l, h = _wilson(k, n)
+        return k / n, l, h, n
+
+    # assemble every method: GRIN (p_PI > threshold) plus any extras (their hard PI call)
+    methods = [{"label": "GRIN", "called_pi": p_pi > threshold,
+                "valid": np.ones_like(is_pi, bool), "color": RED_DEEP, "marker": "o"}]
+    for ent in (extra_frontier or []):
+        methods.append({"label": ent["label"],
+                        "called_pi": np.asarray(ent["called_pi"], bool),
+                        "valid": np.asarray(ent.get("valid", np.ones_like(is_pi)), bool),
+                        "color": ent["color"], "marker": ent.get("marker", "s")})
+
+    curves = []
+    for mth in methods:
+        x, p, lo, hi, ns = _pcall(mth["called_pi"], mth["valid"])
+        curves.append(p)
+        ax[1].fill_between(x, lo, hi, color=mth["color"], alpha=0.12, linewidth=0)
+        ax[1].plot(x, p, mth["marker"] + "-", color=mth["color"], lw=1.6, ms=4.0,
+                   alpha=0.9, label=mth["label"])
+        h = _hit(mth["called_pi"], mth["valid"])
+        if h is not None:
+            phit, l, hh, n = h
+            ax[1].errorbar([0.0], [phit], yerr=[[phit - l], [hh - phit]],
+                           fmt=mth["marker"], color=mth["color"], ms=7, capsize=3,
+                           elinewidth=1.0, zorder=4)
+
+    # bold group-mean false-alarm curve (mean across methods, per bin)
+    if len(curves) > 1:
+        gm_curve = np.nanmean(np.vstack(curves), axis=0)
+        ax[1].plot(xmid, gm_curve, color=INK, lw=2.6, zorder=5, label="mean")
+
+    ax[1].axvline(0.0, color=MUTE, lw=1.0, ls=(0, (1, 3)))
+    # ax[1].text(0.0, 1.02, "truly\nindependent", transform=ax[1].get_xaxis_transform(),
+            #    ha="left", va="bottom", fontsize=7.5 * scale, color=MUTE)
+    ax[1].set_xlabel(r"True correlation $|\rho|$   (0 = independent)")
+    ax[1].set_ylabel("P( labelled independent )")
+    ax[1].set_title("Detecting independence")
+    ax[1].set_ylim(-0.02, 1.15); ax[1].set_xlim(-0.03, hi_edge)
+    ax[1].set_box_aspect(1)
+    ax[1].legend(fontsize=8.5 * scale, loc=legend_loc, framealpha=0.9, ncol=2,
+                 columnspacing=1.0, handletextpad=0.4)
+
+    if suptitle:
+        fig.suptitle("Construct probabilities", x=0.02, ha="left", fontweight="bold",
+                     fontsize=15 * scale, color=INK)
     if regime:
         fig.text(0.02, 0.945, regime, ha="left", va="top", fontsize=10 * scale, color=MUTE)
-    fig.tight_layout(rect=[0, 0, 1, 0.93]); fig.savefig(path); plt.close(fig)
+    fig.tight_layout(rect=[0, 0, 1, 0.93] if suptitle else None)
+    if wspace is not None:
+        fig.subplots_adjust(wspace=wspace)
+    fig.savefig(path); plt.close(fig)
+
+
+def rt_vs_counts_dumbbell(rows, path, scale=1.0, title="What response times add",
+                          xlabel="accuracy", note=None, before_label="counts only",
+                          after_label="+ RT", xlim=(0, 1.02)):
+    """Cleveland dumbbell: one row per metric, x = accuracy. Each row shows the counts-only
+    value and the +RT value as two dots joined by a line, so the eye reads the MOVEMENT that
+    RTs buy. Optional baseline reference marks (mdsdt / grtools / MLE) sit on the rows where
+    those methods make the same call. No bars.
+
+    Despite the name and the accuracy-shaped defaults, this is a generic paired
+    before/after comparison -- before_label/after_label rename the legend (e.g. for a
+    non-RT comparison) and xlim can be widened/replaced for metrics that are not bounded
+    to [0, 1] (e.g. NRMSE). Defaults are unchanged from the original RT-vs-counts use, so
+    existing callers are unaffected.
+
+    rows: list of dicts, top-to-bottom, each:
+        {"metric": str,
+         "counts": float, "rt": float,              # the two dots
+         "counts_ci": (lo,hi) or None,              # optional 95% intervals
+         "rt_ci": (lo,hi) or None,
+         "baselines": {"mdsdt": v, "grtools": v, "MLE": v} or None,  # small ticks
+         "chance": float or None}                   # faint reference (e.g. architecture)
+    """
+    set_style(scale)
+    n = len(rows)
+    fig, ax = plt.subplots(figsize=(8.6, 0.8 + 0.62 * n))
+    ys = np.arange(n)[::-1]                                   # first row at the top
+    base_col = {"mdsdt": BLUE, "grtools": RED_DEEP, "MLE": MUTE}
+
+    for y, r in zip(ys, rows):
+        if r.get("chance") is not None:
+            ax.plot([r["chance"]], [y], marker="|", ms=16, color=MUTE, alpha=0.7, zorder=1)
+        # connector
+        ax.plot([r["counts"], r["rt"]], [y, y], color=INK, lw=2.2, alpha=0.45, zorder=2)
+        # CIs
+        for key, cikey, col in (("counts", "counts_ci", MUTE), ("rt", "rt_ci", BLUE_DEEP)):
+            ci = r.get(cikey)
+            if ci is not None:
+                ax.plot(ci, [y, y], color=col, lw=1.0, alpha=0.6, zorder=2)
+        # the two dots
+        ax.scatter([r["counts"]], [y], s=130, color=MUTE, edgecolors="white",
+                   linewidth=1.0, zorder=4)
+        ax.scatter([r["rt"]], [y], s=150, color=BLUE_DEEP, edgecolors="white",
+                   linewidth=1.0, zorder=5)
+        # baseline reference marks
+        for name, v in (r.get("baselines") or {}).items():
+            ax.plot([v], [y], marker="d", ms=7, color=base_col.get(name, MUTE),
+                    alpha=0.9, zorder=3)
+
+    ax.set_yticks(ys); ax.set_yticklabels([r["metric"] for r in rows])
+    ax.set_ylim(-0.6, n - 0.4)
+    if xlim is not None:
+        ax.set_xlim(*xlim)
+    ax.set_xlabel(xlabel); ax.set_title(title)
+    ax.spines["left"].set_visible(False); ax.tick_params(axis="y", length=0)
+    for y in ys:
+        ax.axhline(y, color=MUTE, lw=0.5, alpha=0.25, zorder=0)
+
+    # legend: the two dots + whatever baselines appear
+    from matplotlib.lines import Line2D
+    handles = [Line2D([0], [0], marker="o", ls="", ms=10, color=MUTE, label=before_label),
+               Line2D([0], [0], marker="o", ls="", ms=11, color=BLUE_DEEP, label=after_label)]
+    seen = set()
+    for r in rows:
+        for name in (r.get("baselines") or {}):
+            if name not in seen:
+                seen.add(name)
+                handles.append(Line2D([0], [0], marker="d", ls="", ms=8,
+                                      color=base_col.get(name, MUTE), label=name))
+    ax.legend(handles=handles, fontsize=8.5 * scale,
+              loc = "upper left", bbox_to_anchor=(1.02, 1.0), frameon=False, ncol = 1)
+              # loc="lower right", frameon=False,
+            #   ncol=2, columnspacing=1.0, handletextpad=0.3)
+    if note:
+        ax.text(0.0, -0.9 / n, note, transform=ax.transAxes, fontsize=8 * scale,
+                color=MUTE, va="top")
+    fig.tight_layout(); fig.savefig(path, bbox_inches="tight"); plt.close(fig)
 
 
 def model_comparison_figure(acc_amort, acc_bic, frontier_x, frontier_acc, speedup, path, scale=1.0):

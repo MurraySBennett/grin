@@ -253,6 +253,34 @@ def main(n_per_class=150, seed=999):
     F.architecture_figure(cm_arch_n, ARCHITECTURES, gains, fig("rt_architecture.png"),
                           regime="RT model vs shipped counts-only model, same held-out matrices")
 
+    # ---- export counts-vs-+RT construct accuracies for the poster RT dumbbell ----
+    # The poster's rt_vs_counts_dumbbell reads this; baselines are added there from the R set.
+    import json as _json
+    from src.viz.figures import _wilson as _wil
+    n_all = len(yl)
+
+    def _ci(acc):
+        lo, hi = _wil(int(round(acc * n_all)), n_all)
+        return {"lo": float(lo), "hi": float(hi)}
+
+    sep_cm = float(np.mean((cm_pred_sepA == ta) & (cm_pred_sepB == tb)))
+    sep_rt = float(np.mean((rt_pred_sepA == ta) & (rt_pred_sepB == tb)))
+    dumbbell = {
+        "n": int(n_all),
+        "corr": {"cm": acc_corr_cm, "rt": acc_corr_rt,
+                 "cm_ci": _ci(acc_corr_cm), "rt_ci": _ci(acc_corr_rt)},
+        "sep": {"cm": sep_cm, "rt": sep_rt},
+        "pi": {"cm": pi_acc_cm, "rt": pi_acc_rt,
+               "cm_ci": _ci(pi_acc_cm), "rt_ci": _ci(pi_acc_rt)},
+        "arch": {"rt": float(np.mean(pa == ya)), "chance": 1.0 / K},
+        # TODO: fill dimension-neglect detection accuracy from your architecture metric.
+        # Counts-only has no RT signal, so its value is chance; set "cm" accordingly.
+        "dimneglect": {"cm": None, "rt": None},
+    }
+    with open(os.path.join(RESULTS_DIR, "rt_construct_metrics.json"), "w") as _fh:
+        _json.dump(dumbbell, _fh, indent=2)
+    print("  wrote rt_construct_metrics.json  (for the poster RT dumbbell)")
+
     F.recovery_error_map(yp, pred_rt, arch_labels, fig("rt_by_architecture.png"),
                          group_names=ARCHITECTURES, xlabel="processing architecture",
                          title="RT recovery error (MAE) by processing architecture")
@@ -265,4 +293,3 @@ def main(n_per_class=150, seed=999):
 
 if __name__ == "__main__":
     main()
-    
