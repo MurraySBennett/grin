@@ -242,14 +242,13 @@ class RTLBAGenerator:
         Xs, Qs, Ts, Ps, Ls, Cs, Ns, As = [], [], [], [], [], [], [], []
 
         for ci, name in enumerate(self.model_names):
-            n = self.n_per_class
+            n = int(self.n_per_class)
             if verbose:
                 print(f"   [{ci+1:2d}/12] {name:12s} n={n}", flush=True)
             zx, zy, rho = gm.sample_prior(name, n, rng, z_max=self.z_max, r_max=self.r_max)
             lba = self.sample_lba(rng, n)
             arch_id = rng.integers(0, len(ARCHITECTURES), n)
             n_per = self._sample_trial_counts(n, rng, floor=3)
-
             counts = np.zeros((n, 4, 4), dtype=np.int64)
             Q = np.zeros((n, 4, 4, N_Q))
             # group by architecture (one vectorised branch each), chunked to bound memory

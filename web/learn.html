@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <!-- Anti-flash: apply the theme class on <html> SYNCHRONOUSLY, before first
-         paint. Must stay inline and right after <meta charset> — grin-shell.js is
+         paint. Must stay inline and right after <meta charset>, grin-shell.js is
          an ES module and runs too late to prevent the flash. Reads the SAME key
          the rest of the site uses ("msb-dark-mode"), so a dark/light choice made
          anywhere carries across; falls back to the OS preference. Keep in sync
@@ -24,10 +24,10 @@
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Learn — GRIN</title>
+    <title>Learn - GRIN</title>
     <meta
       name="description"
-      content="A primer on General Recognition Theory, a glossary of terms, frequently asked questions, and an honest statement of GRIN's limitations."
+      content="A primer on General Recognition Theory, a glossary of terms, frequently asked questions, and a statement of GRIN's limitations."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -40,7 +40,7 @@
   <body data-page="learn">
     <header class="site">
       <h1>Learn</h1>
-      <p class="tagline">The theory, the terms, and the honest limits.</p>
+      <p class="tagline">The theory, the terms, and the limits.</p>
       <div id="nav-placeholder"></div>
     </header>
 
@@ -52,26 +52,26 @@
         <h3 style="font-size: 0.75rem; color: var(--steel)">1. The task</h3>
         <p>
           Someone sees a stimulus that varies on
-          <strong>two dimensions</strong> — say, a face's expression (happy/sad)
-          and sex (male/female) — and reports both. Across many trials you get a
+          <strong>two dimensions</strong>, say, a face's expression (happy/sad)
+          and sex (male/female), and reports both. Across many trials you get a
           <strong>4×4 confusion matrix</strong>: which of the 4 stimuli was
           shown, against which of the 4 responses was given.
         </p>
 
         <h3 style="font-size: 0.75rem; color: var(--steel)">2. The model</h3>
         <p>
-          General Recognition Theory (GRT — Ashby &amp; Townsend, 1986) says
-          each stimulus doesn't map to a single point in the mind; it maps to a
+          General Recognition Theory (GRT, Ashby &amp; Townsend, 1986) says each
+          stimulus doesn't map to a single point in the mind; it maps to a
           <strong>bivariate normal distribution</strong>
           over a two-dimensional perceptual space, because perception is noisy.
           The two decision axes are lines through that space (GRIN fixes them at
-          the origin — see
+          the origin, see
           <a href="#separability">decisional separability</a> below). You
           respond by asking which side of each line your percept fell on.
         </p>
         <p>
-          That single picture — four ellipses and a pair of crossed lines — is
-          the entire model. Everything else on this site is about estimating
+          That single picture, four ellipses and a pair of crossed lines, is the
+          entire model. Everything else on this site is about estimating
           <em>where the ellipses are and how they're shaped</em> from the
           responses alone. Go build one on the
           <a href="./space-builder.html">Space Builder</a> page; it's faster to
@@ -85,37 +85,37 @@
           <strong id="separability">Perceptual separability.</strong> Does one
           dimension's perceived value depend on the level of the
           <em>other</em> dimension? If a face looks a little happier just
-          because it's male, expression is not separable from sex — the ellipses
+          because it's male, expression is not separable from sex, the ellipses
           shift sideways as you cross the other dimension.
         </p>
         <p>
           <strong id="independence">Perceptual independence.</strong> On a
           single trial, does noise on one dimension travel with noise on the
           other? If an unusually happy-looking sample also tends to look
-          unusually male, the dimensions are correlated on that trial — the
+          unusually male, the dimensions are correlated on that trial, the
           ellipses tilt.
         </p>
         <p>
           These are independent questions. A space can be separable but
-          correlated, non-separable but uncorrelated, or any combination — which
+          correlated, non-separable but uncorrelated, or any combination, which
           is exactly why GRT needs a shape in a plane, not a single number, to
           describe a representation.
         </p>
 
         <h3 style="font-size: 0.75rem; color: var(--steel)">
-          4. Why fitting this is hard
+          4. Why a single matrix is enough
         </h3>
         <p>
           A 4×4 confusion matrix has 12 free numbers (4 rows, each summing to 1,
           so 3 free probabilities per row). GRIN's representation has exactly 12
-          identified parameters — 4 per-stimulus x-locations, 4 y-locations, 4
+          identified parameters, 4 per-stimulus x-locations, 4 y-locations, 4
           correlations. That match is not a coincidence: it is what makes a
           <em>single</em> matrix enough to estimate the whole space, and it is
           why you cannot add a 13th free parameter and expect it to be estimable
           from one matrix alone. Traditionally this fit is done by numerical
           maximum likelihood, one optimiser run per participant per candidate
           model. GRIN replaces that optimiser with a network trained once,
-          offline, on millions of simulated experiments — inference becomes a
+          offline, on millions of simulated experiments, inference becomes a
           single forward pass. See <a href="./validate.html">Validate</a> for
           whether that trade actually holds up.
         </p>
@@ -138,7 +138,7 @@
             <p>
               A dimension is separable from another if its marginal perceptual
               distribution doesn't shift with the other dimension's level.
-              Failure of separability is a <em>mean</em> effect — it moves where
+              Failure of separability is a <em>mean</em> effect, it moves where
               an ellipse is centred.
             </p>
           </div>
@@ -147,7 +147,7 @@
             <p>
               Zero correlation between the two dimensions' perceptual noise,
               <em>within a single stimulus</em>. Failure of independence is a
-              <em>correlation</em> effect — it tilts an ellipse. GRIN's model
+              <em>correlation</em> effect, it tilts an ellipse. GRIN's model
               classes distinguish exact independence (PI), one shared
               correlation across all four stimuli (RHO1), and a fully free
               correlation per stimulus.
@@ -157,8 +157,8 @@
             <h4>Decisional separability (DS)</h4>
             <p>
               The decision bound on one dimension doesn't depend on the
-              perceived level of the other. GRIN assumes DS throughout — the
-              crossed decision lines are always fixed at the origin — which is
+              perceived level of the other. GRIN assumes DS throughout, the
+              crossed decision lines are always fixed at the origin, which is
               what makes the 12-parameter model exactly identified from one
               matrix. Relaxing DS is future scope, not present behaviour.
             </p>
@@ -167,7 +167,7 @@
             <h4>Model class</h4>
             <p>
               One specific combination of {independent / one shared ρ / free ρ}
-              × {A separable or not} × {B separable or not} — 12 in total.
+              × {A separable or not} × {B separable or not}, 12 in total.
               "Fitting a model" in the classical sense means picking the best of
               these 12; GRIN instead returns continuous parameters plus the
               probability of each structural claim, so you aren't forced to pick
@@ -175,7 +175,7 @@
             </p>
           </div>
           <div class="note" style="margin-bottom: 0.6rem">
-            <h4>SFT — Systems Factorial Technology</h4>
+            <h4>SFT, Systems Factorial Technology</h4>
             <p>
               The architecture side of the +RT model: is a two-dimensional
               decision made serially or in parallel, and does it stop as soon as
@@ -186,7 +186,7 @@
             </p>
           </div>
           <div class="note" style="margin-bottom: 0.6rem">
-            <h4>LBA — Linear Ballistic Accumulator</h4>
+            <h4>LBA, Linear Ballistic Accumulator</h4>
             <p>
               The evidence-accumulation model behind the RT predictions:
               evidence for a response rises linearly at a noisy drift rate
@@ -196,12 +196,12 @@
             </p>
           </div>
           <div class="note" style="margin-bottom: 0">
-            <h4>Amortized inference</h4>
+            <h4>Amortised inference</h4>
             <p>
               Paying the cost of learning "how to invert this model" once,
               during training, so that every subsequent inference is just a
-              forward pass. The opposite of MLE, which pays an optimisation cost
-              on every single dataset.
+              forward pass, rather than solving a fresh optimisation for each
+              dataset at analysis time.
             </p>
           </div>
         </dl>
@@ -218,13 +218,13 @@
           </summary>
           <div class="details-body">
             <p style="margin-top: 0">
-              You can — and GRIN's "MLE, full model" column on the Analyse page
+              You can, and GRIN's "MLE, full model" column on the Analyse page
               does exactly that, for comparison. But the constrained classes
               exist because separability and independence are the scientific
               questions usually being asked. Reporting only the unconstrained
-              fit answers "what are the 12 numbers" while quietly declining to
-              answer "are the dimensions independent," which is normally the
-              actual point of running a GRT study.
+              fit answers "what are the 12 numbers" without addressing "are the
+              dimensions independent," which is normally the actual point of
+              running a GRT study.
             </p>
           </div>
         </details>
@@ -238,7 +238,7 @@
               Not directly. GRIN is trained specifically on 2-dimension, 2-level
               identification designs. A 3-level or 3-dimension design has a
               different-shaped confusion matrix and a different parameter count,
-              and the network has never seen it — feeding it in would be exactly
+              and the network has never seen it, feeding it in would be exactly
               the out-of-distribution situation the
               <a href="./analyse.html">Analyse page's validator</a> is built to
               catch. Extending to larger designs is future scope.
@@ -253,7 +253,7 @@
               Because it's what makes the model exactly identified from a single
               confusion matrix. Relax it and you add free decision-bound
               parameters that trade off against the perceptual parameters
-              without more data to separate them — you would need multiple
+              without more data to separate them, you would need multiple
               matrices per participant (e.g. across bias conditions) to identify
               a DS-violating model, which is a different, harder problem than
               the one GRIN solves.
@@ -272,11 +272,11 @@
               (Stan, or MLE with bootstrapped intervals) is more flexible
               per-analysis but costs real compute every time you run it. GRIN
               pays that cost once, at training time, and every subsequent
-              inference — one participant or ten thousand — is a forward pass.
-              The trade is amortization for flexibility: GRIN is fast because it
-              was trained on exactly this family of models and this exact
-              design; it isn't a general-purpose sampler you can repoint at a
-              different model.
+              inference, one participant or ten thousand, is a forward pass. The
+              trade is amortisation for flexibility: GRIN is fast because it was
+              trained on exactly this family of models and this exact design; it
+              isn't a general-purpose sampler you can repoint at a different
+              model.
             </p>
           </div>
         </details>
@@ -286,7 +286,7 @@
           <div class="details-body">
             <p style="margin-top: 0">
               Reasonable position, and the right response is to check it rather
-              than take it on faith — which is what the
+              than take it on faith, which is what the
               <a href="./validate.html">Validate</a> page and the MLE column on
               <a href="./analyse.html">Analyse</a> are for. Run your own matrix
               through both and see where they agree. If you find a case where
@@ -301,14 +301,14 @@
       <div class="card">
         <span class="eyebrow">Limitations, stated plainly</span>
         <div class="note warn">
-          <h4>Amortized over a fixed prior</h4>
+          <h4>Amortised over a fixed prior</h4>
           <p>
             GRIN was trained on data simulated from a specific range of
             sensitivities, correlations, and trial counts (see the manifest
             shipped with each model, or <a href="./analyse.html">Analyse</a>'s
             validator, which checks your data against exactly this range). Data
             far outside that range get a confident-looking answer that means
-            nothing — the network has no way to know it's extrapolating.
+            nothing, the network has no way to know it's extrapolating.
           </p>
         </div>
         <div class="note warn">
@@ -316,8 +316,8 @@
           <p>
             The decision bounds are fixed at the origin in every model class
             GRIN fits. If your participants use response criteria that shift
-            with the other dimension, GRIN will not detect that — it isn't in
-            the model family.
+            with the other dimension, GRIN will not detect that, it isn't in the
+            model family.
           </p>
         </div>
         <div class="note warn">
@@ -333,8 +333,8 @@
           <p>
             GRIN reports a probability alongside every structural claim
             specifically so you don't have to pretend a narrow plurality is a
-            confident conclusion. The Explore and Analyse pages both surface
-            this directly rather than silently picking the top class.
+            confident conclusion. The Space Builder and Analyse pages both
+            surface this directly rather than silently picking the top class.
           </p>
         </div>
         <div class="note warn">
@@ -343,8 +343,8 @@
             Architecture and accumulator-parameter estimates additionally assume
             the LBA evidence-accumulation model is the right description of the
             response-time-generating process. If it isn't, those specific
-            estimates — not the underlying GRT parameters, which are estimated
-            the same way with or without RT — are the part to distrust.
+            estimates, not the underlying GRT parameters, which are estimated
+            the same way with or without RT, are the part to distrust.
           </p>
         </div>
       </div>
@@ -357,9 +357,16 @@
             independence. <em>Psychological Review, 93</em>(2), 154–179.
           </li>
           <li>
-            Kadlec, H., &amp; Townsend, J. T. — the SFT (systems factorial
-            technology) literature, for the processing-architecture side of the
-            +RT model.
+            Townsend, J. T., &amp; Nozawa, G. (1995). Spatio-temporal properties
+            of elementary perception: An investigation of parallel, serial, and
+            coactive theories.
+            <em>Journal of Mathematical Psychology, 39</em>(4), 321–359.
+          </li>
+          <li>
+            Townsend, J. T., Houpt, J. W., &amp; Silbert, N. H. (2012). General
+            recognition theory extended to include response times: Predictions
+            for a class of parallel systems.
+            <em>Journal of Mathematical Psychology, 56</em>(6), 476–494.
           </li>
           <li>
             Brown, S. D., &amp; Heathcote, A. (2008). The simplest complete
@@ -367,7 +374,7 @@
             <em>Cognitive Psychology, 57</em>(3), 153–178.
           </li>
           <li>
-            <code>grtools</code> (R) and <code>mdsdt</code> (R) — the
+            <code>grtools</code> (R) and <code>mdsdt</code> (R), the
             maximum-likelihood implementations GRIN is validated against.
           </li>
         </ul>
@@ -375,7 +382,7 @@
     </main>
 
     <footer class="site">
-      <p>GRIN — amortised Bayesian inference for General Recognition Theory.</p>
+      <p>GRIN, amortised Bayesian inference for General Recognition Theory.</p>
       <p class="fine">
         <a href="https://murraysbennett.com"
           >Part of Murray S. Bennett's research</a

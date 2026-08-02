@@ -2,20 +2,29 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <!-- Anti-flash: apply the theme class on <html> SYNCHRONOUSLY, before first
+         paint. Must stay inline and right after <meta charset>, grin-shell.js is
+         an ES module and runs too late to prevent the flash. Reads the SAME key
+         the rest of the site uses ("msb-dark-mode"), so a dark/light choice made
+         anywhere carries across; falls back to the OS preference. Keep in sync
+         with grin-shell.js resolve(). -->
     <script>
       (function () {
         try {
-          var s = localStorage.getItem("grin-theme");
-          var d =
+          var s = localStorage.getItem("msb-dark-mode");
+          var dark =
             s === "dark" ||
             (s !== "light" &&
+              window.matchMedia &&
               window.matchMedia("(prefers-color-scheme: dark)").matches);
-          if (d) document.documentElement.classList.add("is-dark");
-        } catch (e) {}
+          if (dark) document.documentElement.classList.add("is-dark");
+        } catch (e) {
+          /* storage blocked (private mode) -- fall through to light */
+        }
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Space Builder — GRIN</title>
+    <title>Space Builder - GRIN</title>
     <meta
       name="description"
       content="Build a GRT perceptual space, watch the confusion matrix it produces, run a virtual experiment, and see whether the model can find its way back."
@@ -44,7 +53,7 @@
         <p>
           Imagine identifying a face as <em>happy or sad</em> and
           <em>male or female</em> at the same time. GRT says each face lands
-          somewhere in a two-dimensional "perceptual space" — a cloud, not a
+          somewhere in a two-dimensional "perceptual space", a cloud, not a
           point, because perception is noisy. You respond by asking which side
           of each line the cloud landed on.
         </p>
@@ -159,7 +168,7 @@
                   >The sliders above move a matched PAIR of stimuli
                   together</strong
                 >
-                — the textbook pattern. In real data, separability often fails
+                , the textbook pattern. In real data, separability often fails
                 more messily: <strong>one specific stimulus</strong> reads
                 oddly, not a coordinated pair. This moves just one:
               </p>
@@ -255,7 +264,7 @@
                 <p class="cap" style="margin-top: 0">
                   Each ellipse is one stimulus: a 1-SD contour of where it lands
                   in perceptual space on a given trial. The dashed cross is the
-                  decision bound — you respond by asking which quadrant you fell
+                  decision bound, you respond by asking which quadrant you fell
                   into.
                 </p>
                 <p class="cap">
@@ -277,7 +286,7 @@
               <div>
                 <table class="cm" id="cm"></table>
                 <p class="cap" id="cm-cap">
-                  Exact response probabilities implied by the space above — this
+                  Exact response probabilities implied by the space above, this
                   is what you'd get with infinitely many trials.
                 </p>
               </div>
@@ -286,7 +295,7 @@
                   <h4>This is the whole problem</h4>
                   <p>
                     The confusion matrix has 16 cells, but each row must sum to
-                    1 — so it carries exactly <strong>12 free numbers</strong>.
+                    1, so it carries exactly <strong>12 free numbers</strong>.
                     And the space above has exactly 12 identified parameters.
                     That is not a coincidence: it's why a single confusion
                     matrix is enough to pin down the space, and why one extra
@@ -300,7 +309,6 @@
 
           <div class="card" id="recovery-card" hidden>
             <span class="eyebrow">3. Could anyone have recovered it?</span>
-            <div id="stub-slot"></div>
             <div class="viz-2">
               <div>
                 <canvas id="space2" width="565" height="565"></canvas>
@@ -308,8 +316,8 @@
                 <p class="cap">
                   Solid = the space you built.
                   <strong>Dashed rose = what was recovered</strong> from the
-                  noisy data alone. The gap between them is the error — and it
-                  is <em>supposed</em> to shrink as you raise the trial count.
+                  noisy data alone. The gap between them is the error, and it is
+                  <em>supposed</em> to shrink as you raise the trial count.
                 </p>
               </div>
               <div>
@@ -331,17 +339,17 @@
               <div class="details-body">
                 <p style="font-size: 0.88rem; margin-top: 0">
                   We drew <span id="ntrials-echo">100</span> trials per stimulus
-                  from your space, producing a noisy confusion matrix — a
+                  from your space, producing a noisy confusion matrix, a
                   simulated experiment. Then we handed
                   <em>only that matrix</em> to the model, which had never seen
                   your sliders, and asked it to reconstruct the space.
                 </p>
                 <p style="font-size: 0.88rem">
                   Try this: set the trial count to 10 and run it a few times.
-                  The estimates jump around — and, crucially,
+                  The estimates jump around, and, crucially,
                   <strong>the intervals get wide</strong>. That is the whole
-                  point. An honest method doesn't just get less accurate with
-                  less data; it <em>tells you</em>
+                  point. A well-behaved method doesn't just get less accurate
+                  with less data; it <em>tells you</em>
                   it has got less accurate.
                 </p>
               </div>
@@ -352,7 +360,7 @@
     </main>
 
     <footer class="site">
-      <p>GRIN — amortised Bayesian inference for General Recognition Theory.</p>
+      <p>GRIN, amortised Bayesian inference for General Recognition Theory.</p>
       <p class="fine">
         <a href="https://murraysbennett.com"
           >Part of Murray S. Bennett's research</a
@@ -385,7 +393,7 @@
 
       // Independent per-stimulus nudges. Kept as separate state (not read fresh from
       // the DOM like the other sliders) because only ONE stimulus's Δx/Δy is visible
-      // on screen at a time — switching the dropdown must not forget the other three.
+      // on screen at a time, switching the dropdown must not forget the other three.
       let nudge = { x: [0, 0, 0, 0], y: [0, 0, 0, 0] };
 
       let model = null;
@@ -439,9 +447,9 @@
       }
 
       /**
-       * @param {boolean} invalidate — true when the CONTROLS changed (the previous run
+       * @param {boolean} invalidate, true when the CONTROLS changed (the previous run
        * no longer describes the space on screen, so it must be cleared). False when we
-       * are only repainting, e.g. on a theme change — repainting must never destroy
+       * are only repainting, e.g. on a theme change, repainting must never destroy
        * the user's results.
        */
       function draw(invalidate = true) {
@@ -476,7 +484,7 @@
     <div class="num">${(100 * acc).toFixed(1)}%</div>
   </div>`;
 
-        // what is TRUE of this space — stated before any inference, so the user can
+        // what is TRUE of this space, stated before any inference, so the user can
         // check the model's answer against a known truth rather than trusting it.
         // Checked against the actual built vectors (rep), not the sliders (c): a
         // nudge can break PS(A) on its own even when dA is 0, so c alone can no
@@ -519,7 +527,7 @@
         Plot.renderCM($("cm"), props, L, { counts: data.counts });
         $("cm-cap").innerHTML =
           `Observed from <strong>${n} trials per stimulus</strong> (counts in small type). ` +
-          `Noisy — which is the point.`;
+          `Noisy, which is the point.`;
 
         // recovered space
         const stimuli = [0, 1, 2, 3].map((i) => ({
@@ -575,18 +583,29 @@
           );
 
         const mc = res.modelClass;
-        const decisive = mc.joint >= 0.5;
+        // The joint class probability is the product of three decisions:
+        // separability on A, separability on B, and the correlation class. The
+        // first two are usually well identified; whether rho is 0 (perceptual
+        // independence) is information-limited, so it caps the joint. Report the
+        // parts, not just the product, so a low joint reads as "PI is hard"
+        // rather than "the fit failed".
+        const sepConf = Math.min(
+          Math.max(res.sep.A, 1 - res.sep.A),
+          Math.max(res.sep.B, 1 - res.sep.B),
+        );
+        const corrConf = Math.max(res.corr.pi, res.corr.rho1, res.corr.free);
         $("verdict").innerHTML = `
-    <div class="note ${decisive ? "" : "warn"}">
-      <h4>Verdict: <code>${mc.name}</code></h4>
+    <div class="note ${sepConf >= 0.75 ? "" : "warn"}">
+      <h4>Best-supported class: <code>${mc.name}</code></h4>
       <p>
-        Joint probability <strong>${mc.joint.toFixed(2)}</strong>.
+        The separability structure is identified with confidence ${(100 * sepConf).toFixed(0)}%.
+        Whether the dimensions are independent is the information-limited part: its
+        best option sits at ${(100 * corrConf).toFixed(0)}%, which is what holds the joint
+        class probability down to ${mc.joint.toFixed(2)}.
         ${
-          decisive
-            ? "That's a reasonably confident call."
-            : `That is <strong>not</strong> a confident call. With ${n} trials per stimulus the data
-             simply don't pin the structure down — and a method that reported a single
-             winning model here, with no caveat, would be misleading you.`
+          corrConf >= 0.6
+            ? "Here the data carry enough to lean one way on the correlation as well."
+            : "That is expected. Whether rho is zero leaves only a faint trace in a single matrix, and adding trials moves it slowly, so the separable / not-separable reading is the firm result here."
         }
       </p>
     </div>`;
@@ -594,24 +613,10 @@
         $("ntrials-echo").textContent = n;
         $("recovery-card").hidden = false;
         $("status").textContent = `Done in ${res.ms.toFixed(1)} ms.`;
-        renderStubBanner(res);
         $("recovery-card").scrollIntoView({
           behavior: "smooth",
           block: "nearest",
         });
-      }
-
-      function renderStubBanner(res) {
-        $("stub-slot").innerHTML =
-          res.backend === "stub"
-            ? `<div class="stub-banner">
-         <strong>Placeholder inference.</strong> The trained network isn't wired in yet, so these
-         estimates come from a maximum-likelihood stand-in. The parameter estimates are
-         real; the <em>uncertainty intervals are only a rough approximation</em>, and calibrated
-         uncertainty is the main thing GRIN adds. Treat the intervals as illustrative
-         until the weights land.
-       </div>`
-            : "";
       }
 
       for (const k of SLIDERS) $(k).addEventListener("input", () => draw(true));
@@ -678,7 +683,7 @@
         );
         Plot.renderCM($("cm"), props, L, { counts: data.counts });
         $("cm-cap").innerHTML =
-          `Observed from <strong>${n} trials per stimulus</strong> (counts in small type). Noisy — which is the point.`;
+          `Observed from <strong>${n} trials per stimulus</strong> (counts in small type). Noisy, which is the point.`;
         Plot.renderSpace($("space2"), {
           stimuli: [0, 1, 2, 3].map((i) => ({
             zx: rep.zx[i],

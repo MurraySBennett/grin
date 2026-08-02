@@ -1,0 +1,231 @@
+%% ============================================================================
+%%  poster.tex — GRIN / SBI workshop poster, 48 x 36 in landscape
+%%
+%%  Build:   latexmk -pdf poster.tex        (or just: pdflatex poster.tex)
+%%  Iterate on the hero figure alone:  latexmk -pdf pipeline_preview.tex
+%%
+%%  BEFORE YOU PRINT — the checklist is in README.md. The short version:
+%%    1. Set \highlightchecksfalse below, once every \chk{} number is confirmed.
+%%    2. Make sure no "figure not found" placeholders are left on the page.
+%%    3. Confirm the affiliations line.
+%% ============================================================================
+\documentclass[final]{article}
+\usepackage[paperwidth=48in, paperheight=36in, margin=1.5in]{geometry}
+\usepackage{grinposter}
+
+%% Figures: poster-specific re-renders in figures/ win; otherwise fall back to
+%% the live output of make_figures.py. See make_poster_figures.py — several of
+%% the suite's figures are 12-panel and are unreadable when squeezed into an
+%% 8.6 in column at their default scale.
+\graphicspath{{figures/}{../../results/figures/}}
+
+%% Flip this to false for the final print run. While it is true, every number
+%% that still needs checking against your latest run is highlighted in yellow.
+\highlightcheckstrue
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.11in}
+
+%% Five columns with 0.5 in gutters across the 45 in text block.
+\newlength{\colw}
+\setlength{\colw}{(\textwidth - 4\dimexpr 0.5in\relax)/5}
+
+\begin{document}
+\raggedright
+
+%% ===========================================================================
+%%  TITLE BAND
+%% ===========================================================================
+\begin{minipage}[b]{0.76\textwidth}
+  \setlength{\parskip}{0pt}%
+  {\titlefont\color{gink}
+   Adaptive Perceptual Training via\\
+   Simulation-Based Inference of GRT Models\par}
+  \vspace{0.18in}
+  {\subtitlefont\color{greddeep}
+   Fitting a perceptual model fast enough to teach with it\par}
+  \vspace{0.18in}
+  {\authorfont\color{gink}Murray S. Bennett$^1$ \quad\textbullet\quad Peter D. Kvam$^1$
+  \quad\textbullet\quad Joseph W. Houpt$^2$\par}
+  \vspace{0.06in}
+  {\afflfont\color{gink}[1] The Ohio State University%
+  \quad [2] The University of Texas at San Antonio\par}
+\end{minipage}%
+\hfill
+\begin{minipage}[b]{0.22\textwidth}
+\setlength{\parskip}{0pt}%
+\raggedleft
+\vbox to 0pt{\vss   % pushes everything to sit on the bottom baseline
+  \IfFileExists{osu-logo.png}{\includegraphics[height=2.3in]{osu-logo.png}\\[0.25in]}%
+   {\IfFileExists{osu-logo.pdf}{\includegraphics[height=2.3in]{osu-logo.pdf}\\[0.25in]}%
+    {\textcolor{gmute}{\smallfont[ osu-logo.png ]}\\[0.25in]}}%
+\begin{minipage}[b]{2.3in}\centering
+    \resizebox{1.85in}{!}{\qrcode[level=M]{https://grin.murraysbennett.com}}\\
+    \vspace{0.06in}{\reffont\color{gink}Try it yourself}
+  \end{minipage}\hspace{0.35in}%
+  \begin{minipage}[b]{2.3in}\centering
+    \resizebox{1.85in}{!}{\qrcode[level=M]{https://github.com/murraysbennett/grin}}\\
+    \vspace{0.06in}{\reffont\color{gink}Code}
+  \end{minipage}%
+}
+\end{minipage}
+
+\vspace{0.1in}
+{\color{gink}\rule{\textwidth}{6pt}}
+\vspace{0.18in}
+
+%% ===========================================================================
+%%  HERO FIGURE — the whole method in one image
+%% ===========================================================================
+\noindent\input{pipeline}
+
+\vspace{0.16in}
+{\color{gmute}\rule{\textwidth}{2pt}}
+\vspace{0.16in}
+
+%% ===========================================================================
+%%  FIVE COLUMNS
+%% ===========================================================================
+\noindent
+%% ---------------------------------------------------------------- column 1
+\begin{minipage}[t]{\colw}
+% \qhead{The problem}{What we are measuring}
+\qhead{}{What we are measuring}
+
+{\bodyfont
+General recognition theory (GRT) describes how a person perceives and categorises a stimulus made of two features.
+Stimuli are placed in a perceptual space with the goal of recovering (i) their location, (ii) their noise, (iii) perceptual independence, and where the person sets their decision bounds.\par\medskip\medskip}
+
+\begin{callout}
+\textbf{In the clinic.} For melanoma identification, confusing an irregular \emph{border} with variegated \emph{colour} is a different failure from not seeing the colour variegation at all and each needs different practice. Accuracy alone cannot tell them apart but a multidimensional representation can.\medskip
+\end{callout}
+
+{\bodyfont
+The same performance split can show up in training. Three trainees could score identically yet differ underneath: one lacks the senstivity to see a feature, another perceives it but has drifted their criterion, and a third perceives both but cannot separate them. Critically, each requires different training.
+\par\medskip\medskip}
+
+{\bodyfont
+We aim to recover the representation behind multidimensional categorisation accuracy to facilitate efficient perceptual training.\par}
+
+
+\end{minipage}%
+\hfill
+%% ---------------------------------------------------------------- column 2
+\begin{minipage}[t]{\colw}
+% \qhead{Recovery}{Recovery, and its limit}
+\qhead{}{Recovery, and its limit}
+
+\gfig[2]{poster_recovery.png}{\textbf{Top:} estimated vs.\ true on held-out
+simulations --- sensitivities tightly, correlations not, a property of the data
+not the method; the third panel is each stimulus's joint error. \textbf{Bottom:}
+interval coverage sits on the diagonal.}
+
+{\bodyfont
+Recovery is uneven. Sensitivities return at $r \approx 0.975$, correlations far noisier at
+$r \approx 0.576$, but maximum likelihood shows the \emph{same} split.%
+\par\medskip\medskip}
+
+{\bodyfont
+Weak correlations are genuinely unrecoverable from one confusion matrix, but the posterior permits \textbf{honest} credible interval coverage at their stated rate, making the method safe to act on mid-experiment.
+\par}
+
+\end{minipage}%
+\hfill
+%% ---------------------------------------------------------------- column 3
+\begin{minipage}[t]{\colw}
+% \qhead{Speed}{Instant estimation}
+\qhead{}{Instant estimation}
+
+\gfig[3]{speed_accuracy.png}{Speed x accuracy trade-off compared against our own MLE and two leading R packages (\texttt{mdsdt, grtools}).
+\textbf{Top:}
+fast is left, accurate is up --- GRIN is both fast and accurate.
+Faster than all other tools and no less accurate than the R packages or Python MLE.
+\textbf{Bottom:} accuracy rises with sample size, and GRIN leads when data are scarce.
+\par\medskip\medskip\medskip\medskip}
+
+\bignum{100x}{faster than the realistic MLE workflow.}
+
+{\bodyfont\medskip
+This speed wholly represents the enabling condition.
+At $\sim$1'\,ms a posterior update fits inside an inter-stimulus interval, so the model can sit \emph{inside} the trial loop and never fail to return an answer (which R and MLE fitters sometimes do).
+\par}
+\end{minipage}%
+\hfill
+%% ---------------------------------------------------------------- column 4
+\begin{minipage}[t]{\colw}
+\qhead{}{Identification}
+
+\gfig[2]{constructs.png}{}
+\begin{callout}
+\textbf{Invisible independence.} Every method drifts toward signalling independence as the real
+correlation vanishes. Weak correlations barely affect a confusion matrix, so a challenging to identify.
+GRIN can help here by reporting the uncertainty where  the others are committed to a point estimate.
+\end{callout}
+
+{\bodyfont
+Separability is recovered sharply but correlation structure is not. This is true for all methods, not just ours.\par}
+\end{minipage}%
+\hfill
+%% ---------------------------------------------------------------- column 5
+\begin{minipage}[t]{\colw}
+% \qhead{Implications}{Practical outcomes}
+\qhead{}{Implications}
+
+\gfig[2]{rt_dumbbell.png}{}
+\begin{callout}
+\textbf{Timing.} Response times can (mostly) recover processing
+architecture and dimension neglect, but is largely helpless for the correlation problem.
+\end{callout}
+
+\bignum{55\%}{of trials can be saved by stopping each participant at a precision
+threshold for model class or parameter estimate confidence instead of a fixed budget.}
+
+% \bignum{46\%}{fewer trials for a simulated learner to reach an expert target under a representation-tracking curriculum}
+
+% {\bodyfont
+% \textbf{An honest negative:} information-gain stimulus selection roughly \emph{ties} round-robin.
+% With four symmetric stimuli, balanced coverage is already near-optimal.
+% The win comes from knowing \emph{when to stop} and \emph{what to teach}, not from cleverer sampling.
+% \par}
+
+\begin{callout}
+\textbf{Next.} 
+\begin{itemize}
+	\item Real-world and melanoma screening, where shape asymmetry, border irregularity, colour variance, and many more complex perceptual features genuinely overlap.
+	\item Develop targeted sitmulus selection for trainign perceptual sensitivity and/or holistic representations. 
+	\item One could also move from selecting stimuli in a pool to generating them.
+\end{itemize}
+\end{callout}
+
+\end{minipage}
+
+
+%% ===========================================================================
+%%  FOOTER
+%% ===========================================================================
+\vfill
+{\color{gmute}\rule{\textwidth}{2pt}}
+\vspace{0.05in}
+
+\noindent
+\begin{minipage}[t]{0.6\textwidth}
+\setlength{\parskip}{0pt}%
+{\reffont\color{gink}
+Ashby \& Townsend (1986), \emph{Psychol.\ Rev.\ 93}, 154--179. \quad
+Cranmer, Brehmer \& Louppe (2020), \emph{PNAS 117}, 30055--30062. \\[0.03in]
+Silbert \& Thomas (2013), \emph{Psychon.\ Bull.\ Rev.\ 20}, 1--20.
+\par}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.4\textwidth}
+\setlength{\parskip}{0pt}%
+\raggedleft
+{\smallfont\color{gink}
+\faEnvelope\ \textbf{bennett.1755@osu.edu} \quad
+\faGithub\ \texttt{github.com/murraysbennett/grin} \quad
+\faGlobe\ \texttt{murraysbennett.com}
+\par}
+\end{minipage}
+
+\end{document}

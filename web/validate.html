@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <!-- Anti-flash: apply the theme class on <html> SYNCHRONOUSLY, before first
-         paint. Must stay inline and right after <meta charset> — grin-shell.js is
+         paint. Must stay inline and right after <meta charset>, grin-shell.js is
          an ES module and runs too late to prevent the flash. Reads the SAME key
          the rest of the site uses ("msb-dark-mode"), so a dark/light choice made
          anywhere carries across; falls back to the OS preference. Keep in sync
@@ -24,10 +24,10 @@
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Space Builder — GRIN</title>
+    <title>Validate - GRIN</title>
     <meta
       name="description"
-      content="Build a GRT perceptual space, watch the confusion matrix it produces, run a virtual experiment, and see whether the model can find its way back."
+      content="Check GRIN for yourself: over many simulated participants where the true representation is known, does it recover the representation, and do its uncertainty intervals mean what they say? Recovery and calibration, run live in your browser."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -37,331 +37,140 @@
     />
     <link rel="stylesheet" href="./assets/css/grin.css" />
   </head>
-  <body data-page="space-builder">
+  <body data-page="validate">
     <header class="site">
-      <h1>Space Builder</h1>
+      <h1>Validate</h1>
       <p class="tagline">
-        Build a perceptual space. See the data it produces. Find out whether
-        anyone could have recovered it.
+        Recovery and calibration, on data where the truth is known.
       </p>
       <div id="nav-placeholder"></div>
     </header>
 
     <main class="container">
       <div class="plain" style="margin-bottom: 1.25rem">
-        <span class="eyebrow">In plain English</span>
+        <span class="eyebrow">What this page is for</span>
         <p>
-          Imagine identifying a face as <em>happy or sad</em> and
-          <em>male or female</em> at the same time. GRT says each face lands
-          somewhere in a two-dimensional "perceptual space" — a cloud, not a
-          point, because perception is noisy. You respond by asking which side
-          of each line the cloud landed on.
+          Everywhere else on this site works with a single dataset. This page
+          asks a different question, and answers it live in your browser: over
+          many simulated participants whose true representation we set
+          ourselves, does GRIN <strong>recover</strong> that representation, and
+          do its uncertainty intervals <strong>mean what they say</strong>?
         </p>
-        <p>
-          Two things can go wrong with independence.
-          <strong>The clouds can move</strong>: if a face's happiness changes
-          depending on whether it's male, the dimensions aren't
-          <em>separable</em>. <strong>The clouds can tilt</strong>: if
-          noisy-happy and noisy-male travel together on a given trial, the
-          dimensions aren't <em>independent</em>. Drag the sliders and watch
-          both happen.
+        <p style="margin-bottom: 0">
+          Because the data are simulated, the true answer is known for every
+          participant, so the estimates can be checked against it rather than
+          taken on trust. For the same kind of comparison on your own or
+          published data, GRIN alongside a maximum-likelihood fit, the
+          <a href="./analyse.html">Analyse</a> page is the place to go.
         </p>
       </div>
 
       <div class="tool">
         <!-- ------------------------------------------------------------------ -->
         <aside class="panel sticky">
-          <span class="eyebrow">1. Build the space</span>
+          <span class="eyebrow">Set up the check</span>
 
-          <label
-            >Sensitivity, dimension A
-            <span class="val" id="v-mA">1.40</span></label
-          >
-          <input
-            type="range"
-            id="mA"
-            min="0.1"
-            max="2.5"
-            step="0.05"
-            value="1.4"
-          />
-
-          <label
-            >Sensitivity, dimension B
-            <span class="val" id="v-mB">1.40</span></label
-          >
-          <input
-            type="range"
-            id="mB"
-            min="0.1"
-            max="2.5"
-            step="0.05"
-            value="1.4"
-          />
-
-          <label
-            >Perceptual correlation ρ
-            <span class="val" id="v-rho">0.00</span></label
-          >
-          <input
-            type="range"
-            id="rho"
-            min="-0.9"
-            max="0.9"
-            step="0.05"
-            value="0"
-          />
-
-          <details open>
-            <summary>Break the assumptions</summary>
-            <div class="details-body">
-              <label
-                >Non-separability of A
-                <span class="val" id="v-dA">0.00</span></label
-              >
-              <input
-                type="range"
-                id="dA"
-                min="-1.5"
-                max="1.5"
-                step="0.05"
-                value="0"
-              />
-              <p class="cap" style="margin-top: 0.2rem">
-                How much A's perceived value shifts depending on the
-                <em>level of B</em>. Non-zero ⇒ A is not separable from B.
-              </p>
-
-              <label
-                >Non-separability of B
-                <span class="val" id="v-dB">0.00</span></label
-              >
-              <input
-                type="range"
-                id="dB"
-                min="-1.5"
-                max="1.5"
-                step="0.05"
-                value="0"
-              />
-
-              <label
-                >ρ differs across stimuli
-                <span class="val" id="v-rhoSpread">0.00</span></label
-              >
-              <input
-                type="range"
-                id="rhoSpread"
-                min="0"
-                max="0.6"
-                step="0.05"
-                value="0"
-              />
-              <p class="cap" style="margin-top: 0.2rem">
-                Gives the two "matched" stimuli a different correlation from the
-                other two. Non-zero ⇒ a single ρ can't describe the whole space.
-              </p>
-
-              <hr class="hr" />
-              <p class="cap" style="margin-top: 0">
-                <strong
-                  >The sliders above move a matched PAIR of stimuli
-                  together</strong
-                >
-                — the textbook pattern. In real data, separability often fails
-                more messily: <strong>one specific stimulus</strong> reads
-                oddly, not a coordinated pair. This moves just one:
-              </p>
-              <label>Which stimulus wanders?</label>
-              <select id="nudgeStim">
-                <option value="0">A1 / B1</option>
-                <option value="1">A1 / B2</option>
-                <option value="2">A2 / B1</option>
-                <option value="3">A2 / B2</option>
-              </select>
-              <label
-                >Δx for that stimulus only
-                <span class="val" id="v-nudgeX">0.00</span></label
-              >
-              <input
-                type="range"
-                id="nudgeX"
-                min="-1.5"
-                max="1.5"
-                step="0.05"
-                value="0"
-              />
-              <label
-                >Δy for that stimulus only
-                <span class="val" id="v-nudgeY">0.00</span></label
-              >
-              <input
-                type="range"
-                id="nudgeY"
-                min="-1.5"
-                max="1.5"
-                step="0.05"
-                value="0"
-              />
-              <div class="row">
-                <button id="nudge-reset" class="ghost wide">
-                  Reset all nudges
-                </button>
-              </div>
-              <p class="cap" id="nudge-summary" style="margin-top: 0.4rem"></p>
-            </div>
-          </details>
-
-          <details>
-            <summary>Names</summary>
-            <div class="details-body">
-              <label>Dimension A</label>
-              <input type="text" id="aName" value="Dimension A" />
-              <label>Levels of A (comma separated)</label>
-              <input type="text" id="aLevels" value="A1, A2" />
-              <label>Dimension B</label>
-              <input type="text" id="bName" value="Dimension B" />
-              <label>Levels of B</label>
-              <input type="text" id="bLevels" value="B1, B2" />
-            </div>
-          </details>
-
-          <div class="checkrow">
-            <input type="checkbox" id="showMarginals" checked />
-            <label for="showMarginals" style="margin: 0"
-              >Show marginal distributions</label
-            >
-          </div>
-
-          <hr class="hr" />
-
-          <span class="eyebrow">2. Run an experiment</span>
           <label
             >Trials per stimulus <span class="val" id="v-n">100</span></label
           >
-          <input type="range" id="n" min="5" max="1000" step="5" value="100" />
-          <div class="row">
-            <button id="run" class="wide">Run the experiment</button>
-          </div>
-          <div class="row">
-            <button id="reset" class="ghost wide">Reset the space</button>
-          </div>
-          <p class="status" id="status">
-            Adjust the space, then run an experiment.
+          <input type="range" id="n" min="10" max="500" step="10" value="100" />
+          <p class="cap" style="margin-top: 0.2rem">
+            Fewer trials means noisier data. A well-behaved method should get
+            less certain, wider intervals, rather than confidently wrong. Turn
+            this down and re-run to watch that happen.
           </p>
+
+          <label
+            >Simulated participants <span class="val" id="v-m">60</span></label
+          >
+          <input type="range" id="m" min="1" max="200" step="1" value="60" />
+          <p class="cap" style="margin-top: 0.2rem">
+            Each one gets a fresh, randomly drawn true representation, a
+            simulated experiment, and one GRIN fit.
+          </p>
+
+          <hr class="hr" />
+          <div class="row">
+            <button id="run" class="wide">Run the check</button>
+          </div>
+          <div class="track" style="height: 0.5rem; margin-top: 0.6rem">
+            <div
+              class="fill"
+              id="progress"
+              style="width: 0%; transition: width 0.1s linear"
+            ></div>
+          </div>
+          <p class="status" id="status">Set the batch, then run.</p>
         </aside>
 
         <!-- ------------------------------------------------------------------ -->
         <section>
           <div class="card">
-            <span class="eyebrow">The perceptual space you built</span>
+            <span class="eyebrow">1. Recovery, estimated vs. true</span>
             <div class="viz-2">
               <div>
-                <canvas id="space" width="565" height="565"></canvas>
-                <div class="legend" id="legend"></div>
+                <canvas id="sc-sens" width="300" height="300"></canvas>
+                <p class="cap" style="margin-top: 0.3rem; text-align: center">
+                  Sensitivities (the z-scores)
+                </p>
+              </div>
+              <div>
+                <canvas id="sc-corr" width="300" height="300"></canvas>
+                <p class="cap" style="margin-top: 0.3rem; text-align: center">
+                  Correlations (ρ)
+                </p>
+              </div>
+            </div>
+            <p class="cap" style="margin-top: 0">
+              Each point is one parameter of one simulated participant: its true
+              value across, GRIN's estimate up. Points on the dashed diagonal
+              were recovered exactly.
+            </p>
+            <div id="rec-summary"></div>
+          </div>
+
+          <div class="card">
+            <span class="eyebrow">2. Calibration, do the intervals hold?</span>
+            <div class="viz-2">
+              <div>
+                <canvas id="calib" width="320" height="300"></canvas>
               </div>
               <div>
                 <p class="cap" style="margin-top: 0">
-                  Each ellipse is one stimulus: a 1-SD contour of where it lands
-                  in perceptual space on a given trial. The dashed cross is the
-                  decision bound — you respond by asking which quadrant you fell
-                  into.
+                  An interval is only useful if its stated coverage is right.
+                  For each stated level of confidence, a 50% interval, an 80%
+                  interval, and so on, this plots how often the true value
+                  actually fell inside. A calibrated method sits on the dashed
+                  diagonal: its 90% intervals contain the truth about 90% of the
+                  time. Bowing above the line is under-confidence; below it,
+                  over-confidence.
                 </p>
-                <p class="cap">
-                  <strong>Read the marginals.</strong> Each dimension's two
-                  curves of the same colour are the same level of that
-                  dimension, paired with the two different levels of the
-                  <em>other</em> one (solid vs dotted). If they sit on top of
-                  each other, that dimension is separable.
-                  <strong>If they pull apart, it isn't.</strong>
-                </p>
-                <div id="truth"></div>
+                <div id="calib-headline"></div>
               </div>
             </div>
           </div>
 
           <div class="card">
-            <span class="eyebrow">The data that space produces</span>
-            <div class="viz-2">
-              <div>
-                <table class="cm" id="cm"></table>
-                <p class="cap" id="cm-cap">
-                  Exact response probabilities implied by the space above — this
-                  is what you'd get with infinitely many trials.
-                </p>
-              </div>
-              <div>
-                <div class="note">
-                  <h4>This is the whole problem</h4>
-                  <p>
-                    The confusion matrix has 16 cells, but each row must sum to
-                    1 — so it carries exactly <strong>12 free numbers</strong>.
-                    And the space above has exactly 12 identified parameters.
-                    That is not a coincidence: it's why a single confusion
-                    matrix is enough to pin down the space, and why one extra
-                    parameter would make it impossible.
-                  </p>
-                </div>
-                <div id="acc"></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card" id="recovery-card" hidden>
-            <span class="eyebrow">3. Could anyone have recovered it?</span>
-            <div id="stub-slot"></div>
-            <div class="viz-2">
-              <div>
-                <canvas id="space2" width="565" height="565"></canvas>
-                <div class="legend" id="legend2"></div>
-                <p class="cap">
-                  Solid = the space you built.
-                  <strong>Dashed rose = what was recovered</strong> from the
-                  noisy data alone. The gap between them is the error — and it
-                  is <em>supposed</em> to shrink as you raise the trial count.
-                </p>
-              </div>
-              <div>
-                <span class="eyebrow" style="font-size: 0.55rem"
-                  >Recovered parameters (90% intervals)</span
-                >
-                <div id="ests"></div>
-                <span
-                  class="eyebrow"
-                  style="font-size: 0.55rem; margin-top: 1rem"
-                  >Structural conclusions</span
-                >
-                <div id="constructs"></div>
-                <div id="verdict"></div>
-              </div>
-            </div>
-            <details>
-              <summary>What just happened?</summary>
-              <div class="details-body">
-                <p style="font-size: 0.88rem; margin-top: 0">
-                  We drew <span id="ntrials-echo">100</span> trials per stimulus
-                  from your space, producing a noisy confusion matrix — a
-                  simulated experiment. Then we handed
-                  <em>only that matrix</em> to the model, which had never seen
-                  your sliders, and asked it to reconstruct the space.
-                </p>
-                <p style="font-size: 0.88rem">
-                  Try this: set the trial count to 10 and run it a few times.
-                  The estimates jump around — and, crucially,
-                  <strong>the intervals get wide</strong>. That is the whole
-                  point. An honest method doesn't just get less accurate with
-                  less data; it <em>tells you</em>
-                  it has got less accurate.
-                </p>
-              </div>
-            </details>
+            <span class="eyebrow">How to read this</span>
+            <p style="margin: 0">
+              The sensitivities land tightly on the diagonal. The correlations
+              are looser, because a weak within-stimulus correlation leaves only
+              a faint trace in a single confusion matrix. That is a limit of
+              what the data carry rather than of the estimator, and a
+              maximum-likelihood fit shows the same split.
+              <a href="./independence.html">An independence problem</a> walks
+              through why. As you lower the trials per stimulus the points
+              spread out, but the calibration curve should stay near the
+              diagonal: the estimates get less certain and report it, which is
+              the property worth checking and what this page lets you check.
+            </p>
           </div>
         </section>
       </div>
     </main>
 
     <footer class="site">
-      <p>GRIN — amortised Bayesian inference for General Recognition Theory.</p>
+      <p>GRIN, amortised Bayesian inference for General Recognition Theory.</p>
       <p class="fine">
         <a href="https://murraysbennett.com"
           >Part of Murray S. Bennett's research</a
@@ -373,336 +182,358 @@
     </footer>
 
     <script type="module">
-      import * as Plot from "./assets/js/grt-plot.js";
       import * as Sim from "./assets/js/grt-sim.js";
+      import * as Core from "./assets/js/grt-core.js";
+      import * as Plot from "./assets/js/grt-plot.js";
       import { loadModel } from "./assets/js/grin-model.js";
-      import { cmAccuracy } from "./assets/js/grt-plot.js";
-      import { forwardProbabilities } from "./assets/js/grt-core.js";
       import "./assets/js/grin-shell.js";
 
       const $ = (id) => document.getElementById(id);
-      const SLIDERS = ["mA", "mB", "rho", "dA", "dB", "rhoSpread", "n"];
-      const DEFAULTS = {
-        mA: 1.4,
-        mB: 1.4,
-        rho: 0,
-        dA: 0,
-        dB: 0,
-        rhoSpread: 0,
-        n: 100,
-      };
-
-      // Independent per-stimulus nudges. Kept as separate state (not read fresh from
-      // the DOM like the other sliders) because only ONE stimulus's Δx/Δy is visible
-      // on screen at a time — switching the dropdown must not forget the other three.
-      let nudge = { x: [0, 0, 0, 0], y: [0, 0, 0, 0] };
 
       let model = null;
-      let lastRun = null;
-
       async function getModel() {
-        if (model) return model;
-        model = await loadModel("./assets/models/cm");
+        if (!model) model = await loadModel("./assets/models/cm");
         return model;
       }
 
-      function readControls() {
-        const o = {};
-        for (const k of SLIDERS) o[k] = parseFloat($(k).value);
-        return o;
-      }
+      // The most recent batch, kept so a theme change (or a calibration redraw)
+      // can repaint from the same simulated data instead of re-running.
+      let batch = null;
 
-      /** The actual representation on screen: sliders + the independent nudges. */
-      function currentRep() {
-        return Sim.buildRepresentation({ ...readControls(), nudge });
-      }
-
-      function nudgeSummary() {
-        const active = [0, 1, 2, 3].filter(
-          (i) => nudge.x[i] !== 0 || nudge.y[i] !== 0,
-        );
-        if (!active.length) return "No stimuli nudged.";
-        const names = ["A1/B1", "A1/B2", "A2/B1", "A2/B2"];
-        return (
-          "Nudged: " +
-          active
-            .map(
-              (i) =>
-                `${names[i]} (Δx ${nudge.x[i].toFixed(2)}, Δy ${nudge.y[i].toFixed(2)})`,
-            )
-            .join("; ")
-        );
-      }
-
-      function labels() {
-        const [a1, a2] = Plot.parseLevels($("aLevels").value, ["A1", "A2"]);
-        const [b1, b2] = Plot.parseLevels($("bLevels").value, ["B1", "B2"]);
-        return {
-          aName: $("aName").value || "Dimension A",
-          a1,
-          a2,
-          bName: $("bName").value || "Dimension B",
-          b1,
-          b2,
-        };
-      }
-
-      /**
-       * @param {boolean} invalidate — true when the CONTROLS changed (the previous run
-       * no longer describes the space on screen, so it must be cleared). False when we
-       * are only repainting, e.g. on a theme change — repainting must never destroy
-       * the user's results.
-       */
-      function draw(invalidate = true) {
-        const c = readControls();
-        for (const k of SLIDERS)
-          $("v-" + k) &&
-            ($("v-" + k).textContent = k === "n" ? c[k] : c[k].toFixed(2));
-        $("nudge-summary").textContent = nudgeSummary();
-
-        const rep = currentRep();
-        const L = labels();
-        const stimuli = [0, 1, 2, 3].map((i) => ({
-          zx: rep.zx[i],
-          zy: rep.zy[i],
-          rho: rep.rho[i],
-        }));
-
-        Plot.renderSpace($("space"), {
-          stimuli,
-          labels: L,
-          showMarginals: $("showMarginals").checked,
+      // --- sampling a random, in-range true representation ---------------------
+      // Uses the same builder the Space Builder uses, with randomised controls, so
+      // the truth always lands inside the range the network was trained on. Some
+      // draws are deliberately exactly separable / exactly independent so the
+      // scatter includes those cases rather than only messy ones.
+      function sampleTruth(rng) {
+        const U = (lo, hi) => lo + (hi - lo) * rng.uniform();
+        return Sim.buildRepresentation({
+          mA: U(0.3, 2.2),
+          mB: U(0.3, 2.2),
+          rho: rng.uniform() < 0.3 ? 0 : U(-0.85, 0.85),
+          dA: rng.uniform() < 0.4 ? 0 : U(-1.0, 1.0),
+          dB: rng.uniform() < 0.4 ? 0 : U(-1.0, 1.0),
+          rhoSpread: rng.uniform() < 0.5 ? 0 : U(0, 0.35),
         });
-        Plot.buildLegend($("legend"), L);
+      }
 
-        const P = forwardProbabilities([...rep.zx, ...rep.zy, ...rep.rho]);
-        Plot.renderCM($("cm"), P, L);
+      // --- stats helpers -------------------------------------------------------
+      function pearson(x, y) {
+        const n = x.length;
+        let sx = 0,
+          sy = 0,
+          sxx = 0,
+          syy = 0,
+          sxy = 0;
+        for (let i = 0; i < n; i++) {
+          sx += x[i];
+          sy += y[i];
+          sxx += x[i] * x[i];
+          syy += y[i] * y[i];
+          sxy += x[i] * y[i];
+        }
+        const cov = n * sxy - sx * sy;
+        const dx = Math.sqrt(n * sxx - sx * sx);
+        const dy = Math.sqrt(n * syy - sy * sy);
+        return dx && dy ? cov / (dx * dy) : NaN;
+      }
 
-        const acc = cmAccuracy(P);
-        $("acc").innerHTML = `<div class="est">
-    <div class="lbl">Accuracy</div>
-    <div class="track"><div class="ci" style="left:0;width:${(100 * acc).toFixed(1)}%;opacity:.8"></div></div>
-    <div class="num">${(100 * acc).toFixed(1)}%</div>
-  </div>`;
+      /** Empirical coverage of the central `level` interval, assuming the
+       * Gaussian marginal the network actually returns (mean ± z·sd). */
+      function coverageAt(tru, est, sd, level) {
+        const z = Core.nppf(0.5 + level / 2);
+        let c = 0;
+        for (let i = 0; i < tru.length; i++)
+          if (Math.abs(tru[i] - est[i]) <= z * sd[i]) c++;
+        return c / tru.length;
+      }
 
-        // what is TRUE of this space — stated before any inference, so the user can
-        // check the model's answer against a known truth rather than trusting it.
-        // Checked against the actual built vectors (rep), not the sliders (c): a
-        // nudge can break PS(A) on its own even when dA is 0, so c alone can no
-        // longer tell you the truth.
-        const t = Sim.trueAssumptions(rep);
-        const pill = (ok, yes, no) =>
-          `<span class="pill ${ok ? "ok" : "warn"}">${ok ? yes : no}</span>`;
-        $("truth").innerHTML = `
-    <p class="cap" style="margin-bottom:.35rem"><strong>Ground truth for this space:</strong></p>
-    <div class="row" style="margin-top:0">
-      ${pill(t.psA, "A separable", "A NOT separable")}
-      ${pill(t.psB, "B separable", "B NOT separable")}
-      ${pill(t.pi, "independent", t.rho1 ? "correlated (one ρ)" : "correlated (ρ varies)")}
-    </div>`;
+      // --- tiny self-contained canvas plotting (matches the site theme) --------
+      function ctxFor(canvas, w, h) {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = w + "px";
+        canvas.style.maxWidth = "100%";
+        canvas.style.height = "auto";
+        const g = canvas.getContext("2d");
+        g.setTransform(dpr, 0, 0, dpr, 0, 0);
+        g.clearRect(0, 0, w, h);
+        return g;
+      }
 
-        // any change to the space invalidates the previous run
-        if (invalidate && lastRun) {
-          $("recovery-card").hidden = true;
-          lastRun = null;
-          $("status").textContent = "Space changed. Run the experiment again.";
+      function drawScatter(canvas, xs, ys, lo, hi, color, T) {
+        const W = 300,
+          H = 300,
+          m = 38,
+          pad = 12;
+        const g = ctxFor(canvas, W, H);
+        const x0 = m,
+          y0 = H - m,
+          plotW = W - m - pad,
+          plotH = H - m - pad;
+        const X = (v) => x0 + ((v - lo) / (hi - lo)) * plotW;
+        const Y = (v) => y0 - ((v - lo) / (hi - lo)) * plotH;
+
+        // frame
+        g.strokeStyle = T.line;
+        g.lineWidth = 1;
+        g.strokeRect(x0, pad, plotW, plotH);
+
+        // identity line
+        g.strokeStyle = T.mute;
+        g.setLineDash([5, 4]);
+        g.lineWidth = 1.2;
+        g.beginPath();
+        g.moveTo(X(lo), Y(lo));
+        g.lineTo(X(hi), Y(hi));
+        g.stroke();
+        g.setLineDash([]);
+
+        // points
+        g.fillStyle = color;
+        g.globalAlpha = xs.length > 1200 ? 0.22 : 0.38;
+        for (let i = 0; i < xs.length; i++) {
+          g.beginPath();
+          g.arc(X(xs[i]), Y(ys[i]), 2.1, 0, Math.PI * 2);
+          g.fill();
+        }
+        g.globalAlpha = 1;
+
+        // axis ticks + labels
+        g.fillStyle = T.mute;
+        g.font = "11px Inter, system-ui, sans-serif";
+        g.textAlign = "center";
+        g.fillText(String(lo), X(lo), H - m + 16);
+        g.fillText(String(hi), X(hi), H - m + 16);
+        g.fillText("true", (x0 + X(hi)) / 2, H - 6);
+        g.save();
+        g.translate(12, (pad + y0) / 2);
+        g.rotate(-Math.PI / 2);
+        g.fillText("recovered", 0, 0);
+        g.restore();
+        g.textAlign = "right";
+        g.fillText(String(hi), x0 - 6, Y(hi) + 3);
+        g.fillText(String(lo), x0 - 6, Y(lo) + 3);
+      }
+
+      function drawCalib(canvas, series, T) {
+        const W = 320,
+          H = 300,
+          m = 40,
+          pad = 14;
+        const g = ctxFor(canvas, W, H);
+        const x0 = m,
+          y0 = H - m,
+          plotW = W - m - pad,
+          plotH = H - m - pad;
+        const X = (v) => x0 + v * plotW;
+        const Y = (v) => y0 - v * plotH;
+
+        g.strokeStyle = T.line;
+        g.lineWidth = 1;
+        g.strokeRect(x0, pad, plotW, plotH);
+
+        g.strokeStyle = T.mute;
+        g.setLineDash([5, 4]);
+        g.lineWidth = 1.2;
+        g.beginPath();
+        g.moveTo(X(0), Y(0));
+        g.lineTo(X(1), Y(1));
+        g.stroke();
+        g.setLineDash([]);
+
+        for (const s of series) {
+          g.strokeStyle = s.color;
+          g.fillStyle = s.color;
+          g.lineWidth = 1.8;
+          g.beginPath();
+          s.pts.forEach(([nx, ny], i) =>
+            i ? g.lineTo(X(nx), Y(ny)) : g.moveTo(X(nx), Y(ny)),
+          );
+          g.stroke();
+          for (const [nx, ny] of s.pts) {
+            g.beginPath();
+            g.arc(X(nx), Y(ny), 2.6, 0, Math.PI * 2);
+            g.fill();
+          }
+        }
+
+        // axis labels
+        g.fillStyle = T.mute;
+        g.font = "11px Inter, system-ui, sans-serif";
+        g.textAlign = "center";
+        g.fillText("stated confidence", (x0 + X(1)) / 2, H - 6);
+        ["0", "0.5", "1"].forEach((t, i) =>
+          g.fillText(t, X(i / 2), H - m + 15),
+        );
+        g.save();
+        g.translate(12, (pad + y0) / 2);
+        g.rotate(-Math.PI / 2);
+        g.fillText("actual coverage", 0, 0);
+        g.restore();
+
+        // legend
+        g.textAlign = "left";
+        let ly = pad + 6;
+        for (const s of series) {
+          g.fillStyle = s.color;
+          g.fillRect(X(0) + 8, ly - 7, 10, 3);
+          g.fillStyle = T.ink;
+          g.fillText(s.label, X(0) + 22, ly - 2);
+          ly += 15;
         }
       }
 
+      // --- render everything from the stored batch -----------------------------
+      function renderAll() {
+        if (!batch) return;
+        const T = Plot.theme();
+        const cSens = T.slate || T.stim[1];
+        const cCorr = T.predicted;
+
+        drawScatter(
+          $("sc-sens"),
+          batch.sensTrue,
+          batch.sensRec,
+          -3,
+          3,
+          cSens,
+          T,
+        );
+        drawScatter(
+          $("sc-corr"),
+          batch.corrTrue,
+          batch.corrRec,
+          -1,
+          1,
+          cCorr,
+          T,
+        );
+
+        const rS = pearson(batch.sensTrue, batch.sensRec);
+        const rC = pearson(batch.corrTrue, batch.corrRec);
+        $("rec-summary").innerHTML = `
+    <div class="note">
+      <h4>Recovery over ${batch.M} participants at ${batch.n} trials/stimulus</h4>
+      <p>Sensitivities recover closely (r &asymp; <strong>${rS.toFixed(2)}</strong>).
+      Correlations are recovered less sharply (r &asymp; <strong>${rC.toFixed(2)}</strong>) , 
+      a weak within-stimulus correlation leaves only a faint trace in one confusion
+      matrix, so it is genuinely harder to pin down. This split is a property of the
+      data rather than the method.</p>
+    </div>`;
+
+        const levels = [0.5, 0.7, 0.8, 0.9, 0.95];
+        const sSens = levels.map((L) => [
+          L,
+          coverageAt(batch.sensTrue, batch.sensRec, batch.sensStd, L),
+        ]);
+        const sCorr = levels.map((L) => [
+          L,
+          coverageAt(batch.corrTrue, batch.corrRec, batch.corrStd, L),
+        ]);
+        drawCalib(
+          $("calib"),
+          [
+            { label: "sensitivities", color: cSens, pts: sSens },
+            { label: "correlations", color: cCorr, pts: sCorr },
+          ],
+          T,
+        );
+
+        const all90 = coverageAt(
+          [...batch.sensTrue, ...batch.corrTrue],
+          [...batch.sensRec, ...batch.corrRec],
+          [...batch.sensStd, ...batch.corrStd],
+          0.9,
+        );
+        $("calib-headline").innerHTML = `
+    <div class="note">
+      <h4>90% intervals contained the truth ${(100 * all90).toFixed(0)}% of the time</h4>
+      <p>Close to 90% is what a calibrated method looks like. This is measured live
+      on the batch above, so it will wobble a little run to run and shift as you change
+      the trial count.</p>
+    </div>`;
+      }
+
+      // --- run -----------------------------------------------------------------
       async function run() {
-        const rep = currentRep();
-        const L = labels();
-        const n = parseFloat($("n").value);
+        const n = +$("n").value;
+        const M = +$("m").value;
 
+        let mdl;
+        try {
+          mdl = await getModel();
+        } catch (e) {
+          $("status").innerHTML =
+            `<span class="pill bad">Couldn't load the model (${e.message}).</span>`;
+          return;
+        }
+
+        $("run").disabled = true;
         $("status").textContent = "Simulating…";
-        const data = Sim.simulateCounts(rep, n);
+        $("progress").style.width = "0%";
 
-        const m = await getModel();
-        const res = await m.predict(data);
-        lastRun = { data, res, rep, L, n };
+        const rng = Sim.makeRNG();
+        const sensTrue = [],
+          sensRec = [],
+          sensStd = [];
+        const corrTrue = [],
+          corrRec = [],
+          corrStd = [];
 
-        // the observed (noisy) matrix now replaces the exact one
-        const props = data.counts.map((r, i) =>
-          r.map((v) => v / Math.max(1, data.trials[i])),
-        );
-        Plot.renderCM($("cm"), props, L, { counts: data.counts });
-        $("cm-cap").innerHTML =
-          `Observed from <strong>${n} trials per stimulus</strong> (counts in small type). ` +
-          `Noisy — which is the point.`;
-
-        // recovered space
-        const stimuli = [0, 1, 2, 3].map((i) => ({
-          zx: rep.zx[i],
-          zy: rep.zy[i],
-          rho: rep.rho[i],
-        }));
-        Plot.renderSpace($("space2"), {
-          stimuli,
-          predicted: Plot.toStimuli(res.mean),
-          labels: L,
-          showMarginals: false,
-        });
-        Plot.buildLegend($("legend2"), L, { predictedLabel: "recovered" });
-
-        // estimates with intervals, against the truth
-        const names = m.paramNames;
-        const truth = [...rep.zx, ...rep.zy, ...rep.rho];
-        let html = "";
-        for (let i = 0; i < 12; i++) {
-          const range = i < 8 ? [-3, 3] : [-1, 1];
-          html += Plot.estRow(
-            `${names[i]} <span style="color:var(--mute-soft)">(true ${truth[i].toFixed(2)})</span>`,
-            res.mean[i],
-            res.std[i],
-            range,
-          );
+        for (let k = 0; k < M; k++) {
+          const rep = sampleTruth(rng);
+          const truth = [...rep.zx, ...rep.zy, ...rep.rho];
+          const data = Sim.simulateCounts(rep, n, rng);
+          const res = await mdl.predict(data);
+          for (let i = 0; i < 8; i++) {
+            sensTrue.push(truth[i]);
+            sensRec.push(res.mean[i]);
+            sensStd.push(res.std[i]);
+          }
+          for (let i = 8; i < 12; i++) {
+            corrTrue.push(truth[i]);
+            corrRec.push(res.mean[i]);
+            corrStd.push(res.std[i]);
+          }
+          if (k % 25 === 0) {
+            $("status").textContent = `Simulating… ${k} / ${M}`;
+            $("progress").style.width = `${((100 * k) / M).toFixed(0)}%`;
+            await new Promise((r) => setTimeout(r, 0)); // let the UI breathe
+          }
         }
-        $("ests").innerHTML = html;
 
-        // structural conclusions vs ground truth
-        const t = Sim.trueAssumptions(rep);
-        $("constructs").innerHTML =
-          Plot.pbar(
-            `A is separable <em>(truly ${t.psA ? "yes" : "no"})</em>`,
-            res.sep.A,
-          ) +
-          Plot.pbar(
-            `B is separable <em>(truly ${t.psB ? "yes" : "no"})</em>`,
-            res.sep.B,
-          ) +
-          Plot.pbar(
-            `Independent (ρ = 0) <em>(truly ${t.pi ? "yes" : "no"})</em>`,
-            res.corr.pi,
-          ) +
-          Plot.pbar(
-            `One shared ρ <em>(truly ${t.rho1 && !t.pi ? "yes" : "no"})</em>`,
-            res.corr.rho1,
-          ) +
-          Plot.pbar(
-            `ρ varies by stimulus <em>(truly ${!t.rho1 ? "yes" : "no"})</em>`,
-            res.corr.free,
-          );
-
-        const mc = res.modelClass;
-        const decisive = mc.joint >= 0.5;
-        $("verdict").innerHTML = `
-    <div class="note ${decisive ? "" : "warn"}">
-      <h4>Verdict: <code>${mc.name}</code></h4>
-      <p>
-        Joint probability <strong>${mc.joint.toFixed(2)}</strong>.
-        ${
-          decisive
-            ? "That's a reasonably confident call."
-            : `That is <strong>not</strong> a confident call. With ${n} trials per stimulus the data
-             simply don't pin the structure down — and a method that reported a single
-             winning model here, with no caveat, would be misleading you.`
-        }
-      </p>
-    </div>`;
-
-        $("ntrials-echo").textContent = n;
-        $("recovery-card").hidden = false;
-        $("status").textContent = `Done in ${res.ms.toFixed(1)} ms.`;
-        renderStubBanner(res);
-        $("recovery-card").scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-        });
+        $("progress").style.width = "100%";
+        batch = {
+          n,
+          M,
+          sensTrue,
+          sensRec,
+          sensStd,
+          corrTrue,
+          corrRec,
+          corrStd,
+        };
+        renderAll();
+        $("run").disabled = false;
+        $("status").innerHTML =
+          `<span class="pill ok">${M} participants &times; ${n} trials/stimulus.</span>`;
       }
 
-      function renderStubBanner(res) {
-        $("stub-slot").innerHTML =
-          res.backend === "stub"
-            ? `<div class="stub-banner">
-         <strong>Placeholder inference.</strong> The trained network isn't wired in yet, so these
-         estimates come from a maximum-likelihood stand-in. The parameter estimates are
-         real; the <em>uncertainty intervals are only a rough approximation</em>, and calibrated
-         uncertainty is the main thing GRIN adds. Treat the intervals as illustrative
-         until the weights land.
-       </div>`
-            : "";
-      }
-
-      for (const k of SLIDERS) $(k).addEventListener("input", () => draw(true));
-      // Renaming a dimension or toggling the marginals does NOT change the space, so
-      // it must not throw away a completed run.
-      ["aName", "aLevels", "bName", "bLevels", "showMarginals"].forEach((id) =>
-        $(id).addEventListener("input", () => {
-          draw(false);
-          if (lastRun) redrawRun();
-        }),
+      $("n").addEventListener(
+        "input",
+        () => ($("v-n").textContent = $("n").value),
+      );
+      $("m").addEventListener(
+        "input",
+        () => ($("v-m").textContent = $("m").value),
       );
       $("run").addEventListener("click", run);
-      $("reset").addEventListener("click", () => {
-        for (const [k, v] of Object.entries(DEFAULTS)) $(k).value = v;
-        nudge = { x: [0, 0, 0, 0], y: [0, 0, 0, 0] };
-        $("nudgeX").value = 0;
-        $("nudgeY").value = 0;
-        $("nudgeStim").value = "0";
-        $("recovery-card").hidden = true;
-        lastRun = null;
-        draw();
-        $("status").textContent =
-          "Reset. Adjust the space, then run an experiment.";
-      });
 
-      // --- nudge controls: the dropdown selects WHICH stimulus the two sliders
-      // below it are currently editing. Switching stimuli must show that stimulus's
-      // own stored offset, not reset it to zero or leak the previous one. ---
-      function syncNudgeSliders() {
-        const i = +$("nudgeStim").value;
-        $("nudgeX").value = nudge.x[i];
-        $("nudgeY").value = nudge.y[i];
-        $("v-nudgeX").textContent = nudge.x[i].toFixed(2);
-        $("v-nudgeY").textContent = nudge.y[i].toFixed(2);
-      }
-      $("nudgeStim").addEventListener("change", syncNudgeSliders);
-      $("nudgeX").addEventListener("input", () => {
-        nudge.x[+$("nudgeStim").value] = parseFloat($("nudgeX").value);
-        $("v-nudgeX").textContent = (+$("nudgeX").value).toFixed(2);
-        draw(true);
-      });
-      $("nudgeY").addEventListener("input", () => {
-        nudge.y[+$("nudgeStim").value] = parseFloat($("nudgeY").value);
-        $("v-nudgeY").textContent = (+$("nudgeY").value).toFixed(2);
-        draw(true);
-      });
-      $("nudge-reset").addEventListener("click", () => {
-        nudge = { x: [0, 0, 0, 0], y: [0, 0, 0, 0] };
-        syncNudgeSliders();
-        draw(true);
-      });
-
-      // A theme change must only REDRAW. Re-running run() here would silently
-      // resample the experiment, so toggling dark mode would change your results.
-      Plot.onThemeChange(() => {
-        draw(false);
-        if (lastRun) redrawRun();
-      });
-
-      function redrawRun() {
-        const { data, res, rep, L, n } = lastRun;
-        const props = data.counts.map((r, i) =>
-          r.map((v) => v / Math.max(1, data.trials[i])),
-        );
-        Plot.renderCM($("cm"), props, L, { counts: data.counts });
-        $("cm-cap").innerHTML =
-          `Observed from <strong>${n} trials per stimulus</strong> (counts in small type). Noisy — which is the point.`;
-        Plot.renderSpace($("space2"), {
-          stimuli: [0, 1, 2, 3].map((i) => ({
-            zx: rep.zx[i],
-            zy: rep.zy[i],
-            rho: rep.rho[i],
-          })),
-          predicted: Plot.toStimuli(res.mean),
-          labels: L,
-          showMarginals: false,
-        });
-        Plot.buildLegend($("legend2"), L, { predictedLabel: "recovered" });
-        $("recovery-card").hidden = false;
-      }
-
-      draw();
+      // A theme change must only repaint from the stored batch, never re-run,
+      // which would resample and change the numbers under the user.
+      Plot.onThemeChange(renderAll);
     </script>
   </body>
 </html>

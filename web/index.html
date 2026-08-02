@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <!-- Anti-flash: apply the theme class on <html> SYNCHRONOUSLY, before first
-         paint. Must stay inline and right after <meta charset> — grin-shell.js is
+         paint. Must stay inline and right after <meta charset>, grin-shell.js is
          an ES module and runs too late to prevent the flash. Reads the SAME key
          the rest of the site uses ("msb-dark-mode"), so a dark/light choice made
          anywhere carries across; falls back to the OS preference. Keep in sync
@@ -24,7 +24,7 @@
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>GRIN — General Recognition theory, INverted</title>
+    <title>GRIN - General Recognition Inversion Network</title>
     <meta
       name="description"
       content="GRIN fits General Recognition Theory models to identification data in milliseconds, with calibrated uncertainty. Explore the theory, analyse your own data, and check the tool against the alternatives."
@@ -41,7 +41,7 @@
     <header class="site">
       <h1>GRIN</h1>
       <p class="tagline">
-        General Recognition theory, INverted — fit GRT models to identification
+        General Recognition Inversion Network, fit GRT models to identification
         data in milliseconds, with uncertainty you can actually trust.
       </p>
       <div id="nav-placeholder"></div>
@@ -59,15 +59,13 @@
           that space out of a confusion matrix.
         </p>
         <p class="lede">
-          The hard part has always been the fitting. Maximum likelihood needs an
-          optimiser per participant, per model, and it gives you a point
-          estimate with standard errors that are only as good as the
-          asymptotics.
+          Maximum likelihood approaches this by running an optimiser for each
+          participant and each candidate model, and returns a point estimate.
           <strong
             >GRIN replaces the optimiser with a neural network trained on
             millions of simulated experiments.</strong
           >
-          Inference becomes a single forward pass — about a millisecond — and
+          Inference becomes a single forward pass, about a millisecond, and
           returns a posterior, not just a point.
         </p>
         <p class="lede">
@@ -89,7 +87,7 @@
         </a>
 
         <a class="door" href="./space-builder-time-attack.html">
-          <h3>Space Builder: Time Attack</h3>
+          <h3>Space Builder: +RT</h3>
           <p>
             The same, plus response times. Discover the thing accuracy cannot
             tell you: three different processing architectures produce
@@ -99,33 +97,43 @@
           <span class="kicker">The interesting one →</span>
         </a>
 
-        <a class="door" href="./analyse.html">
-          <h3>Analyse</h3>
-          <p>
-            Bring your own data. Upload a trial-level CSV and get GRT
-            parameters, model comparison, and a maximum-likelihood fit for
-            reference — side by side, so you can see exactly where they agree
-            and where they don't.
-          </p>
-          <span class="kicker">Bring your data →</span>
-        </a>
-
         <a class="door" href="./validate.html">
           <h3>Validate</h3>
           <p>
             Should you believe any of this? Parameter recovery, interval
             calibration, and head-to-head comparison against
-            <code>grtools</code>, <code>mdsdt</code>, and plain maximum
-            likelihood — on simulated and on real data.
+            <code>grtools</code>, <code>mdsdt</code>, and maximum likelihood, on
+            simulated and on real data.
           </p>
           <span class="kicker">Kick the tyres →</span>
+        </a>
+
+        <a class="door" href="./independence.html">
+          <h3>An independence problem</h3>
+          <p>
+            One thing GRT genuinely struggles to recover: whether two dimensions
+            are perceptually independent. See why, live, and what it means for
+            how you design a study.
+          </p>
+          <span class="kicker">Where to be careful →</span>
+        </a>
+
+        <a class="door" href="./analyse.html">
+          <h3>Analyse</h3>
+          <p>
+            Bring your own data. Upload a trial-level CSV and get GRT
+            parameters, model comparison, and a maximum-likelihood fit for
+            reference, side by side, so you can see exactly where they agree and
+            where they don't.
+          </p>
+          <span class="kicker">Bring your data →</span>
         </a>
 
         <a class="door" href="./dynamics.html">
           <h3>Dynamics</h3>
           <p>
             Everywhere else on this site is one fit, examined. GRIN is fast
-            enough that fitting isn't something you do after data collection —
+            enough that fitting isn't something you do after data collection,
             it's something you can do <em>during</em>
             it. Watch what that actually unlocks.
           </p>
@@ -134,7 +142,7 @@
       </div>
 
       <div class="card">
-        <span class="eyebrow">The honest version</span>
+        <span class="eyebrow">What it does and doesn't do</span>
         <div class="viz-2">
           <div>
             <h3 style="font-size: 0.66rem; color: var(--steel); margin-top: 0">
@@ -144,12 +152,12 @@
               <li>
                 <strong>Speed.</strong> A participant is a forward pass. Fitting
                 200 people is about as fast as fitting one, which makes
-                hierarchical and adaptive designs practical for the first time.
+                hierarchical and adaptive designs practical to run.
               </li>
               <li>
                 <strong>Calibrated uncertainty.</strong> The network returns a
                 posterior. We check that its 90% intervals actually contain the
-                truth 90% of the time — see
+                truth 90% of the time, see
                 <a href="./validate.html">Validate</a>.
               </li>
               <li>
@@ -187,20 +195,19 @@
       <div class="card">
         <span class="eyebrow">Cite / source</span>
         <p style="margin: 0">
-          GRIN is open source. The simulator, the networks, the validation
-          suite, and this site are all in the repository. If you use it, please
-          cite the paper — and if you find a case where it breaks, please tell
-          us, because that is the useful kind of bug.
+          The paper is in preparation. The simulator, the networks, the
+          validation suite, and this site will be released together as open
+          source. If you find a case where GRIN breaks, please get in touch,
+          that is the useful kind of bug.
         </p>
         <div class="row">
-          <a class="button" href="https://github.com/" rel="noopener">Source</a>
-          <a class="button ghost" href="./learn.html">GRT primer</a>
+          <a class="button" href="./learn.html">GRT primer</a>
         </div>
       </div>
     </main>
 
     <footer class="site">
-      <p>GRIN — amortised Bayesian inference for General Recognition Theory.</p>
+      <p>GRIN, amortised Bayesian inference for General Recognition Theory.</p>
       <p class="fine">
         <a href="https://murraysbennett.com"
           >Part of Murray S. Bennett's research</a

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <!-- Anti-flash: apply the theme class on <html> SYNCHRONOUSLY, before first
-         paint. Must stay inline and right after <meta charset> — grin-shell.js is
+         paint. Must stay inline and right after <meta charset>, grin-shell.js is
          an ES module and runs too late to prevent the flash. Reads the SAME key
          the rest of the site uses ("msb-dark-mode"), so a dark/light choice made
          anywhere carries across; falls back to the OS preference. Keep in sync
@@ -24,7 +24,7 @@
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Analyse — GRIN</title>
+    <title>Analyse - GRIN</title>
     <meta
       name="description"
       content="Upload identification data and get GRT parameter estimates, model comparison, and a maximum-likelihood reference fit, side by side, entirely in your browser."
@@ -99,7 +99,7 @@
                 Use this matrix
               </button>
               <p class="cap">
-                Counts only — response times need trial-level data.
+                Counts only, response times need trial-level data.
               </p>
             </div>
           </details>
@@ -108,20 +108,18 @@
           <span class="eyebrow">Or load a published example</span>
           <p class="cap" style="margin-top: 0">
             Real confusion matrices from the GRT literature, so you can see GRIN
-            and a classical maximum-likelihood fit — the same estimator
-            <code>grtools</code> and <code>mdsdt</code> implement — land on the
+            and a classical maximum-likelihood fit, the same estimator
+            <code>grtools</code> and <code>mdsdt</code> implement, land on the
             same answer for data someone else already published.
           </p>
           <div class="row">
             <select id="example-select" style="flex: 1">
-              <option value="soto">
-                Emotion / Gender — Soto et al. (2017)
-              </option>
+              <option value="soto">Emotion / Gender, Soto et al. (2017)</option>
               <option value="silbert_FD">
-                Frequency / Duration — Silbert et al. (2009)
+                Frequency / Duration, Silbert et al. (2009)
               </option>
               <option value="silbert_PT">
-                Pitch / Timbre — Silbert et al. (2009)
+                Pitch / Timbre, Silbert et al. (2009)
               </option>
             </select>
             <button id="load-example" class="ghost">Load</button>
@@ -214,7 +212,7 @@
                   >Style this export</span
                 >
                 <p class="cap" style="margin-top: 0">
-                  Only changes this one figure — the site keeps its own colours
+                  Only changes this one figure, the site keeps its own colours
                   everywhere else.
                 </p>
                 <label>Colour palette</label>
@@ -224,7 +222,7 @@
                     <option value="blackOnWhite">Black on white</option>
                     <option value="whiteOnBlack">White on black</option>
                     <option value="grayscalePrint">
-                      Grayscale, print-safe
+                      Greyscale, print-safe
                     </option>
                     <option value="colorblindSafe">
                       Colour-blind safe (Okabe–Ito)
@@ -313,7 +311,7 @@
                 </div>
                 <p class="cap" style="margin-top: 0.3rem">
                   The four stimuli are told apart by <em>position</em> either
-                  way — colour is a bonus cue, not the only one, so this is safe
+                  way, colour is a bonus cue, not the only one, so this is safe
                   to turn off if it's more distracting than helpful.
                 </p>
 
@@ -367,7 +365,7 @@
                 </div>
                 <p class="cap">
                   Renames the axes, the confusion matrix headers, and the export
-                  — for this session only, doesn't touch your uploaded file.
+                  , for this session only, doesn't touch your uploaded file.
                 </p>
               </div>
             </div>
@@ -375,7 +373,6 @@
 
           <div class="card" id="compare-card" hidden>
             <span class="eyebrow">GRIN vs. maximum likelihood</span>
-            <div id="stub-slot"></div>
             <div class="viz-2">
               <div>
                 <h3
@@ -398,9 +395,9 @@
                   MLE, full model <span class="pill neutral" id="mle-ms"></span>
                 </h3>
                 <p class="cap" style="margin-top: 0">
-                  Point estimates only — MLE has no calibrated uncertainty to
-                  offer here, which is the comparison this whole page is trying
-                  to make honestly.
+                  This column shows point estimates for reference. What GRIN
+                  adds alongside them is the calibrated posterior, the
+                  comparison this page is set up to show.
                 </p>
                 <div id="mle-ests"></div>
                 <h3 style="font-size: 0.68rem; color: var(--steel)">
@@ -444,7 +441,7 @@
     </main>
 
     <footer class="site">
-      <p>GRIN — amortised Bayesian inference for General Recognition Theory.</p>
+      <p>GRIN, amortised Bayesian inference for General Recognition Theory.</p>
       <p class="fine">
         <a href="https://murraysbennett.com"
           >Part of Murray S. Bennett's research</a
@@ -535,7 +532,7 @@
       });
 
       // --------------------------------------------------------------------------- //
-      // Published examples — real confusion matrices from the GRT literature. Not
+      // Published examples, real confusion matrices from the GRT literature. Not
       // here to claim GRIN is faster or better; here so the GRIN-vs-MLE comparison
       // above can be run on data someone else already published, with a citation
       // attached, so "different methods land on the same answer" is checkable
@@ -543,7 +540,7 @@
       // --------------------------------------------------------------------------- //
       const EXAMPLES = {
         soto: {
-          label: "Emotion / Gender — Soto et al. (2017)",
+          label: "Emotion / Gender, Soto et al. (2017)",
           matrix: [
             [140, 34, 36, 40],
             [85, 90, 5, 70],
@@ -560,10 +557,10 @@
       <em>Frontiers in Psychology</em>, 8, 696.
       <a href="https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2017.00696/full"
          target="_blank" rel="noopener">View paper</a>
-      — data reproduced from Table 1 (emotion/gender face identification).`,
+, data reproduced from Table 1 (emotion/gender face identification).`,
         },
         silbert_FD: {
-          label: "Frequency / Duration — Silbert et al. (2009)",
+          label: "Frequency / Duration, Silbert et al. (2009)",
           matrix: [
             [159, 33, 46, 12],
             [20, 186, 5, 39],
@@ -579,11 +576,11 @@
       <em>Attention, Perception, &amp; Psychophysics</em>, 71(8), 1900\u20131915.
       <a href="https://link.springer.com/article/10.3758/APP.71.8.1900"
          target="_blank" rel="noopener">View paper</a>
-      — reproduced from their frequency/duration identification experiment. Values
+, reproduced from their frequency/duration identification experiment. Values
       transcribed manually; worth a spot check against the original table before citing.`,
         },
         silbert_PT: {
-          label: "Pitch / Timbre — Silbert et al. (2009)",
+          label: "Pitch / Timbre, Silbert et al. (2009)",
           matrix: [
             [186, 22, 41, 1],
             [16, 180, 26, 28],
@@ -599,7 +596,7 @@
       <em>Attention, Perception, &amp; Psychophysics</em>, 71(8), 1900\u20131915.
       <a href="https://link.springer.com/article/10.3758/APP.71.8.1900"
          target="_blank" rel="noopener">View paper</a>
-      — reproduced from their pitch/timbre identification experiment. Values
+, reproduced from their pitch/timbre identification experiment. Values
       transcribed manually; worth a spot check against the original table before citing.`,
         },
       };
@@ -716,7 +713,7 @@
             ? `${result.trials.length} trials`
             : "1 matrix";
         $("file-status").innerHTML =
-          `<span class="pill ok">Parsed ${escapeHTML(sourceName)} — ${nBadge}${hasRT ? ", with RT" : ""}</span>` +
+          `<span class="pill ok">Parsed ${escapeHTML(sourceName)}, ${nBadge}${hasRT ? ", with RT" : ""}</span>` +
           (result.warnings?.length
             ? `<br><span class="pill warn" style="margin-top:.4rem">${result.warnings.length} warning(s)</span>`
             : "");
@@ -795,7 +792,7 @@
           $("figure-card").hidden = true;
           $("compare-card").hidden = true;
           $("analysis-status").innerHTML =
-            `<span class="pill bad">Cannot analyse ${escapeHTML(id)} — see notes above.</span>`;
+            `<span class="pill bad">Cannot analyse ${escapeHTML(id)}, see notes above.</span>`;
           return;
         }
 
@@ -884,7 +881,7 @@
     <h4>Best-supported class: <code>${mc.name}</code> <span class="cap">(${Core.modelLabel(mc.name)})</span></h4>
     <p>Joint probability ${mc.joint.toFixed(2)}.${
       mc.joint < 0.5
-        ? " Not decisive — treat the structural conclusion as tentative."
+        ? " Not decisive, treat the structural conclusion as tentative."
         : ""
     }</p>
   </div>`;
@@ -902,7 +899,6 @@
         } else {
           $("grin-rt-block").innerHTML = "";
         }
-        renderStub(grin);
 
         // MLE column: full (unconstrained) fit, comparable term-for-term to GRIN's posterior
         $("mle-ms").textContent = `${mleFull.ms.toFixed(2)} ms`;
@@ -922,7 +918,7 @@
     <td style="text-align:left;font-family:Inter,sans-serif">${f.model}</td>
     <td>${f.k}</td><td>${f.loglik.toFixed(1)}</td>
     <td>${f.bic.toFixed(1)}</td><td>${f.weight.toFixed(3)}</td>
-    <td>${Number.isFinite(f.p) ? f.p.toFixed(3) : "—"}</td>
+    <td>${Number.isFinite(f.p) ? f.p.toFixed(3) : ", "}</td>
   </tr>`,
           )
           .join("");
@@ -930,7 +926,7 @@
           `<tr><th style="text-align:left">Model</th><th>k</th>
     <th>log L</th><th>BIC</th><th>weight</th><th>G² p</th></tr>${rows}`;
         $("mle-rt-note").textContent = hasRT
-          ? "MLE has no response-time model here — grtools and mdsdt don't fit RT either. This comparison is counts-only by nature."
+          ? "MLE has no response-time model here, grtools and mdsdt don't fit RT either. This comparison is counts-only by nature."
           : "";
 
         // honest agreement check: GRIN posterior mean vs the unconstrained MLE fit
@@ -952,7 +948,7 @@
       <strong>${worst}</strong>: ${maxDiff.toFixed(3)} (${nSD.toFixed(1)} GRIN posterior SDs).
       ${
         nSD > 2
-          ? "That's a bigger gap than GRIN's own uncertainty would predict — worth a second look, especially if trial counts are low or this matrix is unusual."
+          ? "That's a bigger gap than GRIN's own uncertainty would predict, worth a second look, especially if trial counts are low or this matrix is unusual."
           : "That's well within GRIN's stated uncertainty, which is what you want to see."
       }
     </p>
@@ -961,25 +957,12 @@
         $("compare-card").hidden = false;
       }
 
-      function renderStub(res) {
-        $("stub-slot").innerHTML =
-          res.backend === "stub"
-            ? `<div class="stub-banner">
-         <strong>Placeholder inference.</strong> The trained network isn't wired in yet, so "GRIN
-         posterior" above is a maximum-likelihood stand-in dressed in the same interface —
-         the parameter values are real, but the <em>uncertainty intervals are only a rough
-         approximation</em>, not the network's calibrated output. Swap in the real weights to
-         get the real comparison.
-       </div>`
-            : "";
-      }
-
       // --------------------------------------------------------------------------- //
       // The classic GRT plot: GRIN's per-stimulus estimate (solid), against a chosen
-      // reference (dashed) — either the unconstrained MLE fit (the "different methods,
+      // reference (dashed), either the unconstrained MLE fit (the "different methods,
       // same answer" comparison) or GRIN's own estimate projected onto its best-fitting
       // model class (how much adjustment getting to a clean structural model cost).
-      // Redraws from cache only — never refits, so toggling the overlay or editing
+      // Redraws from cache only, never refits, so toggling the overlay or editing
       // labels is instant.
       // --------------------------------------------------------------------------- //
       // --------------------------------------------------------------------------- //
@@ -987,13 +970,13 @@
         site: "",
         custom: "",
         blackOnWhite:
-          "All-black lines — stimuli are told apart by position, not colour.",
+          "All-black lines, stimuli are told apart by position, not colour.",
         whiteOnBlack:
-          "All-white lines — stimuli are told apart by position, not colour.",
+          "All-white lines, stimuli are told apart by position, not colour.",
         grayscalePrint:
-          "Four distinguishable grays. Photocopies and prints cleanly.",
+          "Four distinguishable greys. Photocopies and prints cleanly.",
         colorblindSafe:
-          "Okabe–Ito palette — safe under deuteranopia, protanopia, and tritanopia.",
+          "Okabe–Ito palette, safe under deuteranopia, protanopia, and tritanopia.",
         apaStyle: "Muted, high-contrast, minimal decoration.",
         trueGrit: "Sepia + a wanted-poster title font. Purely for fun.",
         matrixConsole:
@@ -1015,7 +998,7 @@
       // A small easter egg: typing "Go Spurs Go" (case-insensitive) as the figure
       // title unlocks a Spurs palette + two image-based rendering options. Once
       // unlocked in a session it stays unlocked, even if the title is changed
-      // afterward — this is a one-time reveal, not something that flickers on and
+      // afterward, this is a one-time reveal, not something that flickers on and
       // off as the user types.
       // --------------------------------------------------------------------------- //
       let spursUnlocked = false;
@@ -1046,7 +1029,7 @@
         $("opt-spurs-retro").hidden = false;
         $("spurs-extra").hidden = false;
         $("spurs-unlock-note").innerHTML =
-          `<span class="pill ok">🏀 Go Spurs Go! — Spurs palettes unlocked below.</span>`;
+          `<span class="pill ok">🏀 Go Spurs Go!, Spurs palettes unlocked below.</span>`;
       }
 
       /** Read the "Style this export" panel into renderSpace-ready options. */
@@ -1124,7 +1107,7 @@
             : `Best model (${grin.modelClass.name})`;
 
         $("overlay-cap").textContent = !showPredicted
-          ? "Comparison ellipses are hidden — just GRIN's own estimate below."
+          ? "Comparison ellipses are hidden, just GRIN's own estimate below."
           : overlay === "mle"
             ? "How far GRIN's posterior mean sits from the classical maximum-likelihood fit on the same data."
             : "How much GRIN's free per-stimulus estimate had to move to satisfy its own best-fitting structural model.";
@@ -1134,12 +1117,12 @@
           PALETTE_NOTES[$("fig-palette").value] || "";
 
         // A webfont used ONLY on canvas (never applied via CSS to any DOM element)
-        // is not guaranteed to be loaded yet — fillText() would silently fall back
+        // is not guaranteed to be loaded yet, fillText() would silently fall back
         // to the default font for that draw, with no error. Explicitly request it
         // first; if the load fails (offline, blocked font host, older browser
         // without the Font Loading API), draw anyway with whatever font resolves.
         // Skip this for a palette like "blueprint" whose titleFont is already a
-        // system font stack (contains a comma) — there's nothing to fetch.
+        // system font stack (contains a comma), there's nothing to fetch.
         const wf = style.theme?.titleFont;
         if (wf && !wf.includes(",") && document.fonts?.load) {
           try {
@@ -1152,7 +1135,7 @@
 
         // Same pattern as the font preload just above: an image needs to be loaded
         // before drawImage() will show it (a not-yet-loaded Image just draws
-        // nothing, silently) — request it first, respect the render token after.
+        // nothing, silently), request it first, respect the render token after.
         let stimMarkerImage = null;
         if (spursUnlocked && $("fig-spurs-marker").checked) {
           stimMarkerImage = await loadImageOnce(
@@ -1228,7 +1211,7 @@
       });
       // --------------------------------------------------------------------------- //
       // An easter egg. Plays the real recording; if it's missing, blocked, or fails
-      // to decode for any reason, does nothing — no synthesized substitute.
+      // to decode for any reason, does nothing, no synthesized substitute.
       // --------------------------------------------------------------------------- //
       const EAGLE_AUDIO_SRC = "./assets/audio/eagle-screech.mp3";
       let eagleAudio = null;
@@ -1242,14 +1225,14 @@
           }
           eagleAudio.currentTime = 0;
           const p = eagleAudio.play();
-          if (p?.catch) p.catch(() => {}); // missing file, autoplay block, decode error — just skip it
+          if (p?.catch) p.catch(() => {}); // missing file, autoplay block, decode error, just skip it
         } catch {
-          /* no audio support — it's an easter egg, not a feature */
+          /* no audio support, it's an easter egg, not a feature */
         }
       }
 
       /** A brief on-screen firework flourish. Lives entirely outside the exported
-       * PNG — the PNG gets its own static spark decoration via the "fireworks"
+       * PNG, the PNG gets its own static spark decoration via the "fireworks"
        * texture; this is purely a viewport celebration, and removes itself. Fades
        * through navy rather than clearing to transparent each frame, which leaves
        * short glowing trails behind each spark instead of hard-edged dots. */
@@ -1333,12 +1316,12 @@
         const val = $("fig-palette").value;
         $("fig-custom-colors").hidden = val !== "custom";
         // Themed palettes (True GRiT's sepia, Matrix's black, etc.) look wrong on a
-        // transparent or mismatched background, so suggest the matching one — but
+        // transparent or mismatched background, so suggest the matching one, but
         // only as a default; the user can still pick something else afterward.
         if (val !== "site" && val !== "custom")
           $("fig-background").value = "palette";
         // Picking a Spurs palette is a pretty strong signal you want the spur
-        // marker too — suggest it on, but leave it fully overridable.
+        // marker too, suggest it on, but leave it fully overridable.
         if (
           spursUnlocked &&
           (val === "spursModern" || val === "spursRetroFiesta")
@@ -1463,7 +1446,7 @@
         window.__grinBatchRows = rows; // for CSV export
 
         // batch mode already populated `cache` for every non-skipped participant, so
-        // jumping to one's figure is a cache-only redraw — no refit.
+        // jumping to one's figure is a cache-only redraw, no refit.
         document.querySelectorAll(".batch-row-link").forEach((a) => {
           a.addEventListener("click", (e) => {
             e.preventDefault();

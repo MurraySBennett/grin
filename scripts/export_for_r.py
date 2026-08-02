@@ -27,27 +27,48 @@ from src.data.generator import GRTDataGenerator
 import src.grt_model as gm
 
 
-def main(n=600, seed=999):
+def main(n=2000, seed=999):
+    # Fixed bin edges in TRIALS PER STIMULUS (not quantiles): dense where GRIN's low-N
+    # advantage lives, coarse where the curve flattens and nothing new happens. The x-axis
+    # then carries real numbers instead of "low/mid/high", and the SAME edges are used for
+    # every method so a sparse baseline bin shows as a wide CI + low n, not a hidden gap.
+    TPS_EDGES = np.array([5, 10, 15, 20, 30, 50, 75, 100, 200, 500], dtype=float)
+
     per_class = max(n // 12, 10)
     g = GRTDataGenerator(n_per_class=per_class * 3, trial_range=TRIAL_RANGE,
                          z_max=Z_MAX, r_max=R_MAX, seed=seed)
     X, yp, Xt, yc, yl = g.generate_all_model_cms()
 
-    total = Xt.sum(1)
-    trial_bin = np.digitize(total, np.quantile(total, [0.33, 0.66]))     # low / mid / high
+    tps = Xt.sum(1) / 4.0                                    # mean trials per stimulus
+    trial_bin = np.clip(np.digitize(tps, TPS_EDGES) - 1, 0, len(TPS_EDGES) - 2)
     maxrho = np.abs(yp[:, 8:12]).max(1)
-    rho_bin = np.digitize(maxrho, [0.001, 0.3, 0.6])                     # PI / weak / mod / strong
+    rho_bin = np.digitize(maxrho, [0.001, 0.3, 0.6])        # PI / weak / mod / strong
 
-    # stratified draw: even coverage of (class x trial_bin x rho_bin)
+    n_tbin = len(TPS_EDGES) - 1
+    # Target an EVEN number of matrices per trial bin (that is what tightens the spark),
+    # drawn across class x rho within each trial bin. per_tbin is generous because the fine
+    # low-N bins are the whole point; raise --n if a real experiment needs even more.
+    per_tbin = max(1, n // n_tbin)
     rng = np.random.default_rng(seed)
     keep = []
-    for cls in np.unique(yl):
-        for tb in np.unique(trial_bin):
+    for tb in range(n_tbin):
+        pool_tb = np.flatnonzero(trial_bin == tb)
+        if not len(pool_tb):
+            continue
+        sub = []
+        for cls in np.unique(yl):
             for rb in np.unique(rho_bin):
-                idx = np.flatnonzero((yl == cls) & (trial_bin == tb) & (rho_bin == rb))
+                idx = pool_tb[(yl[pool_tb] == cls) & (rho_bin[pool_tb] == rb)]
                 if len(idx):
-                    take = max(1, n // (12 * 3 * 4))
-                    keep.extend(rng.choice(idx, min(take, len(idx)), replace=False))
+                    take = max(1, per_tbin // (12 * 4))
+                    sub.extend(rng.choice(idx, min(take, len(idx)), replace=False))
+        # top up this trial bin toward per_tbin from whatever else is in it
+        if len(sub) < per_tbin:
+            rest = np.setdiff1d(pool_tb, sub, assume_unique=False)
+            if len(rest):
+                sub.extend(rng.choice(rest, min(per_tbin - len(sub), len(rest)),
+                                      replace=False))
+        keep.extend(sub)
     keep = np.array(sorted(set(keep)))[:n]
 
     cols = {"row_id": np.arange(len(keep))}
@@ -57,17 +78,20 @@ def main(n=600, seed=999):
     cols["model_label"] = yl[keep]
     cols["trial_bin"] = trial_bin[keep]
     cols["rho_bin"] = rho_bin[keep]
+    cols["tps"] = tps[keep]                                  # exact trials/stimulus, for the curve
 
     path = os.path.join(SIMULATED_DATA_DIR, "test_set_for_R.csv")
     pd.DataFrame(cols).to_csv(path, index=False)
     print(f"wrote {len(keep)} stratified matrices -> {path}")
-    print(f"  trial bins: {np.bincount(trial_bin[keep])}  rho bins: {np.bincount(rho_bin[keep])}")
+    tb_counts = np.bincount(trial_bin[keep], minlength=n_tbin)
+    labels = [f"{int(TPS_EDGES[i])}-{int(TPS_EDGES[i+1])}" for i in range(n_tbin)]
+    print("  trials/stim bins:  " + "  ".join(f"{l}:{c}" for l, c in zip(labels, tb_counts)))
+    print(f"  rho bins: {np.bincount(rho_bin[keep])}")
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--n", type=int, default=600)
+    ap.add_argument("--n", type=int, default=2000)
     ap.add_argument("--seed", type=int, default=999)
     a = ap.parse_args()
     main(a.n, a.seed)
-    
