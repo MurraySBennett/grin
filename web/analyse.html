@@ -2,12 +2,6 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <!-- Anti-flash: apply the theme class on <html> SYNCHRONOUSLY, before first
-         paint. Must stay inline and right after <meta charset>, grin-shell.js is
-         an ES module and runs too late to prevent the flash. Reads the SAME key
-         the rest of the site uses ("msb-dark-mode"), so a dark/light choice made
-         anywhere carries across; falls back to the OS preference. Keep in sync
-         with grin-shell.js resolve(). -->
     <script>
       (function () {
         try {
@@ -18,16 +12,14 @@
               window.matchMedia &&
               window.matchMedia("(prefers-color-scheme: dark)").matches);
           if (dark) document.documentElement.classList.add("is-dark");
-        } catch (e) {
-          /* storage blocked (private mode) -- fall through to light */
-        }
+        } catch (e) {}
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Analyse - GRIN</title>
     <meta
       name="description"
-      content="Upload identification data and get GRT parameter estimates, model comparison, and a maximum-likelihood reference fit, side by side, entirely in your browser."
+      content="Upload identification data and get GRT parameter estimates, model comparison, and a maximum-likelihood reference fit, side by side, all in your browser."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -48,7 +40,7 @@
       <div class="tool">
         <!-- ================================================================ -->
         <aside class="panel sticky">
-          <span class="eyebrow">1. Get your data in</span>
+          <span class="eyebrow">1. Use your own data</span>
 
           <div
             id="dropzone"
@@ -99,7 +91,7 @@
                 Use this matrix
               </button>
               <p class="cap">
-                Counts only, response times need trial-level data.
+                <emph>Counts only</emph>, response times need trial-level data.
               </p>
             </div>
           </details>
@@ -107,10 +99,9 @@
           <hr class="hr" />
           <span class="eyebrow">Or load a published example</span>
           <p class="cap" style="margin-top: 0">
-            Real confusion matrices from the GRT literature, so you can see GRIN
-            and a classical maximum-likelihood fit, the same estimator
-            <code>grtools</code> and <code>mdsdt</code> implement, land on the
-            same answer for data someone else already published.
+            A brief selection of real confusion matrices from the GRT
+            literature, so you can see and compare GRIN against a classical
+            maximum-likelihood fit on published data.
           </p>
           <div class="row">
             <select id="example-select" style="flex: 1">
@@ -175,7 +166,7 @@
           </div>
 
           <div class="card" id="figure-card" hidden>
-            <span class="eyebrow">The classic GRT plot</span>
+            <span class="eyebrow">The classic GRT figure</span>
             <div class="viz-2">
               <div>
                 <canvas id="space" width="460" height="460"></canvas>
@@ -195,7 +186,7 @@
                 <select id="overlay-select">
                   <option value="mle">MLE, unconstrained fit</option>
                   <option value="class">
-                    GRIN's own best-fitting model class
+                    GRIN onlyown best-fitting model class
                   </option>
                 </select>
                 <p class="cap" id="overlay-cap" style="margin-top: 0.3rem"></p>
@@ -211,10 +202,6 @@
                 <span class="eyebrow" style="font-size: 0.6rem"
                   >Style this export</span
                 >
-                <p class="cap" style="margin-top: 0">
-                  Only changes this one figure, the site keeps its own colours
-                  everywhere else.
-                </p>
                 <label>Colour palette</label>
                 <select id="fig-palette">
                   <option value="site">Site colours (default)</option>
@@ -318,7 +305,7 @@
                 <div class="checkrow">
                   <input type="checkbox" id="fig-legend-on-png" checked />
                   <label for="fig-legend-on-png" style="margin: 0"
-                    >Bake legend into the PNG</label
+                    >Include legend in plot</label
                   >
                 </div>
                 <div class="checkrow">
@@ -341,7 +328,7 @@
 
                 <hr class="hr" />
                 <span class="eyebrow" style="font-size: 0.6rem"
-                  >Edit labels for this figure</span
+                  >Edit figure labels</span
                 >
                 <div class="row2">
                   <div>
@@ -365,7 +352,7 @@
                 </div>
                 <p class="cap">
                   Renames the axes, the confusion matrix headers, and the export
-                  , for this session only, doesn't touch your uploaded file.
+                  figure.
                 </p>
               </div>
             </div>
@@ -395,9 +382,7 @@
                   MLE, full model <span class="pill neutral" id="mle-ms"></span>
                 </h3>
                 <p class="cap" style="margin-top: 0">
-                  This column shows point estimates for reference. What GRIN
-                  adds alongside them is the calibrated posterior, the
-                  comparison this page is set up to show.
+                  Point estimates with GRIN's calibrated posterior.
                 </p>
                 <div id="mle-ests"></div>
                 <h3 style="font-size: 0.68rem; color: var(--steel)">
