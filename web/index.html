@@ -42,7 +42,7 @@
       <h1>GRIN</h1>
       <p class="tagline">
         General Recognition Inversion Network, fit GRT models to identification
-        data in milliseconds, with uncertainty you can actually trust.
+        data in milliseconds, with uncertainty you can trust.
       </p>
       <div id="nav-placeholder"></div>
     </header>
@@ -66,7 +66,8 @@
             millions of simulated experiments.</strong
           >
           Inference becomes a single forward pass, about a millisecond, and
-          returns a posterior, not just a point.
+          returns a posterior over parameter estimates and model
+          classifications, not just a point.
         </p>
         <p class="lede">
           Everything on this site runs <strong>in your browser</strong>. Your
@@ -78,10 +79,10 @@
         <a class="door" href="./space-builder.html">
           <h3>Space Builder</h3>
           <p>
-            Build a perceptual space with your own hands. Break separability,
-            add a correlation, and watch the confusion matrix change. Then run a
-            virtual experiment and see whether GRIN can find its way back to
-            what you built.
+            Build an underlying perceptual space then try breaking assumptions
+            of separability and independence. Watch the confusion matrix change
+            then run virtual experiments to see whether GRIN can find its way
+            back to what you built.
           </p>
           <span class="kicker">Start here →</span>
         </a>
@@ -89,10 +90,10 @@
         <a class="door" href="./space-builder-time-attack.html">
           <h3>Space Builder: +RT</h3>
           <p>
-            The same, plus response times. Discover the thing accuracy cannot
-            tell you: three different processing architectures produce
-            <em>identical</em> confusion matrices, and only the timing pulls
-            them apart.
+            The same, plus response times. Accuracy data can give you only so
+            much. Including Response Times in the model (GRIN +RT) with
+            confusions helps us extract and identify separability and processing
+            architectures.
           </p>
           <span class="kicker">The interesting one →</span>
         </a>
@@ -100,10 +101,9 @@
         <a class="door" href="./validate.html">
           <h3>Validate</h3>
           <p>
-            Should you believe any of this? Parameter recovery, interval
-            calibration, and head-to-head comparison against
-            <code>grtools</code>, <code>mdsdt</code>, and maximum likelihood, on
-            simulated and on real data.
+            Parameter recovery, interval calibration, and head-to-head
+            comparison against <code>grtools</code>, <code>mdsdt</code>, and
+            maximum likelihood, on simulated and real data.
           </p>
           <span class="kicker">Kick the tyres →</span>
         </a>
@@ -111,9 +111,10 @@
         <a class="door" href="./independence.html">
           <h3>An independence problem</h3>
           <p>
-            One thing GRT genuinely struggles to recover: whether two dimensions
-            are perceptually independent. See why, live, and what it means for
-            how you design a study.
+            GRT readily recovers perceptual separability but, depending on
+            accuracy, can struggle to recover whether two dimensions are
+            perceptually independent. We demonstrate why, what it means for how
+            you design a study, and how GRIN can help.
           </p>
           <span class="kicker">Where to be careful →</span>
         </a>
@@ -132,10 +133,10 @@
         <a class="door" href="./dynamics.html">
           <h3>Dynamics</h3>
           <p>
-            Everywhere else on this site is one fit, examined. GRIN is fast
-            enough that fitting isn't something you do after data collection,
-            it's something you can do <em>during</em>
-            it. Watch what that actually unlocks.
+            Everywhere else on this site examines or explores a single fit. GRIN
+            is fast enough that fitting isn't something you need to wait for
+            data collection to conclude, it's something you can do
+            <em>during</em> it. Explore what this can unlock.
           </p>
           <span class="kicker">Fit as a process →</span>
         </a>
@@ -156,8 +157,8 @@
               </li>
               <li>
                 <strong>Calibrated uncertainty.</strong> The network returns a
-                posterior. We check that its 90% intervals actually contain the
-                truth 90% of the time, see
+                posterior over each parameter and model class. We check that its
+                90% intervals actually contain the truth 90% of the time, see
                 <a href="./validate.html">Validate</a>.
               </li>
               <li>
@@ -180,12 +181,12 @@
               </li>
               <li>
                 <strong>It assumes decisional separability</strong> throughout,
-                and 2×2 designs only.
+                and (currently) 2×2 designs only.
               </li>
               <li>
                 <strong>It is not a replacement for thinking.</strong> A winning
-                model class with a probability of 0.4 is not a finding, and we
-                will tell you that too.
+                model class with a probability of 0.4 is not a conclusive
+                finding, and GRIN will tell you that, too.
               </li>
             </ul>
           </div>
@@ -215,7 +216,6 @@
       </p>
       <p class="fine">
         Everything here runs client-side. No data leaves your machine.
-        ↑↑↓↓←→←→BA.
       </p>
     </footer>
 
