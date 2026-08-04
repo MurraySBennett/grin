@@ -1,20 +1,4 @@
-/* =============================================================================
-   grin.css — the GRIN web app.
-
-   DESIGN PRINCIPLE
-   ----------------
-   The chrome is Murray's site: slate-blue header, Press Start 2P headings,
-   pastel scanlines, dark mode, Konami. The chrome FRAMES the science; it does
-   not compete with it. So inside a panel, chart, or table there are no glows,
-   no text-shadows, no animations. Numbers are numbers. Personality lives at the
-   edges, seriousness lives in the middle.
-
-   Tokens are lifted from site.css so the two stay in sync. If site.css changes,
-   change these.
-   ============================================================================= */
-
 :root {
-  /* --- Murray's palette (from site.css) --- */
   --slate: #7b68ee;
   --slate-deep: #6a5acd;
   --slate-dark: #5a4fcc;
@@ -41,10 +25,6 @@
   --mute: #6f6a8f;
   --mute-soft: #9a95b8;
 
-  /* --- the GRT plot convention, in Murray's colours ---
-     SOLID = the representation you specified / the raw estimate  (slate, 4 shades)
-     DASHED = what was recovered / what the model predicts        (rose)
-     This is fixed across every page and figure. */
   --stim-0: #2a1f5e;
   --stim-1: #5a4fcc;
   --stim-2: #7b68ee;
@@ -80,7 +60,7 @@ body {
   line-height: 1.6;
 }
 
-/* --- the pastel scanline drift, straight from site.css --- */
+/* --- the pastel scanline drift --- */
 @keyframes pastelFlickerDrift {
   0% {
     opacity: 0.25;
@@ -162,9 +142,6 @@ code {
   font-size: 0.88em;
 }
 
-/* =============================================================================
-   SHELL — header / nav / footer (matches the main site)
-   ============================================================================= */
 header.site {
   background-color: var(--slate);
   color: var(--ice);
@@ -272,9 +249,6 @@ footer.site .fine {
   flex-grow: 1;
 }
 
-/* =============================================================================
-   TOOL LAYOUT
-   ============================================================================= */
 .tool {
   display: grid;
   grid-template-columns: 21rem 1fr;
@@ -321,7 +295,7 @@ footer.site .fine {
   box-shadow: 0 0.12rem 0.12rem rgba(0, 0, 0, 0.06);
 }
 
-/* Section titles: retro font, but SMALL and quiet — a label, not a shout. */
+/* Section titles: retro font */
 .eyebrow {
   font-family: "Press Start 2P", cursive;
   font-size: 0.6rem;
@@ -337,7 +311,7 @@ footer.site .fine {
 }
 
 /* =============================================================================
-   CONTROLS — plain Inter, no decoration. These are instruments.
+   CONTROLS
    ============================================================================= */
 label {
   display: block;
@@ -407,7 +381,7 @@ input[type="file"] {
   font-weight: 600;
 }
 
-/* buttons — the site's .button, but usable at control density */
+/* buttons */
 button,
 .button {
   display: inline-flex;
@@ -496,7 +470,7 @@ button.wide {
 }
 
 /* =============================================================================
-   DATA DISPLAY — deliberately plain
+   DATA DISPLAY
    ============================================================================= */
 .status {
   font-size: 0.8rem;
@@ -676,7 +650,7 @@ table.grid td input {
   background: var(--good);
 }
 
-/* pills / badges — reuse the site's status-badge look, but readable */
+/* pills / badges */
 .pill {
   display: inline-block;
   font-family: "Press Start 2P", cursive;
@@ -737,7 +711,6 @@ table.grid td input {
   font-size: 0.9rem;
 }
 
-/* the plain-English box */
 .plain {
   background: #fff7fa;
   border: 1px solid #f3d9e4;
@@ -751,7 +724,6 @@ table.grid td input {
   margin: 0.5rem 0;
 }
 
-/* the "this is a stub / not the real network" banner. Loud on purpose. */
 .stub-banner {
   background: repeating-linear-gradient(
     45deg,
@@ -768,7 +740,6 @@ table.grid td input {
   color: #6b5310;
 }
 
-/* details/summary, matching the site */
 details {
   margin: 0.8rem 0 0;
   border: 1px solid var(--line);
@@ -866,13 +837,7 @@ summary:hover {
   margin: 1.5rem 0;
 }
 
-/* =============================================================================
-   DARK MODE — mirrors site.css. A single class, `.is-dark`, is set on <body> by
-   grin-theme.js (which reads the OS preference and the saved override). Driving
-   it from one class means the CSS and the <canvas> drawing code can never
-   disagree about which theme is active — which they would if the CSS used a
-   media query the canvas couldn't see.
-   ============================================================================= */
+/* dark mode */
 html.is-dark {
   background-color: #0f0d1a;
   color: #d4cef8;
@@ -899,16 +864,9 @@ html.is-dark {
   --bad: #e57373;
   --bad-bg: #3a1a1a;
 }
-/* The body carries an OPAQUE background (var(--cream)), so the dark colour on
-   <html> above is hidden behind it unless we repaint the body too. Without this,
-   night mode reads as light ivory. Mirrors site.css's body.dark-mode background. */
 html.is-dark body {
   background-color: #0f0d1a;
 }
-/* Dark scanline texture. Targets body::before — the pseudo-element that actually
-   has `content`, fixed positioning and the drift animation — so it overrides the
-   light texture. (The previous html.is-dark::before selector set no `content`
-   and therefore never rendered.) */
 html.is-dark body::before {
   background-image:
     repeating-linear-gradient(
@@ -977,7 +935,7 @@ html.is-dark a {
   color: #a899f0;
 }
 
-/* theme toggle, borrowed from the site */
+/* theme toggle */
 #theme-row {
   display: flex;
   justify-content: center;
