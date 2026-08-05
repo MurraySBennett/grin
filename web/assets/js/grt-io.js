@@ -455,9 +455,11 @@ export function templateCSV({ withRT = true } = {}) {
     "# one row per TRIAL. stimulus/response: A1B1|A1B2|A2B1|A2B2, your own",
   );
   rows.push(
-    "# labels like Happy/Male, or integers 0-3. rt in SECONDS. participant",
+    "# labels like Happy/Male, or integers 0-3. If using, rt are in SECONDS.",
   );
-  rows.push("# and rt are optional; drop rt to use the counts-only model.");
+  rows.push(
+    "Participant # and rt are optional; drop rt to use the counts-only model.",
+  );
   return rows.join("\n") + "\n";
 }
 
