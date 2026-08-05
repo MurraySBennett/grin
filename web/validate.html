@@ -2,12 +2,6 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <!-- Anti-flash: apply the theme class on <html> SYNCHRONOUSLY, before first
-         paint. Must stay inline and right after <meta charset>, grin-shell.js is
-         an ES module and runs too late to prevent the flash. Reads the SAME key
-         the rest of the site uses ("msb-dark-mode"), so a dark/light choice made
-         anywhere carries across; falls back to the OS preference. Keep in sync
-         with grin-shell.js resolve(). -->
     <script>
       (function () {
         try {
@@ -18,16 +12,14 @@
               window.matchMedia &&
               window.matchMedia("(prefers-color-scheme: dark)").matches);
           if (dark) document.documentElement.classList.add("is-dark");
-        } catch (e) {
-          /* storage blocked (private mode) -- fall through to light */
-        }
+        } catch (e) {}
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Validate - GRIN</title>
     <meta
       name="description"
-      content="Check GRIN for yourself: over many simulated participants where the true representation is known, does it recover the representation, and do its uncertainty intervals mean what they say? Recovery and calibration, run live in your browser."
+      content="Check GRIN over many simulated participants where the true representation is known. Does it recover the representation, and are its uncertainty intervals meaningful? Execute parameter recovery and calibration live in your browser."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -40,9 +32,7 @@
   <body data-page="validate">
     <header class="site">
       <h1>Validate</h1>
-      <p class="tagline">
-        Recovery and calibration, on data where the truth is known.
-      </p>
+      <p class="tagline">Recovery and calibration on ground-truth data.</p>
       <div id="nav-placeholder"></div>
     </header>
 
@@ -51,24 +41,22 @@
         <span class="eyebrow">What this page is for</span>
         <p>
           Everywhere else on this site works with a single dataset. This page
-          asks a different question, and answers it live in your browser: over
-          many simulated participants whose true representation we set
-          ourselves, does GRIN <strong>recover</strong> that representation, and
-          do its uncertainty intervals <strong>mean what they say</strong>?
+          asks if GRIN can <strong>recover</strong> the tru representation from
+          many simulated participants, and do its uncertainty intervals
+          <strong>mean what they say</strong>?
         </p>
         <p style="margin-bottom: 0">
           Because the data are simulated, the true answer is known for every
-          participant, so the estimates can be checked against it rather than
-          taken on trust. For the same kind of comparison on your own or
-          published data, GRIN alongside a maximum-likelihood fit, the
-          <a href="./analyse.html">Analyse</a> page is the place to go.
+          participant, so the estimates can be checked directly against. For the
+          same kind of comparison on your own or published data, visit the
+          <a href="./analyse.html">Analyse</a> page.
         </p>
       </div>
 
       <div class="tool">
         <!-- ------------------------------------------------------------------ -->
         <aside class="panel sticky">
-          <span class="eyebrow">Set up the check</span>
+          <span class="eyebrow">Set up</span>
 
           <label
             >Trials per stimulus <span class="val" id="v-n">100</span></label
@@ -76,8 +64,7 @@
           <input type="range" id="n" min="10" max="500" step="10" value="100" />
           <p class="cap" style="margin-top: 0.2rem">
             Fewer trials means noisier data. A well-behaved method should get
-            less certain, wider intervals, rather than confidently wrong. Turn
-            this down and re-run to watch that happen.
+            less certain, wider intervals, rather than confidently wrong.
           </p>
 
           <label
@@ -100,18 +87,18 @@
               style="width: 0%; transition: width 0.1s linear"
             ></div>
           </div>
-          <p class="status" id="status">Set the batch, then run.</p>
+          <!-- <p class="status" id="status">Set the batch, then run.</p> -->
         </aside>
 
         <!-- ------------------------------------------------------------------ -->
         <section>
           <div class="card">
-            <span class="eyebrow">1. Recovery, estimated vs. true</span>
+            <span class="eyebrow">1. Recovery: estimated vs. true</span>
             <div class="viz-2">
               <div>
                 <canvas id="sc-sens" width="300" height="300"></canvas>
                 <p class="cap" style="margin-top: 0.3rem; text-align: center">
-                  Sensitivities (the z-scores)
+                  Sensitivities (z-scores)
                 </p>
               </div>
               <div>
@@ -122,15 +109,15 @@
               </div>
             </div>
             <p class="cap" style="margin-top: 0">
-              Each point is one parameter of one simulated participant: its true
-              value across, GRIN's estimate up. Points on the dashed diagonal
+              Each point is one parameter of one simulated participant. Its true
+              value across and GRIN's estimate up. Points on the dashed diagonal
               were recovered exactly.
             </p>
             <div id="rec-summary"></div>
           </div>
 
           <div class="card">
-            <span class="eyebrow">2. Calibration, do the intervals hold?</span>
+            <span class="eyebrow">2. Calibration: do the intervals hold?</span>
             <div class="viz-2">
               <div>
                 <canvas id="calib" width="320" height="300"></canvas>
@@ -142,8 +129,8 @@
                   interval, and so on, this plots how often the true value
                   actually fell inside. A calibrated method sits on the dashed
                   diagonal: its 90% intervals contain the truth about 90% of the
-                  time. Bowing above the line is under-confidence; below it,
-                  over-confidence.
+                  time. Bowing above the line is under-confidence and below it
+                  is over-confidence.
                 </p>
                 <div id="calib-headline"></div>
               </div>
@@ -161,8 +148,7 @@
               <a href="./independence.html">An independence problem</a> walks
               through why. As you lower the trials per stimulus the points
               spread out, but the calibration curve should stay near the
-              diagonal: the estimates get less certain and report it, which is
-              the property worth checking and what this page lets you check.
+              diagonal: the estimates get less certain and report it.
             </p>
           </div>
         </section>
@@ -196,15 +182,11 @@
         return model;
       }
 
-      // The most recent batch, kept so a theme change (or a calibration redraw)
-      // can repaint from the same simulated data instead of re-running.
       let batch = null;
 
       // --- sampling a random, in-range true representation ---------------------
       // Uses the same builder the Space Builder uses, with randomised controls, so
-      // the truth always lands inside the range the network was trained on. Some
-      // draws are deliberately exactly separable / exactly independent so the
-      // scatter includes those cases rather than only messy ones.
+      // the truth always lands inside the range the network was trained on.
       function sampleTruth(rng) {
         const U = (lo, hi) => lo + (hi - lo) * rng.uniform();
         return Sim.buildRepresentation({
@@ -248,7 +230,7 @@
         return c / tru.length;
       }
 
-      // --- tiny self-contained canvas plotting (matches the site theme) --------
+      // --- tiny self-contained canvas plotting  --------
       function ctxFor(canvas, w, h) {
         const dpr = window.devicePixelRatio || 1;
         canvas.width = w * dpr;
@@ -385,7 +367,6 @@
         }
       }
 
-      // --- render everything from the stored batch -----------------------------
       function renderAll() {
         if (!batch) return;
         const T = Plot.theme();
@@ -531,8 +512,6 @@
       );
       $("run").addEventListener("click", run);
 
-      // A theme change must only repaint from the stored batch, never re-run,
-      // which would resample and change the numbers under the user.
       Plot.onThemeChange(renderAll);
     </script>
   </body>
