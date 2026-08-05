@@ -2,12 +2,6 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <!-- Anti-flash: apply the theme class on <html> SYNCHRONOUSLY, before first
-         paint. Must stay inline and right after <meta charset>, grin-shell.js is
-         an ES module and runs too late to prevent the flash. Reads the SAME key
-         the rest of the site uses ("msb-dark-mode"), so a dark/light choice made
-         anywhere carries across; falls back to the OS preference. Keep in sync
-         with grin-shell.js resolve(). -->
     <script>
       (function () {
         try {
@@ -18,16 +12,14 @@
               window.matchMedia &&
               window.matchMedia("(prefers-color-scheme: dark)").matches);
           if (dark) document.documentElement.classList.add("is-dark");
-        } catch (e) {
-          /* storage blocked (private mode) -- fall through to light */
-        }
+        } catch (e) {}
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Space Builder - GRIN</title>
     <meta
       name="description"
-      content="Build a GRT perceptual space, watch the confusion matrix it produces, run a virtual experiment, and see whether the model can find its way back."
+      content="Build a GRT perceptual space, watch the confusion matrix it can produce, run a virtual experiment, and see whether the model can find its way back."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -41,8 +33,8 @@
     <header class="site">
       <h1>Space Builder</h1>
       <p class="tagline">
-        Build a perceptual space. See the data it produces. Find out whether
-        anyone could have recovered it.
+        Build a perceptual space. See the data it produces. Find out if we can
+        recover it.
       </p>
       <div id="nav-placeholder"></div>
     </header>
@@ -74,29 +66,29 @@
           <span class="eyebrow">1. Build the space</span>
 
           <label
-            >Sensitivity, dimension A
-            <span class="val" id="v-mA">1.40</span></label
+            >Sensitivity of dimension A
+            <span class="val" id="v-mA">1.00</span></label
           >
           <input
             type="range"
             id="mA"
-            min="0.1"
+            min="0.0"
             max="2.5"
-            step="0.05"
-            value="1.4"
+            step="0.1"
+            value="1.0"
           />
 
           <label
-            >Sensitivity, dimension B
+            >Sensitivity of dimension B
             <span class="val" id="v-mB">1.40</span></label
           >
           <input
             type="range"
             id="mB"
-            min="0.1"
+            min="0.0"
             max="2.5"
-            step="0.05"
-            value="1.4"
+            step="0.1"
+            value="1.0"
           />
 
           <label
@@ -124,7 +116,7 @@
                 id="dA"
                 min="-1.5"
                 max="1.5"
-                step="0.05"
+                step="0.1"
                 value="0"
               />
               <p class="cap" style="margin-top: 0.2rem">
@@ -141,7 +133,7 @@
                 id="dB"
                 min="-1.5"
                 max="1.5"
-                step="0.05"
+                step="0.10"
                 value="0"
               />
 
@@ -153,7 +145,7 @@
                 type="range"
                 id="rhoSpread"
                 min="0"
-                max="0.6"
+                max="0.9"
                 step="0.05"
                 value="0"
               />
@@ -167,10 +159,9 @@
                 <strong
                   >The sliders above move a matched PAIR of stimuli
                   together</strong
-                >
-                , the textbook pattern. In real data, separability often fails
-                more messily: <strong>one specific stimulus</strong> reads
-                oddly, not a coordinated pair. This moves just one:
+                >. In real data, separability often fails more messily:
+                <strong>one specific stimulus</strong> reads oddly, not a
+                coordinated pair. This moves just one:
               </p>
               <label>Which stimulus wanders?</label>
               <select id="nudgeStim">
@@ -188,7 +179,7 @@
                 id="nudgeX"
                 min="-1.5"
                 max="1.5"
-                step="0.05"
+                step="0.1"
                 value="0"
               />
               <label
@@ -239,7 +230,14 @@
           <label
             >Trials per stimulus <span class="val" id="v-n">100</span></label
           >
-          <input type="range" id="n" min="5" max="1000" step="5" value="100" />
+          <input
+            type="range"
+            id="n"
+            min="10"
+            max="1000"
+            step="10"
+            value="100"
+          />
           <div class="row">
             <button id="run" class="wide">Run the experiment</button>
           </div>
@@ -291,17 +289,6 @@
                 </p>
               </div>
               <div>
-                <div class="note">
-                  <h4>This is the whole problem</h4>
-                  <p>
-                    The confusion matrix has 16 cells, but each row must sum to
-                    1, so it carries exactly <strong>12 free numbers</strong>.
-                    And the space above has exactly 12 identified parameters.
-                    That is not a coincidence: it's why a single confusion
-                    matrix is enough to pin down the space, and why one extra
-                    parameter would make it impossible.
-                  </p>
-                </div>
                 <div id="acc"></div>
               </div>
             </div>
@@ -315,8 +302,8 @@
                 <div class="legend" id="legend2"></div>
                 <p class="cap">
                   Solid = the space you built.
-                  <strong>Dashed rose = what was recovered</strong> from the
-                  noisy data alone. The gap between them is the error, and it is
+                  <strong>Dashed = what was recovered</strong> from the noisy
+                  data alone. The gap between them is the error, and it is
                   <em>supposed</em> to shrink as you raise the trial count.
                 </p>
               </div>
@@ -348,9 +335,8 @@
                   Try this: set the trial count to 10 and run it a few times.
                   The estimates jump around, and, crucially,
                   <strong>the intervals get wide</strong>. That is the whole
-                  point. A well-behaved method doesn't just get less accurate
-                  with less data; it <em>tells you</em>
-                  it has got less accurate.
+                  point. A well-behaved method will <em>tell you</em> when it is
+                  unsure.
                 </p>
               </div>
             </details>
@@ -382,8 +368,8 @@
       const $ = (id) => document.getElementById(id);
       const SLIDERS = ["mA", "mB", "rho", "dA", "dB", "rhoSpread", "n"];
       const DEFAULTS = {
-        mA: 1.4,
-        mB: 1.4,
+        mA: 1.5,
+        mB: 1.5,
         rho: 0,
         dA: 0,
         dB: 0,
@@ -391,9 +377,6 @@
         n: 100,
       };
 
-      // Independent per-stimulus nudges. Kept as separate state (not read fresh from
-      // the DOM like the other sliders) because only ONE stimulus's Δx/Δy is visible
-      // on screen at a time, switching the dropdown must not forget the other three.
       let nudge = { x: [0, 0, 0, 0], y: [0, 0, 0, 0] };
 
       let model = null;
@@ -620,8 +603,7 @@
       }
 
       for (const k of SLIDERS) $(k).addEventListener("input", () => draw(true));
-      // Renaming a dimension or toggling the marginals does NOT change the space, so
-      // it must not throw away a completed run.
+      // Renaming a dimension or toggling the marginals does NOT change the space
       ["aName", "aLevels", "bName", "bLevels", "showMarginals"].forEach((id) =>
         $(id).addEventListener("input", () => {
           draw(false);
@@ -643,8 +625,7 @@
       });
 
       // --- nudge controls: the dropdown selects WHICH stimulus the two sliders
-      // below it are currently editing. Switching stimuli must show that stimulus's
-      // own stored offset, not reset it to zero or leak the previous one. ---
+      // below it are currently editing
       function syncNudgeSliders() {
         const i = +$("nudgeStim").value;
         $("nudgeX").value = nudge.x[i];
@@ -670,7 +651,7 @@
       });
 
       // A theme change must only REDRAW. Re-running run() here would silently
-      // resample the experiment, so toggling dark mode would change your results.
+      // resample the experiment, so toggling dark mode would change the results.
       Plot.onThemeChange(() => {
         draw(false);
         if (lastRun) redrawRun();
@@ -683,7 +664,7 @@
         );
         Plot.renderCM($("cm"), props, L, { counts: data.counts });
         $("cm-cap").innerHTML =
-          `Observed from <strong>${n} trials per stimulus</strong> (counts in small type). Noisy, which is the point.`;
+          `Observed from <strong>${n} trials per stimulus</strong> (counts in small type). Noisy.`;
         Plot.renderSpace($("space2"), {
           stimuli: [0, 1, 2, 3].map((i) => ({
             zx: rep.zx[i],
