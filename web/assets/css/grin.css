@@ -966,9 +966,6 @@ html.is-dark a {
   background: transparent;
 }
 
-/* =============================================================================
-   KONAMI — kept, because it costs the science nothing and it is his site.
-   ============================================================================= */
 body.konami-mode {
   background-color: #0d0f1a !important;
   color: #00ff00 !important;

@@ -2,12 +2,6 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <!-- Anti-flash: apply the theme class on <html> SYNCHRONOUSLY, before first
-         paint. Must stay inline and right after <meta charset>, grin-shell.js is
-         an ES module and runs too late to prevent the flash. Reads the SAME key
-         the rest of the site uses ("msb-dark-mode"), so a dark/light choice made
-         anywhere carries across; falls back to the OS preference. Keep in sync
-         with grin-shell.js resolve(). -->
     <script>
       (function () {
         try {
@@ -18,16 +12,14 @@
               window.matchMedia &&
               window.matchMedia("(prefers-color-scheme: dark)").matches);
           if (dark) document.documentElement.classList.add("is-dark");
-        } catch (e) {
-          /* storage blocked (private mode) -- fall through to light */
-        }
+        } catch (e) {}
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>An independence problem - GRIN</title>
     <meta
       name="description"
-      content="Whether two perceptual dimensions are independent is the hard part of a General Recognition Theory fit. This page shows why, live, and what it suggests for study design."
+      content="We have found that accurately identifying whether two perceptual dimensions are independent is... particular. This page shows why and what it suggests for study design."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -41,7 +33,8 @@
     <header class="site">
       <h1>An independence problem</h1>
       <p class="tagline">
-        The correlation is the hard part. Here is why, and what to do about it.
+        Identifying within-stimulus correlation can be hard. Here is why, and
+        what to do about it.
       </p>
       <div id="nav-placeholder"></div>
     </header>
@@ -50,29 +43,27 @@
       <div class="plain" style="margin-bottom: 1.25rem">
         <span class="eyebrow">The one hard piece</span>
         <p>
-          GRIN recovers most of a General Recognition Theory representation
-          well. One piece is genuinely hard: whether the two dimensions are
+          GRIN recovers a General Recognition Theory representation (mostly)
+          well. The challenging part is knowing whether two dimensions are
           perceptually independent, which is to say whether the within-stimulus
-          correlation is zero. This page walks through why, using the same live
-          machinery as the rest of the site, and what it suggests for how you
-          design a study. Everything here points to the difficulty being a
-          feature of the data and the task rather than of a particular way of
-          fitting, so it is worth understanding rather than working around.
+          correlation is zero. Here, we walk through why, using the same
+          machinery as the rest of the site, and what it suggests for your study
+          design. Everything here points to the difficulty being a feature of
+          the data and the task rather than any particular way of fitting, so it
+          is worth understanding rather than working around.
           <a href="./validate.html">Validate</a> shows the recovery and
-          calibration that hold across the rest of the representation; this page
-          is about the one place to be careful.
+          calibration that hold across the rest of the representation and this
+          page explores when and why you should be careful.
         </p>
       </div>
 
-      <!-- ============================ Section 1 ============================ -->
       <div class="card">
         <span class="eyebrow">1. Two spaces, one matrix</span>
         <p class="cap" style="margin-top: 0">
-          On the left, the two dimensions are independent. On the right, they
+          On the left, the two dimensions are independent and on the right they
           carry a correlation you set. The perceptual pictures are clearly
-          different. The confusion matrices they produce are almost the same,
-          and that is the whole problem: identification data sees the matrix,
-          not the picture.
+          different, but the confusion matrices they produce (below) are almost
+          the same, which is the whole problem.
         </p>
 
         <div class="row" style="gap: 1.5rem; flex-wrap: wrap">
@@ -89,9 +80,9 @@
             type="range"
             id="rhoA"
             min="0"
-            max="0.85"
+            max="0.9"
             step="0.05"
-            value="0.4"
+            value="0.5"
           />
           <input
             style="flex: 1; min-width: 150px"
@@ -128,7 +119,7 @@
       <!-- ============================ Section 2 ============================ -->
       <div class="tool">
         <aside class="panel sticky">
-          <span class="eyebrow">2. Run the frontier</span>
+          <span class="eyebrow">2. Examine the PI frontier</span>
           <p class="cap" style="margin-top: 0">
             Simulate many participants across the full range of true
             correlations, fit each with GRIN, and record how often it reports a
@@ -136,15 +127,15 @@
             independence.
           </p>
           <label
-            >Trials per stimulus <span class="val" id="v-nB">100</span></label
+            >Trials per stimulus <span class="val" id="v-nB">150</span></label
           >
           <input
             type="range"
             id="nB"
             min="10"
-            max="500"
+            max="600"
             step="10"
-            value="100"
+            value="150"
           />
           <label
             >Simulated participants
@@ -153,7 +144,7 @@
           <input
             type="range"
             id="mB"
-            min="50"
+            min="10"
             max="600"
             step="50"
             value="300"
@@ -167,7 +158,7 @@
               style="width: 0%; transition: width 0.1s linear"
             ></div>
           </div>
-          <p class="status" id="statusB">Set the batch, then run.</p>
+          <p class="status" id="statusB">Set the batch and run.</p>
         </aside>
 
         <section>
@@ -188,18 +179,17 @@
 
       <!-- ============================ Section 3 ============================ -->
       <div class="card">
-        <span class="eyebrow">3. Why response times don't rescue it</span>
+        <span class="eyebrow">3. Why response times can't help</span>
         <p style="margin: 0">
           It is tempting to hope that adding response times pins down the
           correlation the counts cannot. Our results suggest they mostly do not,
           and the reason is collinearity. As the correlation changes it moves
           accuracy and response time together, so the timing carries little
           information about the correlation beyond what accuracy already
-          reported. Adding the full response-time model helps, but modestly. The
-          <a href="./space-builder-time-attack.html">+RT</a> page is where that
-          counts-versus-timing comparison lives. The short version is that
-          timing sharpens the architecture question far more than it sharpens
-          the correlation.
+          reported. Adding the full response-time model helps, but modestly (see
+          the <a href="./space-builder-time-attack.html">+RT</a> page) The short
+          version is that timing sharpens the architecture question far more
+          than it sharpens the correlation.
         </p>
       </div>
 
@@ -222,13 +212,13 @@
           unresolved, not as independence and not as a failed fit.
         </p>
         <p>
-          Where the correlation genuinely matters, the leverage seems to lie in
-          the data you collect more than the method you fit. Asking participants
-          for confidence ratings, or having them respond to the two dimensions
-          separately or in sequence rather than as one joint response, would add
+          Where correlation genuinely matters, the leverage seems to lie in the
+          data you collect more than the method you fit. Asking participants for
+          confidence ratings, or having them respond to the two dimensions
+          separately or in sequence rather than as one joint response, could add
           information a single joint matrix does not carry. These are directions
-          our work points toward rather than settled prescriptions, and they are
-          worth testing rather than assuming.
+          our work points toward rather than settled prescriptions, and you are
+          welcome and encouraged to be the one to test that.
         </p>
         <p style="margin-bottom: 0">
           Finally, methods designed to bring in extra information are worth
@@ -264,7 +254,6 @@
       const $ = (id) => document.getElementById(id);
       const L = Plot.DEFAULT_LABELS;
 
-      // ---------------------------------------------------------------- shared
       function ctxFor(canvas, w, h) {
         const dpr = window.devicePixelRatio || 1;
         canvas.width = w * dpr;
@@ -278,7 +267,7 @@
         return g;
       }
 
-      // ================================================ Section 1: two spaces
+      // Section 1: two spaces
       function repVec(rho) {
         const rep = Sim.buildRepresentation({
           mA: 1.2,
@@ -340,7 +329,7 @@
     </div>`;
       }
 
-      // ================================================ Section 2: frontier
+      // Section 2: frontier
       let model = null;
       async function getModel() {
         if (!model) model = await loadModel("./assets/models/cm");
@@ -367,15 +356,15 @@
         g.strokeRect(x0, pad, plotW, plotH);
 
         // y gridlines at 0.5 and 1
-        g.strokeStyle = T.line;
-        g.setLineDash([2, 4]);
-        [0.5].forEach((yy) => {
-          g.beginPath();
-          g.moveTo(x0, Y(yy));
-          g.lineTo(x0 + plotW, Y(yy));
-          g.stroke();
-        });
-        g.setLineDash([]);
+        // g.strokeStyle = T.line;
+        // g.setLineDash([2, 4]);
+        // [0.5].forEach((yy) => {
+        //   g.beginPath();
+        //   g.moveTo(x0, Y(yy));
+        //   g.lineTo(x0 + plotW, Y(yy));
+        //   g.stroke();
+        // });
+        // g.setLineDash([]);
 
         // curve
         g.strokeStyle = T.predicted;
@@ -415,7 +404,7 @@
       function renderFrontier() {
         if (!frontierData) return;
         const T = Plot.theme();
-        const edges = [0, 0.1, 0.2, 0.3, 0.45, 0.6, 0.75, 0.9];
+        const edges = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
         const pts = [];
         for (let b = 0; b < edges.length - 1; b++) {
           const lo = edges[b],
@@ -512,7 +501,7 @@
         renderFrontier();
       });
 
-      renderCompare(); // draw section 1 immediately; section 2 waits for Run
+      renderCompare();
     </script>
   </body>
 </html>
