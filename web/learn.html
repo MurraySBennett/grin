@@ -2,12 +2,6 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <!-- Anti-flash: apply the theme class on <html> SYNCHRONOUSLY, before first
-         paint. Must stay inline and right after <meta charset>, grin-shell.js is
-         an ES module and runs too late to prevent the flash. Reads the SAME key
-         the rest of the site uses ("msb-dark-mode"), so a dark/light choice made
-         anywhere carries across; falls back to the OS preference. Keep in sync
-         with grin-shell.js resolve(). -->
     <script>
       (function () {
         try {
@@ -18,16 +12,14 @@
               window.matchMedia &&
               window.matchMedia("(prefers-color-scheme: dark)").matches);
           if (dark) document.documentElement.classList.add("is-dark");
-        } catch (e) {
-          /* storage blocked (private mode) -- fall through to light */
-        }
+        } catch (e) {}
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Learn - GRIN</title>
     <meta
       name="description"
-      content="A primer on General Recognition Theory, a glossary of terms, frequently asked questions, and a statement of GRIN's limitations."
+      content="A primer on General Recognition Theory, a glossary of terms,  and a statement of GRIN's limitations."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -47,39 +39,42 @@
     <main class="container">
       <!-- ================================================================ -->
       <div class="card">
-        <span class="eyebrow">A primer, in five minutes</span>
+        <span class="eyebrow">A 5-minute primer</span>
 
         <h3 style="font-size: 0.75rem; color: var(--steel)">1. The task</h3>
         <p>
-          Someone sees a stimulus that varies on
-          <strong>two dimensions</strong>, say, a face's expression (happy/sad)
-          and sex (male/female), and reports both. Across many trials you get a
-          <strong>4×4 confusion matrix</strong>: which of the 4 stimuli was
-          shown, against which of the 4 responses was given.
+          Say I ask you to categorise a stimulus that varies on
+          <strong>two dimensions</strong>, a face's expression (happy/sad) and
+          sex (male/female). Across many trials we get a
+          <strong>4×4 confusion matrix</strong> that indicates which of the 4
+          stimuli was shown against which of the 4 responses was given.
         </p>
 
         <h3 style="font-size: 0.75rem; color: var(--steel)">2. The model</h3>
         <p>
-          General Recognition Theory (GRT, Ashby &amp; Townsend, 1986) says each
-          stimulus doesn't map to a single point in the mind; it maps to a
+          General Recognition Theory (GRT, Ashby &amp; Townsend, 1986) says that
+          because perception is noisy, each stimulus doesn't map to a single
+          point in the mind, but instead maps to a
           <strong>bivariate normal distribution</strong>
-          over a two-dimensional perceptual space, because perception is noisy.
-          The two decision axes are lines through that space (GRIN fixes them at
-          the origin, see
-          <a href="#separability">decisional separability</a> below). You
-          respond by asking which side of each line your percept fell on.
+          over a two-dimensional perceptual space. The two decision axes are
+          lines through that space (GRIN fixes them at the origin, see
+          <a href="#separability">decisional separability</a> below). Your
+          response as to which category you saw is determined by which side of
+          each line your percept fell on.
         </p>
         <p>
           That single picture, four ellipses and a pair of crossed lines, is the
           entire model. Everything else on this site is about estimating
-          <em>where the ellipses are and how they're shaped</em> from the
-          responses alone. Go build one on the
+          <em
+            >where the ellipses are located in space and how they're shaped</em
+          >
+          from the responses alone. You can go build one of these spaces in the
           <a href="./space-builder.html">Space Builder</a> page; it's faster to
-          understand by dragging sliders than by reading prose.
+          understand by dragging sliders than by reading all of this.
         </p>
 
         <h3 style="font-size: 0.75rem; color: var(--steel)">
-          3. The two questions GRT actually asks
+          3. The two questions we typically ask with GRT
         </h3>
         <p>
           <strong id="separability">Perceptual separability.</strong> Does one
@@ -92,32 +87,30 @@
           <strong id="independence">Perceptual independence.</strong> On a
           single trial, does noise on one dimension travel with noise on the
           other? If an unusually happy-looking sample also tends to look
-          unusually male, the dimensions are correlated on that trial, the
+          unusually male, the dimensions are correlated on that trial and the
           ellipses tilt.
         </p>
         <p>
           These are independent questions. A space can be separable but
-          correlated, non-separable but uncorrelated, or any combination, which
-          is exactly why GRT needs a shape in a plane, not a single number, to
-          describe a representation.
+          correlated, non-separable but uncorrelated, or any combination.
         </p>
 
         <h3 style="font-size: 0.75rem; color: var(--steel)">
-          4. Why a single matrix is enough
+          4. The confusion matrix
         </h3>
         <p>
           A 4×4 confusion matrix has 12 free numbers (4 rows, each summing to 1,
           so 3 free probabilities per row). GRIN's representation has exactly 12
           identified parameters, 4 per-stimulus x-locations, 4 y-locations, 4
-          correlations. That match is not a coincidence: it is what makes a
-          <em>single</em> matrix enough to estimate the whole space, and it is
-          why you cannot add a 13th free parameter and expect it to be estimable
-          from one matrix alone. Traditionally this fit is done by numerical
-          maximum likelihood, one optimiser run per participant per candidate
-          model. GRIN replaces that optimiser with a network trained once,
-          offline, on millions of simulated experiments, inference becomes a
-          single forward pass. See <a href="./validate.html">Validate</a> for
-          whether that trade actually holds up.
+          correlations. 12 parameters and 12 free numbers makes a
+          <em>single</em> matrix enough to estimate the whole space (but we must
+          pin the decision bounds to align with their axes). Traditionally this
+          fit is done by numerical maximum likelihood, one optimiser run per
+          participant per candidate model. GRIN replaces that optimiser with a
+          network that we have trained offline on millions of simulated
+          experiments so that inference becomes a single forward pass through
+          that trained network. See <a href="./validate.html">Validate</a> for
+          how it holds up.
         </p>
       </div>
 
@@ -130,7 +123,7 @@
             <p>
               The experimental design GRT (and GRIN) assumes: one stimulus per
               trial, varying on two binary dimensions, one response naming both
-              levels. Not a same/different task, not a detection task.
+              levels. One response key per response option.
             </p>
           </div>
           <div class="note" style="margin-bottom: 0.6rem">
@@ -139,7 +132,7 @@
               A dimension is separable from another if its marginal perceptual
               distribution doesn't shift with the other dimension's level.
               Failure of separability is a <em>mean</em> effect, it moves where
-              an ellipse is centred.
+              an ellipse is centered.
             </p>
           </div>
           <div class="note" style="margin-bottom: 0.6rem">
@@ -175,22 +168,23 @@
             </p>
           </div>
           <div class="note" style="margin-bottom: 0.6rem">
-            <h4>SFT, Systems Factorial Technology</h4>
+            <h4>Systems Factorial Technology (SFT)</h4>
             <p>
-              The architecture side of the +RT model: is a two-dimensional
-              decision made serially or in parallel, and does it stop as soon as
-              one dimension is settled (self-terminating) or wait for both
-              (exhaustive)? Five architectures in total (the 4 serial/parallel ×
-              exhaustive/self-terminating combinations, plus coactive, where
-              evidence for both dimensions pools into a single accumulator).
+              SFT carries the architecture side of the +RT model. We can ask if
+              a two-dimensional decision <isindex> made serially or in parallel, and
+              does it stop as soon as one dimension is settled (self-terminating) or
+              wait for both (exhaustive)? Five architectures in total (the 4
+              serial/parallel × exhaustive/self-terminating combinations,
+              plus coactive, where evidence for both dimensions pools into a
+              single accumulator).
             </p>
           </div>
           <div class="note" style="margin-bottom: 0.6rem">
-            <h4>LBA, Linear Ballistic Accumulator</h4>
+            <h4>Linear Ballistic Accumulator (LBA)</h4>
             <p>
-              The evidence-accumulation model behind the RT predictions:
-              evidence for a response rises linearly at a noisy drift rate
-              toward a threshold; whichever accumulator gets there first wins.
+              The evidence-accumulation model behind the RT predictions. We model
+              evidence for a response rising linearly at a noisy drift rate
+              toward a threshold and whichever accumulator gets there first wins.
               Its parameters (non-decision time, threshold, drift) are what the
               +RT model additionally estimates.
             </p>
@@ -246,7 +240,7 @@
           </div>
         </details>
 
-        <details>
+        <!-- <details>
           <summary>Why does GRIN assume decisional separability?</summary>
           <div class="details-body">
             <p style="margin-top: 0">
@@ -259,7 +253,7 @@
               the one GRIN solves.
             </p>
           </div>
-        </details>
+        </details> -->
 
         <details>
           <summary>
@@ -281,7 +275,7 @@
           </div>
         </details>
 
-        <details>
+        <!-- <details>
           <summary>What if I don't trust a neural network's output?</summary>
           <div class="details-body">
             <p style="margin-top: 0">
@@ -294,12 +288,12 @@
               is.
             </p>
           </div>
-        </details>
+        </details> -->
       </div>
 
       <!-- ================================================================ -->
       <div class="card">
-        <span class="eyebrow">Limitations, stated plainly</span>
+        <span class="eyebrow">Limitations</span>
         <div class="note warn">
           <h4>Amortised over a fixed prior</h4>
           <p>
@@ -312,7 +306,7 @@
           </p>
         </div>
         <div class="note warn">
-          <h4>Decisional separability, always</h4>
+          <h4>Decisional separability</h4>
           <p>
             The decision bounds are fixed at the origin in every model class
             GRIN fits. If your participants use response criteria that shift
@@ -334,11 +328,11 @@
             GRIN reports a probability alongside every structural claim
             specifically so you don't have to pretend a narrow plurality is a
             confident conclusion. The Space Builder and Analyse pages both
-            surface this directly rather than silently picking the top class.
+            raise this directly.
           </p>
         </div>
         <div class="note warn">
-          <h4>The RT model adds assumptions, not fewer</h4>
+          <h4>The RT model adds assumptions</h4>
           <p>
             Architecture and accumulator-parameter estimates additionally assume
             the LBA evidence-accumulation model is the right description of the
