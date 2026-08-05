@@ -2,12 +2,6 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <!-- Anti-flash: apply the theme class on <html> SYNCHRONOUSLY, before first
-         paint. Must stay inline and right after <meta charset>, grin-shell.js is
-         an ES module and runs too late to prevent the flash. Reads the SAME key
-         the rest of the site uses ("msb-dark-mode"), so a dark/light choice made
-         anywhere carries across; falls back to the OS preference. Keep in sync
-         with grin-shell.js resolve(). -->
     <script>
       (function () {
         try {
@@ -18,9 +12,7 @@
               window.matchMedia &&
               window.matchMedia("(prefers-color-scheme: dark)").matches);
           if (dark) document.documentElement.classList.add("is-dark");
-        } catch (e) {
-          /* storage blocked (private mode) -- fall through to light */
-        }
+        } catch (e) {}
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -40,7 +32,7 @@
   <body data-page="time-attack">
     <header class="site">
       <h1>Space Builder: +RT</h1>
-      <p class="tagline">The thing accuracy cannot tell you.</p>
+      <p class="tagline">What can response times add?</p>
       <div id="nav-placeholder"></div>
     </header>
 
@@ -56,18 +48,18 @@
         <p>
           That isn't a limitation of the method. It's a limitation of the
           <strong>data</strong>. Below, three of the five architectures produce
-          <em>the same confusion matrix</em>, not similar, the same. No amount
+          <em>the same confusion matrix</em>. Not similar, the same. No amount
           of accuracy data could separate them, however it is analysed. But they
-          finish at visibly different times.
+          can finish at visibly different times.
           <strong
-            >Response times are not a nice extra here; they are the only channel
-            the information is in.</strong
+            >Response times can represent the only channel the information is
+            in.</strong
           >
         </p>
       </div>
 
       <div class="card" style="margin-bottom: 1.25rem">
-        <span class="eyebrow">What this model actually needs from you</span>
+        <span class="eyebrow">What this model needs from you</span>
         <div class="viz-2">
           <div>
             <p class="cap" style="margin-top: 0">
@@ -113,8 +105,8 @@
           </div>
           <div>
             <p class="cap" style="margin-top: 0">
-              <strong>Counts + response times</strong>, every trial,
-              individually, with a timestamp.
+              <strong>Counts + response times</strong>, every trial with a
+              timestamp (seconds).
             </p>
             <table class="cm" style="font-size: 0.75rem">
               <tr>
@@ -151,11 +143,12 @@
           </div>
         </div>
         <p class="cap" style="margin-bottom: 0">
-          That's a genuinely different data-collection commitment, not just "the
-          same experiment, analysed more thoroughly", every trial needs its own
-          timestamp, not just its outcome. The per-trial table gets compressed
-          down to 5 quantiles per cell (80 numbers total) before it reaches the
-          model; that compression is shown live in the
+          It's a different data-collection commitment that excludes many
+          historical published data, but many of you will already be collecting
+          RT data alongside responses, and many more of you will not be impeded
+          by simply adding RT data collection with responses. The per-trial
+          table gets compressed down to 5 quantiles per cell (80 numbers total)
+          before it reaches the model; that compression is shown live in the
           <strong>The response times</strong> card below once you run an
           experiment.
         </p>
@@ -166,7 +159,7 @@
         <aside class="panel sticky">
           <span class="eyebrow">1. The space</span>
           <label
-            >Sensitivity, dimension A
+            >Sensitivity of dimension A
             <span class="val" id="v-mA">1.40</span></label
           >
           <input
@@ -175,10 +168,10 @@
             min="0.1"
             max="2.5"
             step="0.05"
-            value="1.4"
+            value="1.5"
           />
           <label
-            >Sensitivity, dimension B
+            >Sensitivity of dimension B
             <span class="val" id="v-mB">1.40</span></label
           >
           <input
@@ -187,7 +180,7 @@
             min="0.1"
             max="2.5"
             step="0.05"
-            value="1.4"
+            value="1.5"
           />
           <label
             >Perceptual correlation ρ
@@ -237,7 +230,7 @@
                 type="range"
                 id="rhoSpread"
                 min="0"
-                max="0.6"
+                max="0.9"
                 step="0.05"
                 value="0"
               />
@@ -245,8 +238,8 @@
               <hr class="hr" />
               <p class="cap" style="margin-top: 0">
                 <strong>The sliders above move a matched pair together</strong>
-                , the textbook pattern. Real separability failures are often
-                messier: <strong>one stimulus</strong>
+                . Real separability failures are often messier:
+                <strong>one stimulus</strong>
                 wanders on its own. This moves just one:
               </p>
               <label>Which stimulus wanders?</label>
@@ -377,7 +370,7 @@
               Compare all 5 architectures
             </button>
           </div>
-          <p class="status" id="status">Pick an architecture, then run.</p>
+          <!-- <p class="status" id="status">Pick an architecture, then run.</p> -->
         </aside>
 
         <!-- ------------------------------------------------------------------ -->
@@ -412,7 +405,7 @@
                   <strong>correct</strong> responses. Each curve is scaled by
                   that stimulus's accuracy, so the area under it is P(correct),
                   a curve that is both <em>low</em> and <em>fast</em> is the
-                  signature of guessing, not of skill.
+                  signature of guessing, not of 'skill'.
                 </p>
                 <p class="cap">
                   The small ticks under each curve are the
@@ -447,16 +440,13 @@
           </div>
 
           <div class="card" id="rt-value-card" hidden>
-            <span class="eyebrow"
-              >What did adding response times actually change?</span
-            >
+            <span class="eyebrow">What did adding response times change?</span>
             <p class="cap" style="margin-top: 0">
               Architecture and the accumulator parameters are things
               <em>only</em> the RT model can see at all, there's no "counts-only
               version" of those to compare against. But the GRT question
               underneath, separable? independent?, is something BOTH models
-              answer. Same simulated data, same question, two models: this is
-              that comparison, live, not just asserted.
+              answer. Same simulated data, same question, two models.
             </p>
             <div class="viz-2">
               <div>
@@ -668,10 +658,7 @@
         const m = await getModel();
         const res = await m.predict(data);
 
-        // Same data, ignoring RT -- the counts-only model literally cannot see the
-        // response times, since they're not part of what gets passed to it. That's
-        // the whole comparison: identical stimulus/response outcomes, one model
-        // blind to timing, one not.
+        // Same data, ignoring RT
         const cm = await getCmModel();
         const resCm = await cm.predict({
           counts: data.counts,
@@ -866,7 +853,7 @@
         }
         $("compare-table").innerHTML = html;
 
-        // Quantify the claim rather than just asserting it.
+        // Quantify the claim
         const exh = rows.filter((r) => !Sim.SELF_TERMINATING.includes(r.a));
         const accSpread =
           Math.max(...exh.map((r) => r.acc)) -
@@ -880,7 +867,7 @@
       <h4>Serial-exhaustive, parallel-exhaustive and coactive are the same experiment</h4>
       <p>
         Across those three, accuracy differs by <strong>${(100 * accSpread).toFixed(2)} percentage
-        points</strong>, and that is <em>sampling noise</em>, not signal. They don't merely look alike;
+        points</strong>, and that is <em>sampling noise</em>, not signal. They don't just look similar, 
         they have <strong>identical response probabilities by construction</strong>. Every one of them
         processes both dimensions and responds with what it found. No confusion matrix, at
         any sample size, can separate them.
@@ -910,17 +897,12 @@
       // --- wiring ------------------------------------------------------------------
       for (const k of ALL)
         $(k).addEventListener("input", () => {
-          // invalidate FIRST: drawSpace() only restores the exact confusion matrix when
-          // there is no live run, so clearing has to happen before we redraw.
           if (lastRun) invalidate("Settings changed. Run again.");
           drawSpace();
         });
       $("run").addEventListener("click", run);
       $("compare").addEventListener("click", compareAll);
 
-      // --- nudge controls: same pattern as space-builder.html, the dropdown selects
-      // WHICH stimulus the two sliders are currently editing; switching stimuli
-      // must show that stimulus's own stored offset, not reset or leak another's. ---
       function syncNudgeSliders() {
         const i = +$("nudgeStim").value;
         $("nudgeX").value = nudge.x[i];
