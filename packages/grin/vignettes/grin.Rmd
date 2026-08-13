@@ -108,16 +108,37 @@ probability near 0.5 with `evidence_* = FALSE` means "undecided," not
 Separability and independence are about the *shape* of the perceptual
 representation. A related but different question is whether the participant
 simply favours one response over another, independent of how well they
-discriminate -- `grin_response_bias()` reads that directly off the matrix, no
-model fit required:
+discriminate -- and GRT, as a multidimensional extension of signal detection
+theory, gives two different ways to ask it.
+
+`grin_empirical_bias()` reads it straight off the matrix, no model fit
+required: how far each dimension's "respond level 2" rate sits from a fair
+coin.
 
 ```{r}
-grin_response_bias(M)
+grin_empirical_bias(M)
 ```
 
 `x_bias`/`y_bias` are each in [-0.5, 0.5]: 0 is unbiased, positive means the
 participant reports level 2 of that dimension more than a fair coin would,
 negative means they favour level 1.
+
+`grin_response_bias()` asks the SDT-native version of the same question: not
+how the participant *responded*, but where their *decision criterion* sits.
+`grin_infer()`'s identified z-scores place the decision bound at 0 by
+convention, so an unbiased observer's two levels on a dimension are mirror
+images about it and their four z-scores average to exactly zero -- a nonzero
+average is a shifted criterion in the classical SDT sense, read directly off
+a fit you already have:
+
+```{r}
+grin_response_bias(out$result)
+```
+
+Same sign convention as `grin_empirical_bias()` (positive favours level 2),
+but a genuinely different quantity: one describes the data, the other
+describes the decision rule the fitted model attributes it to, uncertainty
+and all (`x_bias_se`/`y_bias_se`, from the fit's own posterior).
 
 ## Plotting one participant
 
@@ -148,9 +169,13 @@ grin_plot_constructs(out$result, out$constructs)
 Bars for a construct the data can't decide are flagged ("insufficient
 evidence") rather than drawn as if informative.
 
-```{r, fig.alt = "Response bias bar chart for dimensions A and B"}
-grin_plot_bias(M)
+```{r, fig.alt = "Decision-criterion response bias bar chart for dimensions A and B, with error bars"}
+grin_plot_bias(out$result)
 ```
+
+`grin_plot_empirical_bias()` is the matrix-only, no-error-bars counterpart to
+this, for the same reason `grin_empirical_bias()` exists alongside
+`grin_response_bias()`.
 
 Every plot is a `ggplot` object, so it composes the normal way (more on this
 in "Editing a figure further," below).
@@ -284,9 +309,12 @@ grin_plot_model_classes(sample)
 grin_plot_precision_group(sample)
 ```
 
-```{r, fig.alt = "Boxplots of response bias per dimension across participants"}
-grin_plot_bias_group(mats)
+```{r, fig.alt = "Boxplots of decision-criterion response bias per dimension across participants"}
+grin_plot_bias_group(sample)
 ```
+
+`grin_plot_empirical_bias_group(mats)` is the matrix-only counterpart, taking
+the raw confusion matrices directly rather than fitted results.
 
 `grin_plot_precision_group()` is useful for planning: run it on pilot data to
 see what posterior SD your trial counts are actually buying you, before

@@ -32,7 +32,8 @@ test_that("individual plots build without error and return ggplot objects", {
   expect_s3_class(grin_plot_space(out1$result), "ggplot")
   expect_s3_class(grin_plot_params(out1$result), "ggplot")
   expect_s3_class(grin_plot_constructs(out1$result, out1$constructs), "ggplot")
-  expect_s3_class(grin_plot_bias(M1), "ggplot")
+  expect_s3_class(grin_plot_bias(out1$result), "ggplot")
+  expect_s3_class(grin_plot_empirical_bias(M1), "ggplot")
 })
 
 test_that("group plots build without error and return ggplot objects", {
@@ -41,7 +42,8 @@ test_that("group plots build without error and return ggplot objects", {
   expect_s3_class(grin_plot_params_group(many), "ggplot")
   expect_s3_class(grin_plot_model_classes(many), "ggplot")
   expect_s3_class(grin_plot_precision_group(many), "ggplot")
-  expect_s3_class(grin_plot_bias_group(list(M1, M2)), "ggplot")
+  expect_s3_class(grin_plot_bias_group(many), "ggplot")
+  expect_s3_class(grin_plot_empirical_bias_group(list(M1, M2)), "ggplot")
 })
 
 test_that("plots actually render (catches ggplot_build()-time errors, not just object construction)", {
@@ -50,7 +52,8 @@ test_that("plots actually render (catches ggplot_build()-time errors, not just o
     grin_plot_constructs(out1$result, out1$constructs),
     grin_plot_space_group(many), grin_plot_params_group(many),
     grin_plot_model_classes(many), grin_plot_precision_group(many),
-    grin_plot_bias(M1), grin_plot_bias_group(list(M1, M2)),
+    grin_plot_bias(out1$result), grin_plot_bias_group(many),
+    grin_plot_empirical_bias(M1), grin_plot_empirical_bias_group(list(M1, M2)),
     grin_plot_diagnostics(out1$result, M1, show_marginals = FALSE)
   )
   for (p in plots) expect_silent(ggplot2::ggplot_build(p))
@@ -128,13 +131,44 @@ test_that("grin_plot_space_group(facet = FALSE) prints the exploratory-only cave
   expect_message(grin_plot_space_group(many, facet = FALSE), "exploratory inspection view only")
 })
 
-test_that("grin_response_bias reads the bias direction from a lopsided matrix", {
+test_that("grin_empirical_bias reads the bias direction from a lopsided matrix", {
   # every trial reported as level-2 on both dimensions -> maximal bias
   M_biased <- matrix(c(0, 0, 0, 40,  0, 0, 0, 40,  0, 0, 0, 40,  0, 0, 0, 40),
                      nrow = 4, byrow = TRUE)
-  b <- grin_response_bias(M_biased)
+  b <- grin_empirical_bias(M_biased)
   expect_equal(b$x_bias, 0.5)
   expect_equal(b$y_bias, 0.5)
+})
+
+test_that("grin_response_bias is zero when a dimension's z-scores are exactly symmetric", {
+  fake <- structure(list(
+    params = c(-1, -1, 1, 1,  -0.7, 0.7, -0.7, 0.7,  0, 0, 0, 0),
+    std = rep(0.15, 12), names = PARAM_NAMES, model_class = "test"
+  ), class = "grin_result")
+  b <- grin_response_bias(fake)
+  expect_equal(b$x_bias, 0)
+  expect_equal(b$y_bias, 0)
+})
+
+test_that("grin_response_bias sign agrees with grin_empirical_bias's convention on an asymmetric case", {
+  # level-1 z-scores (magnitude 1.5) sit further from the bound than level-2's
+  # (magnitude 0.5) -> the bound is effectively closer to level 2, so it takes
+  # LESS evidence to land on the level-1 side -> biased toward level 1 (negative).
+  # Verified against the forward model directly during development: this exact
+  # asymmetry lowers P(respond level 2) to ~0.38, a negative empirical bias too.
+  fake <- structure(list(
+    params = c(-1.5, -1.5, 0.5, 0.5,  -1, -1, 1, 1,  0, 0, 0, 0),
+    std = rep(0.15, 12), names = PARAM_NAMES, model_class = "test"
+  ), class = "grin_result")
+  b <- grin_response_bias(fake)
+  expect_equal(b$x_bias, -0.5)   # mean(-1.5,-1.5,0.5,0.5)
+  expect_equal(b$y_bias, 0)
+  expect_true(b$x_bias_se > 0)
+})
+
+test_that("grin_tidy carries x_bias/y_bias through for group plotting", {
+  td <- grin_tidy(many)
+  expect_true(all(c("x_bias", "y_bias") %in% names(td)))
 })
 
 test_that("grin_plot_diagnostics needs at least one panel switched on", {

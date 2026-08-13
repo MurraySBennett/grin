@@ -17,7 +17,8 @@ a sample of participants.}
 \value{
 A data.frame, one row per participant: \code{id}, \code{model_class}, the 12
 parameter estimates (\code{zx_0}...\code{rho_3}), their SDs (\code{zx_0_sd}...\code{rho_3_sd}),
-\code{p_PI}/\code{p_sep_A}/\code{p_sep_B}, and \code{evidence_PI}/\code{evidence_sep_A}/\code{evidence_sep_B}.
+\code{p_PI}/\code{p_sep_A}/\code{p_sep_B}, \code{evidence_PI}/\code{evidence_sep_A}/\code{evidence_sep_B},
+and \code{x_bias}/\code{y_bias} (the decision-criterion bias of \code{\link[=grin_response_bias]{grin_response_bias()}}).
 }
 \description{
 Tidy one or many GRIN inferences into a data.frame

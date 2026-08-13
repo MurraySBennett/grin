@@ -2,11 +2,11 @@
 % Please edit documentation in R/bias.R
 \name{grin_plot_bias}
 \alias{grin_plot_bias}
-\title{Plot response bias for one participant}
+\title{Plot decision-criterion response bias for one participant}
 \usage{
 grin_plot_bias(
-  counts,
-  trials = NULL,
+  result,
+  ci = 0.9,
   palette = NULL,
   title = NULL,
   dim_labels = c("A", "B"),
@@ -14,7 +14,9 @@ grin_plot_bias(
 )
 }
 \arguments{
-\item{counts, trials}{As in \code{\link[=grin_response_bias]{grin_response_bias()}}.}
+\item{result}{A \code{grin_result} (e.g. \code{grin_infer(M)$result}).}
+
+\item{ci}{Confidence level for the error bars (default 0.90).}
 
 \item{palette}{Colour palette. \code{NULL} (default) defers to
 \code{options(grin.palette)}. See \code{\link[=grin_plot_space]{grin_plot_space()}}.}
@@ -30,13 +32,14 @@ the x-axis. Defaults to \code{c("A", "B")}.}
 A ggplot object.
 }
 \description{
-A two-bar summary of \code{\link[=grin_response_bias]{grin_response_bias()}}: how far each dimension's
-"respond level 2" rate sits from the unbiased 0.5, averaged across the four
-stimuli. Works directly from a confusion matrix -- no \code{\link[=grin_infer]{grin_infer()}} call
-needed.
+A two-bar summary of \code{\link[=grin_response_bias]{grin_response_bias()}}, with error bars carrying its
+(approximate) uncertainty forward. For the model-free alternative, see
+\code{\link[=grin_plot_empirical_bias]{grin_plot_empirical_bias()}}.
 }
 \examples{
+\donttest{
 M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
               13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
-grin_plot_bias(M)
+grin_plot_bias(grin_infer(M)$result)
+}
 }

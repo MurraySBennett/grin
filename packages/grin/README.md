@@ -75,12 +75,23 @@ would destroy the posterior's uncertainty.
 
 ## Response bias
 
-Separate from separability/independence: `grin_response_bias()` reads the raw
-tendency to favour one response over another straight off the matrix, no model
-fit required.
+Separate from separability/independence, and GRT (as a multidimensional
+extension of signal detection theory) gives two ways to ask about it.
+`grin_empirical_bias()` reads the raw tendency to favour one response over
+another straight off the matrix, no model fit required:
 
 ```r
-grin_response_bias(M)   # $x_bias, $y_bias in [-0.5, 0.5]; 0 = unbiased
+grin_empirical_bias(M)   # $x_bias, $y_bias in [-0.5, 0.5]; 0 = unbiased
+```
+
+`grin_response_bias()` is the SDT-native version: the decision bound sits at
+0 by convention, so an unbiased observer's two levels on a dimension are
+mirror images about it and their identified z-scores average to zero -- a
+nonzero average is a shifted decision criterion, read directly off a fit you
+already have, uncertainty included:
+
+```r
+grin_response_bias(out$result)   # $x_bias, $y_bias, plus $x_bias_se/$y_bias_se
 ```
 
 ## Stopping rules for adaptive designs
@@ -117,7 +128,7 @@ participant):
 grin_plot_space(out$result)                     # perceptual space: means, correlation ellipses, error bars
 grin_plot_params(out$result)                     # all 12 estimates, dot-and-whisker with 90% CIs
 grin_plot_constructs(out$result, out$constructs) # P(PI)/P(RHO1)/P(free), P(separable A/B)
-grin_plot_bias(M)                                # response bias per dimension
+grin_plot_bias(out$result)                       # decision-criterion response bias per dimension
 grin_plot_diagnostics(out$result, M)             # predicted-vs-observed + marginal distributions
 ```
 
@@ -125,7 +136,9 @@ grin_plot_diagnostics(out$result, M)             # predicted-vs-observed + margi
 `show_labels`, `show_uncertainty`, `show_marginals`, and `base_size` — see
 `?grin_plot_space` for the full set. `grin_plot_diagnostics()` needs the
 original matrix alongside the fitted result, since `grin_infer()`'s return
-value doesn't carry the input back out.
+value doesn't carry the input back out. `grin_plot_empirical_bias()` is the
+matrix-only, no-fit-required counterpart to `grin_plot_bias()` (see
+"Response bias" above).
 
 Group level (many participants — loop `grin_infer()` over a sample and pass the
 list straight in; `grin_tidy()` is the shared foundation if you want the raw
@@ -139,7 +152,7 @@ grin_plot_space_group(sample)       # one panel per participant -- the individua
 grin_plot_params_group(sample)      # per-parameter distribution across the sample
 grin_plot_model_classes(sample)     # how many participants landed in each GRT model class
 grin_plot_precision_group(sample)   # posterior SD distribution -- data quality across the sample
-grin_plot_bias_group(list(M1, M2, M3)) # response bias distribution across the sample
+grin_plot_bias_group(sample)        # response bias distribution across the sample
 ```
 
 `grin_plot_space_group(sample, facet = FALSE)` overlays all participants with a

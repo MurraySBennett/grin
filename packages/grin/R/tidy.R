@@ -10,7 +10,8 @@
 #'   `results`. Defaults to the list's names if present, otherwise `p1, p2, ...`.
 #' @return A data.frame, one row per participant: `id`, `model_class`, the 12
 #'   parameter estimates (`zx_0`...`rho_3`), their SDs (`zx_0_sd`...`rho_3_sd`),
-#'   `p_PI`/`p_sep_A`/`p_sep_B`, and `evidence_PI`/`evidence_sep_A`/`evidence_sep_B`.
+#'   `p_PI`/`p_sep_A`/`p_sep_B`, `evidence_PI`/`evidence_sep_A`/`evidence_sep_B`,
+#'   and `x_bias`/`y_bias` (the decision-criterion bias of [grin_response_bias()]).
 #' @examples
 #' \donttest{
 #' M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
@@ -36,10 +37,12 @@ grin_tidy <- function(results, ids = NULL) {
     res <- r$result; con <- r$constructs
     est <- stats::setNames(as.list(res$params), res$names)
     sd_ <- stats::setNames(as.list(res$std), paste0(res$names, "_sd"))
+    bias <- grin_response_bias(res)
     c(list(id = id, model_class = res$model_class), est, sd_,
       list(p_PI = con$p_PI, p_sep_A = con$p_sep_A, p_sep_B = con$p_sep_B,
           evidence_PI = con$evidence_PI, evidence_sep_A = con$evidence_sep_A,
-          evidence_sep_B = con$evidence_sep_B))
+          evidence_sep_B = con$evidence_sep_B,
+          x_bias = bias$x_bias, y_bias = bias$y_bias))
   }, results, ids)
 
   do.call(rbind.data.frame, c(lapply(rows, as.data.frame, stringsAsFactors = FALSE),

@@ -2,33 +2,34 @@
 % Please edit documentation in R/bias.R
 \name{grin_response_bias}
 \alias{grin_response_bias}
-\title{Response bias from a raw confusion matrix}
+\title{Parametric (decision-criterion) response bias from a fitted result}
 \usage{
-grin_response_bias(counts, trials = NULL)
+grin_response_bias(result)
 }
 \arguments{
-\item{counts}{A canonical-order 4x4 matrix (see \code{\link[=grin_to_confusion]{grin_to_confusion()}}), or
-a length-16 vector read row-major.}
-
-\item{trials}{Optional per-stimulus trial totals (length 4); defaults to
-row sums.}
+\item{result}{A \code{grin_result} (e.g. \code{grin_infer(M)$result}).}
 }
 \value{
-A list: \code{x_bias}, \code{y_bias} (each in \eqn{[-0.5, 0.5]}), and
-\code{p_resp2}, a 4x2 matrix giving P(respond level 2) on each dimension for
-each of the four stimuli (so a systematic bias can be told apart from one
-driven by a single stimulus).
+A list: \code{x_bias}, \code{y_bias}, and \code{x_bias_se}/\code{y_bias_se}. The SEs
+are a marginal-independence approximation from \code{result$std} (the
+posterior's full covariance across parameters isn't exposed by
+\code{\link[=grin_infer]{grin_infer()}}, only per-parameter marginal SDs, so this likely under-
+or overstates the true joint uncertainty somewhat; treat as
+approximate, not exact).
 }
 \description{
-The signed tendency to report level 2 of a dimension more or less often
-than level 1, averaged across the four stimuli: 0 is unbiased, positive
-means the observer favours the "2" response on that dimension more than a
-fair coin would, negative means they favour "1". This is a description of
-the data, independent of \code{\link[=grin_infer]{grin_infer()}}'s model fit -- it needs no trained
-network and works even on a matrix GRIN can't otherwise fit.
+The mean of a dimension's four identified z-scores: exactly zero when the
+two levels are mirror images about the fixed decision bound (unbiased),
+and equal to the criterion's effective offset from that symmetric point
+otherwise -- the same sign convention as \code{\link[=grin_empirical_bias]{grin_empirical_bias()}} (positive
+favours level 2), but read directly off \code{result$params} rather than raw
+response counts. Unlike the empirical version, this needs a \code{\link[=grin_infer]{grin_infer()}}
+fit, and carries the fit's own uncertainty forward.
 }
 \examples{
+\donttest{
 M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
               13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
-grin_response_bias(M)
+grin_response_bias(grin_infer(M)$result)
+}
 }

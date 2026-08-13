@@ -169,36 +169,3 @@ grin_plot_precision_group <- function(results, ids = NULL, palette = NULL, title
                  subtitle = sprintf("n = %d participants", nrow(td))) +
     theme_grin(base_size)
 }
-
-#' Plot response bias across many participants
-#'
-#' Group-level companion to [grin_plot_bias()]: one boxplot per dimension of
-#' [grin_response_bias()] computed on each participant's own confusion matrix.
-#' Works directly from confusion matrices -- no [grin_infer()] call needed.
-#'
-#' @param counts_list A list of confusion matrices, one per participant (each
-#'   as accepted by [grin_response_bias()]).
-#' @param trials_list Optional list of per-stimulus trial totals, same length
-#'   as `counts_list`; defaults to row sums for each.
-#' @param palette,title,base_size As in [grin_plot_space_group()].
-#' @return A ggplot object.
-#' @export
-grin_plot_bias_group <- function(counts_list, trials_list = NULL, palette = NULL,
-                                 title = NULL, base_size = 12) {
-  if (is.null(trials_list)) trials_list <- vector("list", length(counts_list))
-  stopifnot(length(trials_list) == length(counts_list))
-  b <- Map(grin_response_bias, counts_list, trials_list)
-  df <- data.frame(dimension = rep(c("A", "B"), each = length(b)),
-                   bias = c(vapply(b, `[[`, numeric(1), "x_bias"),
-                           vapply(b, `[[`, numeric(1), "y_bias")))
-  col <- .grin_group_colors(1, palette)
-
-  ggplot2::ggplot(df, ggplot2::aes(x = .data$dimension, y = .data$bias)) +
-    ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = .grin_colors$mute) +
-    ggplot2::geom_boxplot(fill = col, alpha = 0.5, outlier.alpha = 0.4, width = 0.5) +
-    ggplot2::ylim(-0.5, 0.5) +
-    ggplot2::labs(x = NULL, y = "response bias  (P(respond level 2) - 0.5)",
-                 title = .grin_title(title, "Response bias across participants"),
-                 subtitle = sprintf("n = %d participants", length(counts_list))) +
-    theme_grin(base_size)
-}
