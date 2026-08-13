@@ -80,6 +80,39 @@ matrix. Construct targets carry the model's evidence flags, so a threshold on a
 construct the data cannot decide is reported in `decision.blocked_by` and does not
 stop the loop. The limit is in the data, not the tool.
 
+## Plotting and reporting
+
+Needs the `[plot]` extra (`pip install grintools[plot]`, adds matplotlib/pandas/scipy
+-- the core package stays torch-free and dependency-light without it):
+
+```python
+import grintools.plot as gtplot
+
+gtplot.plot_space(result)                # perceptual space: means + correlation ellipses
+gtplot.plot_params(result)                # all 12 estimates, dot-and-whisker with 90% CIs
+gtplot.plot_constructs(result, constructs)  # P(PI)/P(RHO1)/P(free), P(separable A/B)
+```
+
+Group level (many participants — collect `gt.infer()` results into a list;
+`gtplot.tidy()` is the shared foundation if you want the raw DataFrame instead
+of a plot):
+
+```python
+sample = [gt.infer(M1), gt.infer(M2), gt.infer(M3)]
+
+gtplot.tidy(sample)                   # one row per participant: estimates, SDs, constructs
+gtplot.plot_space_group(sample)       # one panel per participant (facet=False overlays instead)
+gtplot.plot_params_group(sample)      # per-parameter distribution across the sample
+gtplot.plot_model_classes(sample)     # how many participants landed in each GRT model class
+gtplot.plot_precision_group(sample)   # posterior SD distribution -- data quality across the sample
+```
+
+Same visual identity as `grin` (the R package) and the paper's own figures --
+a figure made with either package reads as the same family. Bars/labels for a
+construct the data can't decide (`evidence_* == False`) are visually flagged
+rather than plotted as if informative, same principle as the stopping-rule
+API's `blocked_by`.
+
 ## Model provenance
 
 Each release bundles one specific trained `.onnx`. The package version pins the
