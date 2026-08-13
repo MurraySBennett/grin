@@ -20,7 +20,7 @@ torch::install_torch()
 
 # from GitHub until this is on CRAN:
 # install.packages("remotes")
-remotes::install_github("MurraySBennett/grin", subdir = "grin")
+remotes::install_github("MurraySBennett/grin", subdir = "packages/grin")
 ```
 
 ## Use

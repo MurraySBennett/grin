@@ -14,6 +14,20 @@ fast enough to run inside the trial loop for adaptive testing.
 Everything runs **from the project root**. Paths in `src/config.py` are absolute, so outputs
 land in `data/` and `results/` regardless of where you invoke from.
 
+## Packages
+
+This repo trains GRIN and produces the two things people actually install. Both wrap
+the same trained weights (numerically verified to agree) and are otherwise independent
+of each other and of the training pipeline above:
+
+- **[`packages/grintools/`](packages/grintools/)** — Python, `pip install grintools`. Torch-free at
+  runtime (ONNX + `onnxruntime` only).
+- **[`packages/grin/`](packages/grin/)** — R, native inference via the `torch` package
+  (libtorch) — no Python required. `remotes::install_github("MurraySBennett/grin", subdir = "packages/grin")`.
+
+Everything else in the repo (`src/`, `scripts/`, `data/`, `results/`, `validation/`, `web/`) is
+how the model is trained and validated, not something an end user needs to touch.
+
 ---
 
 ## 0. One-time setup

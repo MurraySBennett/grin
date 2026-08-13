@@ -7,9 +7,10 @@ name: Test
 #     src/ directly, so a divergence fails loudly here rather than silently).
 #   - grintools: the standalone PyPI package, matrixed across Python versions and
 #     OSes because that is exactly what "pip install grintools" needs to work on.
-#     Installed as a real wheel and run from an empty directory -- NOT the repo
-#     root, which contains a literal grintools/ folder that would otherwise shadow
-#     the installed package (a real bug this workflow avoids, not paranoia).
+#     Installed as a real wheel and run from an empty directory, not the repo
+#     checkout -- a real bug this avoided during development (a bare grintools/
+#     folder in the working directory shadowed the installed package via Python's
+#     implicit namespace-package resolution), not paranoia.
 #   - r-package: the native-R companion, via devtools::check() (0 errors/warnings
 #     is the bar; a sandbox "unable to verify current time" NOTE is unavoidable and
 #     not a failure). torch::install_torch() downloads libtorch (~500MB); the
@@ -55,15 +56,15 @@ jobs:
       - name: Build and install the wheel
         run: |
           pip install build
-          python -m build grintools
-          pip install grintools/dist/*.whl
+          python -m build packages/grintools
+          pip install packages/grintools/dist/*.whl
         shell: bash
       - name: Install test dependencies
         run: pip install pytest
-      - name: Smoke test, run OUTSIDE the repo (avoids the grintools/ dir shadowing the installed package)
+      - name: Smoke test, run OUTSIDE the repo (avoids any packages/grintools shadowing the installed package)
         run: |
           mkdir "$RUNNER_TEMP/grintools_smoketest"
-          cp grintools/tests/test_packaged.py "$RUNNER_TEMP/grintools_smoketest/"
+          cp packages/grintools/tests/test_packaged.py "$RUNNER_TEMP/grintools_smoketest/"
           cd "$RUNNER_TEMP/grintools_smoketest" && pytest test_packaged.py -v
         shell: bash
 
@@ -74,14 +75,14 @@ jobs:
       - uses: r-lib/actions/setup-r@v2
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          working-directory: grin
+          working-directory: packages/grin
           extra-packages: any::rcmdcheck
       - name: Install libtorch (best-effort -- inference tests skip gracefully if this fails)
         continue-on-error: true
         run: |
           Rscript -e 'torch::install_torch()'
-        working-directory: grin
+        working-directory: packages/grin
       - uses: r-lib/actions/check-r-package@v2
         with:
-          working-directory: grin
+          working-directory: packages/grin
           error-on: '"warning"'

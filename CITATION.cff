@@ -24,8 +24,8 @@ identifiers:
     value: "https://pypi.org/project/grintools/"
     description: "grintools: Python package (PyPI)."
   - type: url
-    value: "https://github.com/MurraySBennett/grin/tree/main/grintools"
+    value: "https://github.com/MurraySBennett/grin/tree/main/packages/grintools"
     description: "grintools: Python package source."
   - type: url
-    value: "https://github.com/MurraySBennett/grin/tree/main/grin"
+    value: "https://github.com/MurraySBennett/grin/tree/main/packages/grin"
     description: "grin: R package source (no Python required; native torch/libtorch)."
