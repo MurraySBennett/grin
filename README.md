@@ -145,10 +145,16 @@ placeholders rather than blank panels.
 
 ```bash
 Rscript scripts/R/fit_real_data.R              # -> data/real/real_matrices.csv + mdsdt fits
+python scripts/compare_real_data.py            # -> GRIN on the same matrices, vs mdsdt
 ```
 
 mdsdt ships five real 2×2 matrices (`thomas01a/b`, `silbert09a/b`, `silbert12`). No ground
-truth, so the check is agreement with the published gold standard.
+truth, so the check is agreement with the published gold standard — does GRIN reach the same
+conclusions (PI, separability) as mdsdt's AIC model selection, in microseconds rather than
+seconds — plus each matrix's OOD/goodness-of-fit score, since a high value there means the
+observed matrix has structure the GRT-Gaussian family can't produce and the estimate should
+be treated with caution. Distinct from `compare_to_r.py` (2.4): that script scores simulated
+data against ground truth; this one has none, so it scores agreement instead.
 
 ### 2.8 — Poster figures
 
