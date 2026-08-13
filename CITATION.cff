@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "GRIN: Amortised, Uncertainty-Calibrated Inference for General Recognition Theory"
+type: software
+authors:
+  - family-names: "Bennett"
+    given-names: "Murray S."
+    email: murray.bennett92@gmail.com
+    affiliation: "The Ohio State University"
+version: 0.1.0
+date-released: "2026-08-12"
+url: "https://github.com/MurraySBennett/grin"
+repository-code: "https://github.com/MurraySBennett/grin"
+license: MIT
+abstract: >
+  Amortised, uncertainty-calibrated inference of General Recognition Theory
+  (GRT) perceptual representations from a 2x2 identification confusion matrix.
+  A neural network, trained once on simulated data, replaces per-participant
+  maximum-likelihood fitting. Ships as two installable packages wrapping the
+  same trained weights: grintools (Python, PyPI) and grin (R, native via
+  torch/libtorch) -- both numerically verified to agree.
+identifiers:
+  - type: url
+    value: "https://pypi.org/project/grintools/"
+    description: "grintools: Python package (PyPI)."
+  - type: url
+    value: "https://github.com/MurraySBennett/grin/tree/main/grintools"
+    description: "grintools: Python package source."
+  - type: url
+    value: "https://github.com/MurraySBennett/grin/tree/main/grin"
+    description: "grin: R package source (no Python required; native torch/libtorch)."
