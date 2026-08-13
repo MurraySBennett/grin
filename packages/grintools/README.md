@@ -113,6 +113,13 @@ construct the data can't decide (`evidence_* == False`) are visually flagged
 rather than plotted as if informative, same principle as the stopping-rule
 API's `blocked_by`.
 
+**Style**: black-on-white by default (publication- and greyscale-safe). Pass
+`color=True` to any plot function for the house blue/rose style instead, or
+set it once for the session with `grintools.plot.DEFAULT_COLOR = True`. Either
+way, `plot_space()` never splits one participant's four stimuli into four
+colours -- with everything else in the plot fixed, that's decoration, not
+information, so stimuli are told apart by a label instead.
+
 ## Model provenance
 
 Each release bundles one specific trained `.onnx`. The package version pins the

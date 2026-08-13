@@ -2,6 +2,7 @@
 import matplotlib
 matplotlib.use("Agg")  # headless, no display needed for tests
 import matplotlib.pyplot as plt
+from matplotlib.colors import to_rgba
 import pytest
 
 import grintools as gt
@@ -83,6 +84,57 @@ def test_plot_constructs_flags_insufficient_evidence(out1):
     ax = plot.plot_constructs(out1[0], stub_constructs)
     texts = [t.get_text() for t in ax.texts]
     assert any("insufficient" in t for t in texts)
+    plt.close(ax.figure)
+
+
+def test_default_style_is_black_on_white(out1):
+    ax = plot.plot_space(out1[0])
+    points = [c for c in ax.collections if c.get_offsets().shape[0] > 0]
+    colors = {tuple(c) for coll in points for c in coll.get_facecolor()}
+    assert colors == {tuple(to_rgba(plot.INK))}
+    plt.close(ax.figure)
+
+
+def test_plot_space_never_splits_by_stimulus_even_in_color_mode(out1):
+    ax = plot.plot_space(out1[0], color=True)
+    points = [c for c in ax.collections if c.get_offsets().shape[0] > 0]
+    colors = {tuple(c) for coll in points for c in coll.get_facecolor()}
+    # one colour for all four stimuli, and it's the house blue, not ink
+    assert colors == {tuple(to_rgba(plot.BLUE))}
+    plt.close(ax.figure)
+
+
+def test_color_true_switches_plot_params_off_monochrome(out1):
+    ax_bw = plot.plot_params(out1[0])
+    ax_color = plot.plot_params(out1[0], color=True)
+    bw_colors = {tuple(c.get_facecolor()[0]) for c in ax_bw.collections}
+    color_colors = {tuple(c.get_facecolor()[0]) for c in ax_color.collections}
+    assert len(bw_colors) == 1
+    assert len(color_colors) > 1
+    plt.close(ax_bw.figure); plt.close(ax_color.figure)
+
+
+def test_default_color_module_setting(out1):
+    plot.DEFAULT_COLOR = True
+    try:
+        ax_option = plot.plot_params(out1[0])
+        ax_explicit = plot.plot_params(out1[0], color=True)
+        option_colors = [tuple(c.get_facecolor()[0]) for c in ax_option.collections]
+        explicit_colors = [tuple(c.get_facecolor()[0]) for c in ax_explicit.collections]
+        assert option_colors == explicit_colors
+    finally:
+        plot.DEFAULT_COLOR = False
+    plt.close(ax_option.figure); plt.close(ax_explicit.figure)
+
+
+def test_explicit_color_false_overrides_default_color_setting(out1):
+    plot.DEFAULT_COLOR = True
+    try:
+        ax = plot.plot_params(out1[0], color=False)
+        colors = {tuple(c.get_facecolor()[0]) for c in ax.collections}
+        assert colors == {tuple(to_rgba(plot.INK))}
+    finally:
+        plot.DEFAULT_COLOR = False
     plt.close(ax.figure)
 
 
