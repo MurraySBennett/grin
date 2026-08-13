@@ -74,6 +74,19 @@ Proportions (rows summing to 1) are refused unless you also pass `trials=[...]`,
 because the model reads per-stimulus trial totals as a second input and proportions
 would destroy the posterior's uncertainty.
 
+`gt.to_confusion()` also accepts trial-level ("long format") data directly —
+one row per trial with `stimulus`/`response` columns, no manual tallying — which
+is the shape a PsychoPy or jsPsych/Pavlovia/Gorilla export already comes in:
+
+```python
+gt.to_confusion(trial_log, factor_a=("Old", "Young"), factor_b=("Neg", "Pos"), long=True)
+```
+
+See [`docs/data_collection.md`](../../docs/data_collection.md) for the full
+walkthrough by platform (including running `grintools` live inside a PsychoPy
+trial loop), and a note on where `grin` (R) fits in against this package for
+post-hoc analysis.
+
 ## Response bias
 
 Separate from separability/independence, and GRT (as a multidimensional

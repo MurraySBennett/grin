@@ -9,6 +9,7 @@ fast enough to run inside the trial loop for adaptive testing.
 - **What the numbers mean:** `docs/interpreting.md`
 - **The maths (parameterisation, constraints, prior):** `docs/GRT_model_spec.md`
 - **What each validation check establishes:** `validation/README_validation.md`
+- **Getting data from PsychoPy / jsPsych / an online platform into GRIN:** `docs/data_collection.md`
 
 Everything runs **from the project root**. Paths in `src/config.py` are absolute, so outputs
 land in `data/` and `results/` regardless of where you invoke from.

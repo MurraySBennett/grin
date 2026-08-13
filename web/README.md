@@ -61,6 +61,11 @@ sync, `grin-model.js` fails loudly at load rather than silently mis-decoding the
 output. Single-threaded SIMD WASM keeps a fit at roughly a millisecond without needing
 SharedArrayBuffer or special response headers.
 
+If you're building a *different* experiment (jsPsych, lab.js, or similar) and want
+this same live in-browser inference in it, `grin-model.js` is reusable as example
+code — copy it in and adapt it, it's not a published package. See
+[`docs/data_collection.md`](../docs/data_collection.md) for the worked pattern.
+
 ## Theme
 
 One class on `<html>` (`is-dark`) drives everything. A tiny synchronous inline
