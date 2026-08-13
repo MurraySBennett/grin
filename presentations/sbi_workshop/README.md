@@ -4,8 +4,8 @@ Source for the GRIN poster. Everything is plain LaTeX; no poster class, because
 `tikzposter` / `beamerposter` block grids fight the full-width hero figure.
 
 ```
-presentations/sbi_poster/
-├── poster.tex              the document — edit the copy here
+presentations/sbi_workshop/
+├── SBI_workshop_poster.tex              the document — edit the copy here
 ├── grinposter.sty          palette, type scale, panel commands
 ├── pipeline.tex            the hero figure (TikZ)
 ├── pipeline_preview.tex    compile this to iterate on the hero alone
@@ -17,12 +17,12 @@ presentations/sbi_poster/
 ## Build
 
 ```bat
-cd presentations\sbi_poster
-latexmk -pdf poster.tex
+cd presentations\sbi_workshop
+latexmk -pdf SBI_workshop_poster.tex
 ```
 
 MiKTeX will offer to install `sourcesanspro`, `qrcode`, and `tcolorbox` on the
-first run — say yes. `pdflatex poster.tex` works too if you'd rather skip
+first run — say yes. `pdflatex SBI_workshop_poster.tex` works too if you'd rather skip
 latexmk. There are no cross-references, so **one pass is enough**.
 
 While drafting the hero figure, compile it on its own — it is far faster and the
@@ -35,14 +35,14 @@ latexmk -pdf pipeline_preview.tex
 
 ## Figures
 
-`poster.tex` searches `figures/` first, then `..\..\results\figures\`. So the
+`SBI_workshop_poster.tex` searches `figures/` first, then `..\..\results\figures\`. So the
 poster picks up the standard suite automatically, and anything you drop in
 `figures/` overrides it.
 
 **Run this once before you print** (from the project root, not this folder):
 
 ```bat
-python presentations\sbi_poster\make_poster_figures.py
+python presentations\sbi_workshop\make_poster_figures.py
 ```
 
 An 8.6 in column is unforgiving. The manuscript figures are drawn at
@@ -70,7 +70,7 @@ something else has to go**. Cheapest places to claw back space, in order:
 
 1. `\bodyfont` in `grinposter.sty`: `{30}{40}` → `{28}{38}`. Still comfortably
    readable at three feet, and buys about half an inch per column.
-2. `\parskip` in `poster.tex` (currently `0.11in`).
+2. `\parskip` in `SBI_workshop_poster.tex` (currently `0.11in`).
 3. The hero's stage captions — they are already terse, and the columns carry the
    detail, so they can lose a line each.
 
@@ -90,7 +90,7 @@ white board each one would sit in a visible rectangle.
 ## Before you print
 
 - [ ] **Confirm every `\chk{}` number.** They render highlighted in yellow until
-      you set `\highlightchecksfalse` in `poster.tex`. Flip it *last*.
+      you set `\highlightchecksfalse` in `SBI_workshop_poster.tex`. Flip it *last*.
 - [ ] **Confirm Kvam's affiliation** — I assumed Ohio State. It is inside a
       `\chk{}` for exactly this reason.
 - [ ] **No `figure not found` placeholders** left on the page.
@@ -100,7 +100,7 @@ white board each one would sit in a visible rectangle.
       change it or remove it** — a dead QR on a poster is worse than none.
 - [ ] Check the PDF at 100 % zoom, not fit-to-window. Fit-to-window hides
       exactly the type-too-small problems this poster is trying to avoid.
-- [ ] Fonts embedded: `pdffonts poster.pdf` — every row should say `yes` under
+- [ ] Fonts embedded: `pdffonts SBI_workshop_poster.pdf` — every row should say `yes` under
       `emb`. pdflatex embeds by default, so this is a formality.
 
 ### Numbers currently marked `\chk{}`

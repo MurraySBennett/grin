@@ -1,6 +1,6 @@
 # GRIN web app
 
-The browser front-end for **GRIN** (General Recognition Inversion Network) —
+The browser front-end for **GRIN** (General Recognition Inference Network) —
 amortised Bayesian inference for General Recognition Theory. Static site: no
 build step, no bundler. ES modules and one stylesheet.
 
