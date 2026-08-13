@@ -2,17 +2,14 @@
 % Please edit documentation in R/style.R
 \name{.grin_group_colors}
 \alias{.grin_group_colors}
-\title{Resolve a set of n category colours: the house palette if colour is on,
-the single ink colour repeated n times if not (so callers can use the same
-\verb{scale_*_manual()} machinery either way, and a bw plot never carries a
-legend that only distinguishes "black" from "black").}
+\title{Resolve a set of n category colours}
 \usage{
-.grin_group_colors(n, color = NULL)
+.grin_group_colors(n, palette = NULL)
 }
 \description{
-Resolve a set of n category colours: the house palette if colour is on,
-the single ink colour repeated n times if not (so callers can use the same
-\verb{scale_*_manual()} machinery either way, and a bw plot never carries a
-legend that only distinguishes "black" from "black").
+The requested palette repeated/interpolated to length \code{n} (mono repeats a
+single colour, so callers can use the same \verb{scale_*_manual()} machinery
+either way and a mono plot never carries a legend that only distinguishes
+"black" from "black").
 }
 \keyword{internal}

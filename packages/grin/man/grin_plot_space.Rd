@@ -4,28 +4,86 @@
 \alias{grin_plot_space}
 \title{Plot one participant's inferred perceptual space}
 \usage{
-grin_plot_space(result, ci = 0.9, color = NULL)
+grin_plot_space(
+  result,
+  ci = 0.9,
+  palette = NULL,
+  title = NULL,
+  xlab = "dimension A (zx)",
+  ylab = "dimension B (zy)",
+  stim_labels = CANON_STIM,
+  show_labels = TRUE,
+  show_uncertainty = TRUE,
+  show_marginals = FALSE,
+  base_size = 12
+)
 }
 \arguments{
 \item{result}{A \code{grin_result} (e.g. \code{grin_infer(M)$result}).}
 
-\item{ci}{Confidence level for the ellipse radius (default 0.90, matching
-\code{result$ci_low}/\code{result$ci_high}'s own convention).}
+\item{ci}{Confidence level for the ellipse radius and (if shown) the error
+bars (default 0.90, matching \code{result$ci_low}/\code{result$ci_high}'s own
+convention).}
 
-\item{color}{Use the house colour style instead of black-on-white? Default
-\code{NULL} defers to \code{options(grin.color = TRUE)}, itself default \code{FALSE}.}
+\item{palette}{Colour palette: \code{NULL} (default) defers to
+\code{options(grin.palette)}, itself default \code{"mono"} (black-on-white). Pass a
+name from \code{\link[=grin_palette_names]{grin_palette_names()}}, or your own vector of hex colours.}
+
+\item{title}{Plot title. \code{NULL} (default) uses
+\code{"Perceptual space (<model class>)"}; pass \code{""} for no title.}
+
+\item{xlab, ylab}{Axis titles. Default to \code{"dimension A (zx)"} /
+\code{"dimension B (zy)"}; pass \code{NULL} to hide an axis title entirely (the
+ordinary ggplot2 convention).}
+
+\item{stim_labels}{Length-4 character vector of labels for the four
+stimuli, in canonical order (A1B1, A1B2, A2B1, A2B2) -- e.g. the same
+labels you passed to \code{\link[=grin_to_confusion]{grin_to_confusion()}}. Defaults to the canonical
+tokens themselves.}
+
+\item{show_labels}{Draw the per-stimulus text labels? Default \code{TRUE}.}
+
+\item{show_uncertainty}{Draw posterior-SD error bars (a horizontal and a
+vertical bar) through each stimulus mean, at the same confidence level as
+the ellipse? Default \code{TRUE} -- every estimate GRIN reports carries
+uncertainty, and the space plot shouldn't be the one place that hides it.
+Set \code{FALSE} if the crosshairs make a crowded plot harder to read.}
+
+\item{show_marginals}{Add per-dimension marginal density strips (one curve
+per stimulus, \code{Normal(mean, 1)} under the model's own unit-variance
+convention) above and to the right of the main panel? Default \code{FALSE}.
+Requires the \pkg{patchwork} package. See also \code{\link[=grin_plot_diagnostics]{grin_plot_diagnostics()}},
+which pairs marginals with a predicted-vs-observed panel for a fuller
+goodness-of-fit report.}
+
+\item{base_size}{Base font size in points (default 12); see
+\code{\link[=theme_grin]{theme_grin()}}.}
 }
 \value{
-A ggplot object.
+A \code{ggplot} object (or, if \code{show_marginals = TRUE}, a \code{patchwork}
+object -- both support \code{+} with further ggplot2 calls on their main
+panel is not guaranteed once composed; add customisation before setting
+\code{show_marginals = TRUE} if you need it applied to every panel).
 }
 \description{
 Four stimulus means in the (zx, zy) plane, each with an ellipse showing its
 within-stimulus correlation (rho), and the decision bounds -- always at 0 in
 GRIN's identified coordinates, which is the whole point of working in them.
-Stimuli are told apart by a text label at each point, not by colour: with
-only one participant on the plot, four colours for four points is more
-decoration than information, and the quadrant each stimulus falls in is
-already fixed by the sign convention (Section 2 of the model spec).
+Stimuli are told apart by a text label at each point by default rather than
+by colour: with only one participant on the plot, four colours for four
+points is more decoration than information, and the quadrant each stimulus
+falls in is already fixed by the sign convention.
+}
+\details{
+The ellipse and the (optional) error bars show two different kinds of
+uncertainty, and the plot never conflates them: the ellipse is the
+predicted spread of a single trial's perceptual sample around the mean
+(fixed at unit variance by the model, shaped by \code{rho}); the error bars, if
+shown, are the \emph{posterior} uncertainty about where that mean itself is,
+given the data (\code{result$std}). A precisely-estimated participant can still
+have a wide ellipse (they are just genuinely correlated/unseparated), and a
+poorly-estimated one can have a narrow ellipse (few trials, but whatever
+trials there were happened to look decisive).
 }
 \examples{
 \donttest{

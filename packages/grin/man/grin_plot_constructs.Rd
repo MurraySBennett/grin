@@ -4,15 +4,26 @@
 \alias{grin_plot_constructs}
 \title{Plot one participant's construct probabilities}
 \usage{
-grin_plot_constructs(result, constructs, color = NULL)
+grin_plot_constructs(
+  result,
+  constructs,
+  palette = NULL,
+  title = NULL,
+  base_size = 12
+)
 }
 \arguments{
 \item{result}{A \code{grin_result}.}
 
 \item{constructs}{The paired constructs list (e.g. \code{grin_infer(M)$constructs}).}
 
-\item{color}{Use the house colour style instead of black-on-white? Default
-\code{NULL} defers to \code{options(grin.color)}.}
+\item{palette}{Colour palette (one colour per panel). \code{NULL} (default)
+defers to \code{options(grin.palette)}. See \code{\link[=grin_plot_space]{grin_plot_space()}}.}
+
+\item{title}{Plot title. \code{NULL} (default) uses
+\code{"Construct probabilities (<model class>)"}.}
+
+\item{base_size}{Base font size in points (default 12).}
 }
 \value{
 A ggplot object.

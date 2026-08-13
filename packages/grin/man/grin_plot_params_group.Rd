@@ -4,15 +4,25 @@
 \alias{grin_plot_params_group}
 \title{Plot the distribution of each parameter across many participants}
 \usage{
-grin_plot_params_group(results, ids = NULL, color = NULL)
+grin_plot_params_group(
+  results,
+  ids = NULL,
+  palette = NULL,
+  title = NULL,
+  base_size = 12
+)
 }
 \arguments{
 \item{results}{A list of \code{grin_inference} objects (see \code{\link[=grin_tidy]{grin_tidy()}}).}
 
 \item{ids}{Optional participant IDs; see \code{\link[=grin_tidy]{grin_tidy()}}.}
 
-\item{color}{Use the house colour style instead of black-on-white? Default
-\code{NULL} defers to \code{options(grin.color)}.}
+\item{palette}{Colour palette. \code{NULL} (default) defers to
+\code{options(grin.palette)}. See \code{\link[=grin_plot_space]{grin_plot_space()}}.}
+
+\item{title}{Plot title. \code{NULL} (default) uses a built-in title.}
+
+\item{base_size}{Base font size in points (default 12).}
 }
 \value{
 A ggplot object.

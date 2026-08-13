@@ -40,17 +40,31 @@ out$constructs$p_PI
 
 ## The ordering contract
 
-The matrix must be in canonical order: rows and columns `A1B1, A1B2, A2B1, A2B2`
-(dimension A varies slowest, B fastest). A bare matrix in unknown order is refused
-rather than guessed, because a silent row/column swap returns a confident wrong
-posterior. Resolve it explicitly with [`grin_to_confusion()`]:
+`grin_infer()` needs to know which row/column of your matrix is which
+stimulus/response. **Canonical order** means: number the four stimuli 1-4 by
+crossing dimension A's two levels with dimension B's two levels, A changing
+slower than B:
+
+| position | A level | B level | canonical label |
+|:--:|:--:|:--:|:--:|
+| 1 | 1 | 1 | `A1B1` |
+| 2 | 1 | 2 | `A1B2` |
+| 3 | 2 | 1 | `A2B1` |
+| 4 | 2 | 2 | `A2B2` |
+
+Row *i* and column *i* of your matrix must be stimulus/response *i* in this
+table. A bare matrix in unknown order is refused rather than guessed, because a
+silent row/column swap returns a confident wrong posterior. Resolve it
+explicitly with [`grin_to_confusion()`]:
 
 ```r
 grin_to_confusion(M, order = "canonical")     # you assert it is already canonical
 
+# or let it permute a different order for you -- e.g. dimension A = Age (Old/Young),
+# dimension B = Emotion (Neg/Pos): position 1 = Old+Neg, ..., position 4 = Young+Pos
 grin_to_confusion(M, stim_labels = c("Old/Neg", "Old/Pos", "Young/Neg", "Young/Pos"),
                   resp_labels = c("Old/Neg", "Old/Pos", "Young/Neg", "Young/Pos"),
-                  factor_a = c("Old", "Young"), factor_b = c("Neg", "Pos"))  # let it permute
+                  factor_a = c("Old", "Young"), factor_b = c("Neg", "Pos"))
 
 grin_describe(M, order = "canonical")         # print exactly what the model will see
 ```
@@ -58,6 +72,16 @@ grin_describe(M, order = "canonical")         # print exactly what the model wil
 Proportions (rows summing to 1) are refused unless you also pass `trials = ...`,
 because the model reads per-stimulus trial totals as a second input and proportions
 would destroy the posterior's uncertainty.
+
+## Response bias
+
+Separate from separability/independence: `grin_response_bias()` reads the raw
+tendency to favour one response over another straight off the matrix, no model
+fit required.
+
+```r
+grin_response_bias(M)   # $x_bias, $y_bias in [-0.5, 0.5]; 0 = unbiased
+```
 
 ## Stopping rules for adaptive designs
 
@@ -85,15 +109,23 @@ stop the loop. The limit is in the data, not the tool.
 
 ## Plotting and reporting
 
-See `vignette("grin")` for a full walkthrough (one participant through a
-small sample) with rendered figures. Summary of the API --
-individual level (one participant):
+See `vignette("grin")` for a full walkthrough (one participant through a small
+sample) with rendered figures. Summary of the API — individual level (one
+participant):
 
 ```r
-grin_plot_space(out$result)                     # perceptual space: means + correlation ellipses
+grin_plot_space(out$result)                     # perceptual space: means, correlation ellipses, error bars
 grin_plot_params(out$result)                     # all 12 estimates, dot-and-whisker with 90% CIs
 grin_plot_constructs(out$result, out$constructs) # P(PI)/P(RHO1)/P(free), P(separable A/B)
+grin_plot_bias(M)                                # response bias per dimension
+grin_plot_diagnostics(out$result, M)             # predicted-vs-observed + marginal distributions
 ```
+
+`grin_plot_space()` also takes `title`, `xlab`/`ylab`, `stim_labels`,
+`show_labels`, `show_uncertainty`, `show_marginals`, and `base_size` — see
+`?grin_plot_space` for the full set. `grin_plot_diagnostics()` needs the
+original matrix alongside the fitted result, since `grin_infer()`'s return
+value doesn't carry the input back out.
 
 Group level (many participants — loop `grin_infer()` over a sample and pass the
 list straight in; `grin_tidy()` is the shared foundation if you want the raw
@@ -103,24 +135,45 @@ data.frame instead of a plot):
 sample <- list(p01 = grin_infer(M1), p02 = grin_infer(M2), p03 = grin_infer(M3))
 
 grin_tidy(sample)                   # one row per participant: estimates, SDs, constructs
-grin_plot_space_group(sample)       # one panel per participant (facet = FALSE overlays instead)
+grin_plot_space_group(sample)       # one panel per participant -- the individual-level analysis GRT licenses
 grin_plot_params_group(sample)      # per-parameter distribution across the sample
 grin_plot_model_classes(sample)     # how many participants landed in each GRT model class
 grin_plot_precision_group(sample)   # posterior SD distribution -- data quality across the sample
+grin_plot_bias_group(list(M1, M2, M3)) # response bias distribution across the sample
 ```
 
+`grin_plot_space_group(sample, facet = FALSE)` overlays all participants with a
+single across-participant mean ellipse instead of one panel each.
+**This is an exploratory inspection view only, not a reporting figure**: GRT's
+perceptual space is defined per observer, and a "grand mean" ellipse over
+several independently-fitted spaces is not itself a fitted GRT model. Use it to
+eyeball whether a sample looks homogeneous, not to report it; `grin` prints a
+reminder every time this mode runs.
+
 Every plot is a `ggplot` object (`theme_grin()` is exported), so it composes the
-normal way: `grin_plot_space(out$result) + ggplot2::labs(title = "Participant 7")`.
-Bars/labels for a construct the data can't decide (`evidence_* == FALSE`) are
-visually flagged rather than plotted as if informative — same principle as the
-stopping-rule API's `blocked_by`.
+normal way. Bars/labels for a construct the data can't decide (`evidence_* ==
+FALSE`) are visually flagged rather than plotted as if informative — same
+principle as the stopping-rule API's `blocked_by`.
 
 **Style**: black-on-white by default (publication- and greyscale-safe). Pass
-`color = TRUE` to any `grin_plot_*()` for the house blue/rose style instead, or
-set it once for the session with `options(grin.color = TRUE)`. Either way,
-`grin_plot_space()` never splits one participant's four stimuli into four
-colours — with everything else in the plot fixed, that's decoration, not
-information, so stimuli are told apart by a label instead.
+`palette = "<name>"` to any `grin_plot_*()` for one of a few built-in colour
+sets (`grin_palette_names()` lists them, including `"contrast"`, the
+colour-vision-deficiency-safe categorical palette of Okabe & Ito, 2008), your
+own character vector of hex colours, or set `options(grin.palette = "<name>")`
+once for the session. Either way, `grin_plot_space()` never splits one
+participant's four stimuli into separate colours — stimuli are told apart by a
+label instead.
+
+**Editing a figure further**: every `grin_plot_*()` returns a plain `ggplot`
+(or, for the multi-panel functions, a `patchwork`) object, so ordinary ggplot2
+calls apply directly rather than needing a package argument for every possible
+customisation:
+
+```r
+grin_plot_space(out$result) +
+  ggplot2::labs(title = "Participant 7, session 2", subtitle = NULL) +
+  ggplot2::annotate("text", x = 0, y = 2.3, label = "post-training session")
+```
 
 ## Model provenance
 
@@ -135,4 +188,5 @@ R has no tuple-unpacking idiom, so `grin_infer()` returns one object with
 names are `grin_`-prefixed (`grin_infer`, `grin_criterion`, `grin_target_precision`,
 ...) rather than bare (`infer`, `Criterion`, `Target.precision`, ...), following R
 package convention and avoiding collisions with other packages' `infer()`/`Target()`.
-Otherwise the API surface, argument names, and behaviour are a direct port.
+Plotting functions take `palette = "<name>"` in both languages; otherwise the API
+surface, argument names, and behaviour are a direct port.

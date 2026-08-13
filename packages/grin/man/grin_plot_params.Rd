@@ -4,13 +4,27 @@
 \alias{grin_plot_params}
 \title{Plot one participant's 12 parameter estimates with credible intervals}
 \usage{
-grin_plot_params(result, color = NULL)
+grin_plot_params(
+  result,
+  palette = NULL,
+  title = NULL,
+  param_labels = result$names,
+  base_size = 12
+)
 }
 \arguments{
 \item{result}{A \code{grin_result}.}
 
-\item{color}{Use the house colour style (one colour per parameter group)
-instead of black-on-white? Default \code{NULL} defers to \code{options(grin.color)}.}
+\item{palette}{Colour palette (one colour per parameter group). \code{NULL}
+(default) defers to \code{options(grin.palette)}. See \code{\link[=grin_plot_space]{grin_plot_space()}}.}
+
+\item{title}{Plot title. \code{NULL} (default) uses \code{"Parameter estimates"}.}
+
+\item{param_labels}{Named or length-12 character vector relabelling the
+y-axis parameter names (in \code{result$names} order). Defaults to
+\code{result$names} themselves (\code{zx_0}, ..., \code{rho_3}).}
+
+\item{base_size}{Base font size in points (default 12).}
 }
 \value{
 A ggplot object.

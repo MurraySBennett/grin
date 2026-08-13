@@ -4,7 +4,12 @@
 \alias{theme_grin}
 \title{GRIN's house ggplot2 theme}
 \usage{
-theme_grin()
+theme_grin(base_size = 12)
+}
+\arguments{
+\item{base_size}{Base font size in points, passed to
+\code{ggplot2::theme_minimal()}. Every \verb{grin_plot_*()} function also takes a
+\code{base_size} argument that forwards here.}
 }
 \description{
 Used internally by every \verb{grin_plot_*()} function; exported so a

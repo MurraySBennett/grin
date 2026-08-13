@@ -9,7 +9,9 @@ grin_plot_space_group(
   ids = NULL,
   facet = TRUE,
   ci = 0.9,
-  color = NULL
+  palette = NULL,
+  title = NULL,
+  base_size = 12
 )
 }
 \arguments{
@@ -18,17 +20,32 @@ grin_plot_space_group(
 \item{ids}{Optional participant IDs; see \code{\link[=grin_tidy]{grin_tidy()}}.}
 
 \item{facet}{If \code{TRUE} (default), one panel per participant, each stimulus
-labelled directly rather than coloured (see \code{\link[=grin_plot_space]{grin_plot_space()}}). If
-\code{FALSE}, overlay every participant's stimulus means (individual ellipses
-omitted -- with many participants they're unreadable; use \code{facet = TRUE}
-to see individual uncertainty) with a labelled group-mean ellipse per
-stimulus.}
+labelled directly rather than coloured (see \code{\link[=grin_plot_space]{grin_plot_space()}}) -- this
+is the individual-level analysis GRT actually licenses: every
+participant's own estimated space, side by side.
 
-\item{ci}{Confidence level for ellipses (facet mode) / the group-mean
-ellipse (overlay mode).}
+If \code{FALSE}, overlay every participant's stimulus means with a single
+across-participant mean ellipse per stimulus. \strong{This is an exploratory
+inspection view only, not a reporting figure}: GRT's perceptual space is
+defined per observer, and there is no sense in which a "grand mean"
+ellipse over several independently-fitted spaces is itself a fitted GRT
+model, or a quantity with the calibrated-uncertainty guarantees
+\code{\link[=grin_infer]{grin_infer()}} gives an individual estimate. Use it to eyeball whether a
+sample looks roughly homogeneous or visibly splits into subgroups before
+deciding how to report it properly (e.g. per participant, or via
+\code{\link[=grin_plot_params_group]{grin_plot_params_group()}} / \code{\link[=grin_plot_model_classes]{grin_plot_model_classes()}}) -- not as the
+figure itself. A message is printed each time this mode is used, as a
+standing reminder rather than a one-off warning you might miss.}
 
-\item{color}{Use the house colour style instead of black-on-white? Default
-\code{NULL} defers to \code{options(grin.color)}.}
+\item{ci}{Confidence level for ellipses (facet mode) / the mean ellipse
+(overlay mode).}
+
+\item{palette}{Colour palette. \code{NULL} (default) defers to
+\code{options(grin.palette)}. See \code{\link[=grin_plot_space]{grin_plot_space()}}.}
+
+\item{title}{Plot title. \code{NULL} (default) uses a built-in title.}
+
+\item{base_size}{Base font size in points (default 12).}
 }
 \value{
 A ggplot object.
