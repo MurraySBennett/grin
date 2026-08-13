@@ -76,12 +76,24 @@ would destroy the posterior's uncertainty.
 
 ## Response bias
 
-Separate from separability/independence: `gt.response_bias()` reads the raw
-tendency to favour one response over another straight off the matrix, no model
-fit required.
+Separate from separability/independence, and GRT (as a multidimensional
+extension of signal detection theory) gives two ways to ask about it.
+`gt.empirical_bias()` reads the raw tendency to favour one response over
+another straight off the matrix, no model fit required:
 
 ```python
-gt.response_bias(M)   # {'x_bias': ..., 'y_bias': ...} in [-0.5, 0.5]; 0 = unbiased
+gt.empirical_bias(M)   # {'x_bias': ..., 'y_bias': ...} in [-0.5, 0.5]; 0 = unbiased
+```
+
+`gt.response_bias()` is the SDT-native version: the decision bound sits at 0
+by convention, so an unbiased observer's two levels on a dimension are
+mirror images about it and their identified z-scores average to zero -- a
+nonzero average is a shifted decision criterion, read directly off a fit you
+already have, uncertainty included:
+
+```python
+result, constructs = gt.infer(M)
+gt.response_bias(result)   # {'x_bias', 'y_bias', 'x_bias_se', 'y_bias_se'}
 ```
 
 ## Stopping rules for adaptive designs
@@ -121,7 +133,7 @@ import grintools.plot as gtplot
 gtplot.plot_space(result)                   # perceptual space: means, correlation ellipses, error bars
 gtplot.plot_params(result)                  # all 12 estimates, dot-and-whisker with 90% CIs
 gtplot.plot_constructs(result, constructs)  # P(PI)/P(RHO1)/P(free), P(separable A/B)
-gtplot.plot_bias(M)                         # response bias per dimension
+gtplot.plot_bias(result)                    # decision-criterion response bias per dimension
 gtplot.plot_diagnostics(result, M)          # predicted-vs-observed + marginal distributions
 ```
 
@@ -129,7 +141,8 @@ gtplot.plot_diagnostics(result, M)          # predicted-vs-observed + marginal d
 `show_labels`, `show_uncertainty`, `show_marginals`, and `base_size`; see its
 docstring for the full set. `plot_diagnostics()` needs the original matrix
 alongside the fitted result, since `gt.infer()`'s return value doesn't carry
-the input back out.
+the input back out. `gtplot.plot_empirical_bias()` is the matrix-only,
+no-fit-required counterpart to `plot_bias()` (see "Response bias" above).
 
 Group level (many participants — collect `gt.infer()` results into a list;
 `gtplot.tidy()` is the shared foundation if you want the raw DataFrame instead
@@ -143,7 +156,7 @@ gtplot.plot_space_group(sample)        # one panel per participant -- the indivi
 gtplot.plot_params_group(sample)       # per-parameter distribution across the sample
 gtplot.plot_model_classes(sample)      # how many participants landed in each GRT model class
 gtplot.plot_precision_group(sample)    # posterior SD distribution -- data quality across the sample
-gtplot.plot_bias_group([M1, M2, M3])   # response bias distribution across the sample
+gtplot.plot_bias_group(sample)         # response bias distribution across the sample
 ```
 
 `gtplot.plot_space_group(sample, facet=False)` overlays all participants with

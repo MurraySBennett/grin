@@ -167,9 +167,11 @@ def tidy(results, ids=None):
     p1, p2, ...
 
     Returns a pandas DataFrame, one row per participant: id, model_class, the
-    12 parameter estimates and their SDs, p_PI/p_sep_A/p_sep_B, and the
-    evidence_* flags.
+    12 parameter estimates and their SDs, p_PI/p_sep_A/p_sep_B, the
+    evidence_* flags, and x_bias/y_bias (the decision-criterion bias of
+    response_bias()).
     """
+    from .io import response_bias as _response_bias
     if isinstance(results, tuple) and len(results) == 2 and hasattr(results[0], "names"):
         results = [results]
     if ids is None:
@@ -189,6 +191,9 @@ def tidy(results, ids=None):
         row["evidence_PI"] = constructs["evidence_PI"]
         row["evidence_sep_A"] = constructs["evidence_sep_A"]
         row["evidence_sep_B"] = constructs["evidence_sep_B"]
+        bias = _response_bias(result)
+        row["x_bias"] = bias["x_bias"]
+        row["y_bias"] = bias["y_bias"]
         rows.append(row)
     return pd.DataFrame(rows)
 
@@ -379,16 +384,43 @@ def plot_constructs(result, constructs, palette=None, title=None, base_size=12, 
     return _style(ax, base_size)
 
 
-def plot_bias(counts, trials=None, palette=None, title=None, dim_labels=("A", "B"),
+def plot_bias(result, ci=0.90, palette=None, title=None, dim_labels=("A", "B"),
              base_size=12, ax=None):
-    """Response bias for one participant: how far each dimension's "respond
-    level 2" rate sits from the unbiased 0.5, averaged across the four
-    stimuli. Works directly from a confusion matrix -- no gt.infer() call
-    needed. See grintools.response_bias()."""
+    """Decision-criterion response bias for one participant, with error bars
+    carrying its (approximate) uncertainty forward. See
+    grintools.response_bias(). For the model-free alternative, see
+    plot_empirical_bias()."""
     from .io import response_bias
     if len(dim_labels) != 2:
         raise ValueError("dim_labels must have exactly 2 entries")
-    b = response_bias(counts, trials)
+    b = response_bias(result)
+    k = _ci_k(ci)
+    col = _group_colors(1, palette)[0]
+    ax = ax or plt.subplots(figsize=(4, 5))[1]
+    ax.axhline(0, ls="--", color=MUTE, lw=1)
+    ax.bar(dim_labels, [b["x_bias"], b["y_bias"]], color=col, width=0.5)
+    ax.errorbar(dim_labels, [b["x_bias"], b["y_bias"]],
+               yerr=[k * b["x_bias_se"], k * b["y_bias_se"]],
+               fmt="none", ecolor=INK, capsize=4)
+    ax.set_ylabel("decision-criterion bias (mean z-score)")
+    subtitle = (f"{ci:.0%} CI; 0 = unbiased; positive favours level 2, "
+               "negative favours level 1")
+    ax.set_title((("Response bias" if title is None else title)) + f"\n{subtitle}",
+                fontsize=base_size + 1)
+    return _style(ax, base_size)
+
+
+def plot_empirical_bias(counts, trials=None, palette=None, title=None, dim_labels=("A", "B"),
+                        base_size=12, ax=None):
+    """Empirical response bias for one participant: how far each dimension's
+    "respond level 2" rate sits from the unbiased 0.5, averaged across the
+    four stimuli. Works directly from a confusion matrix -- no gt.infer()
+    call needed. See grintools.empirical_bias(). For the model-based
+    decision-criterion alternative, see plot_bias()."""
+    from .io import empirical_bias
+    if len(dim_labels) != 2:
+        raise ValueError("dim_labels must have exactly 2 entries")
+    b = empirical_bias(counts, trials)
     col = _group_colors(1, palette)[0]
     ax = ax or plt.subplots(figsize=(4, 5))[1]
     ax.axhline(0, ls="--", color=MUTE, lw=1)
@@ -396,7 +428,7 @@ def plot_bias(counts, trials=None, palette=None, title=None, dim_labels=("A", "B
     ax.set_ylim(-0.5, 0.5)
     ax.set_ylabel("response bias  (P(respond level 2) - 0.5)")
     subtitle = "0 = unbiased; positive favours level 2, negative favours level 1"
-    ax.set_title((("Response bias" if title is None else title)) + f"\n{subtitle}",
+    ax.set_title((("Empirical response bias" if title is None else title)) + f"\n{subtitle}",
                 fontsize=base_size + 1)
     return _style(ax, base_size)
 
@@ -600,16 +632,36 @@ def plot_precision_group(results, ids=None, palette=None, title=None, base_size=
     return _style(ax, base_size)
 
 
-def plot_bias_group(counts_list, trials_list=None, palette=None, title=None, base_size=12, ax=None):
+def plot_bias_group(results, ids=None, palette=None, title=None, base_size=12, ax=None):
     """Group-level companion to plot_bias(): one boxplot per dimension of
-    response_bias() computed on each participant's own confusion matrix.
-    Works directly from confusion matrices -- no gt.infer() call needed."""
-    from .io import response_bias
+    response_bias(), computed per participant from their fitted result. For
+    the model-free alternative, see plot_empirical_bias_group()."""
+    df = tidy(results, ids)
+    col = _group_colors(1, palette)[0]
+    ax = ax or plt.subplots(figsize=(4, 5))[1]
+    ax.axhline(0, ls="--", color=MUTE, lw=1)
+    data = [df["x_bias"].to_numpy(), df["y_bias"].to_numpy()]
+    bp = ax.boxplot(data, tick_labels=["A", "B"], patch_artist=True, widths=0.5)
+    for box in bp["boxes"]:
+        box.set_facecolor(col); box.set_alpha(0.5)
+    ax.set_ylabel("decision-criterion bias (mean z-score)")
+    ax.set_title(f"Response bias across participants (n={len(df)})"
+                if title is None else title)
+    return _style(ax, base_size)
+
+
+def plot_empirical_bias_group(counts_list, trials_list=None, palette=None, title=None,
+                              base_size=12, ax=None):
+    """Group-level companion to plot_empirical_bias(): one boxplot per
+    dimension of empirical_bias() computed on each participant's own
+    confusion matrix. Works directly from confusion matrices -- no
+    gt.infer() call needed."""
+    from .io import empirical_bias
     if trials_list is None:
         trials_list = [None] * len(counts_list)
     if len(trials_list) != len(counts_list):
         raise ValueError("trials_list must be the same length as counts_list")
-    b = [response_bias(c, t) for c, t in zip(counts_list, trials_list)]
+    b = [empirical_bias(c, t) for c, t in zip(counts_list, trials_list)]
     col = _group_colors(1, palette)[0]
     ax = ax or plt.subplots(figsize=(4, 5))[1]
     ax.axhline(0, ls="--", color=MUTE, lw=1)
@@ -619,6 +671,6 @@ def plot_bias_group(counts_list, trials_list=None, palette=None, title=None, bas
         box.set_facecolor(col); box.set_alpha(0.5)
     ax.set_ylim(-0.5, 0.5)
     ax.set_ylabel("response bias  (P(respond level 2) - 0.5)")
-    ax.set_title(f"Response bias across participants (n={len(counts_list)})"
+    ax.set_title(f"Empirical response bias across participants (n={len(counts_list)})"
                 if title is None else title)
     return _style(ax, base_size)

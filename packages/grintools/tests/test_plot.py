@@ -58,7 +58,8 @@ def test_individual_plots_build_and_render(out1):
         plot.plot_space(out1[0]),
         plot.plot_params(out1[0]),
         plot.plot_constructs(out1[0], out1[1]),
-        plot.plot_bias(M1),
+        plot.plot_bias(out1[0]),
+        plot.plot_empirical_bias(M1),
     ]:
         fig = fig_or_ax.figure if hasattr(fig_or_ax, "figure") else fig_or_ax
         fig.canvas.draw()  # forces a real render pass, not just object construction
@@ -74,7 +75,8 @@ def test_group_plots_build_and_render(many):
             plot.plot_params_group(many),
             plot.plot_model_classes(many),
             plot.plot_precision_group(many),
-            plot.plot_bias_group([M1, M2]),
+            plot.plot_bias_group(many),
+            plot.plot_empirical_bias_group([M1, M2]),
         ]
     for fig_or_ax in outputs:
         fig = fig_or_ax.figure if hasattr(fig_or_ax, "figure") else fig_or_ax
@@ -110,11 +112,52 @@ def test_forward_probabilities_rows_sum_to_one_and_match_chance_reference():
     assert np.allclose(probs[0], 0.25, atol=1e-6)  # chance on both dims, no correlation
 
 
-def test_response_bias_reads_direction_from_a_lopsided_matrix():
+def test_empirical_bias_reads_direction_from_a_lopsided_matrix():
     m_biased = [[0, 0, 0, 40], [0, 0, 0, 40], [0, 0, 0, 40], [0, 0, 0, 40]]
-    b = gt.response_bias(m_biased)
+    b = gt.empirical_bias(m_biased)
     assert b["x_bias"] == pytest.approx(0.5)
     assert b["y_bias"] == pytest.approx(0.5)
+
+
+class _FakeResult:
+    """Duck-types OnnxResult's .names/.params/.std, for testing
+    response_bias() without a real model fit."""
+    def __init__(self, params, std):
+        self.names = list(gt.PARAM_NAMES)
+        self.params = params
+        self.std = std
+
+
+def test_response_bias_is_zero_when_a_dimensions_zscores_are_exactly_symmetric():
+    fake = _FakeResult(
+        params=[-1, -1, 1, 1, -0.7, 0.7, -0.7, 0.7, 0, 0, 0, 0],
+        std=[0.15] * 12,
+    )
+    b = gt.response_bias(fake)
+    assert b["x_bias"] == pytest.approx(0)
+    assert b["y_bias"] == pytest.approx(0)
+
+
+def test_response_bias_sign_agrees_with_empirical_bias_convention():
+    # level-1 z-scores (magnitude 1.5) sit further from the bound than
+    # level-2's (magnitude 0.5) -> the bound is effectively closer to level
+    # 2, so it takes LESS evidence to land on the level-1 side -> biased
+    # toward level 1 (negative). Verified against the forward model directly
+    # during development: this exact asymmetry lowers P(respond level 2) to
+    # ~0.38, a negative empirical bias too.
+    fake = _FakeResult(
+        params=[-1.5, -1.5, 0.5, 0.5, -1, -1, 1, 1, 0, 0, 0, 0],
+        std=[0.15] * 12,
+    )
+    b = gt.response_bias(fake)
+    assert b["x_bias"] == pytest.approx(-0.5)   # mean(-1.5,-1.5,0.5,0.5)
+    assert b["y_bias"] == pytest.approx(0)
+    assert b["x_bias_se"] > 0
+
+
+def test_tidy_carries_bias_columns_through_for_group_plotting(many):
+    df = plot.tidy(many)
+    assert "x_bias" in df.columns and "y_bias" in df.columns
 
 
 def test_plot_constructs_flags_insufficient_evidence(out1):

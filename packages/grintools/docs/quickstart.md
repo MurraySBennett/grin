@@ -113,11 +113,15 @@ probability near 0.5 with `evidence_* = False` means "undecided," not
 Separability and independence are about the *shape* of the perceptual
 representation. A related but different question is whether the participant
 simply favours one response over another, independent of how well they
-discriminate -- `gt.response_bias()` reads that directly off the matrix, no
-model fit required:
+discriminate -- and GRT, as a multidimensional extension of signal detection
+theory, gives two different ways to ask it.
+
+`gt.empirical_bias()` reads it straight off the matrix, no model fit
+required: how far each dimension's "respond level 2" rate sits from a fair
+coin.
 
 ```python
-gt.response_bias(M)
+gt.empirical_bias(M)
 ```
 
 ```
@@ -130,6 +134,27 @@ gt.response_bias(M)
 `x_bias`/`y_bias` are each in [-0.5, 0.5]: 0 is unbiased, positive means the
 participant reports level 2 of that dimension more than a fair coin would,
 negative means they favour level 1.
+
+`gt.response_bias()` asks the SDT-native version of the same question: not
+how the participant *responded*, but where their *decision criterion* sits.
+`gt.infer()`'s identified z-scores place the decision bound at 0 by
+convention, so an unbiased observer's two levels on a dimension are mirror
+images about it and their four z-scores average to exactly zero -- a
+nonzero average is a shifted criterion in the classical SDT sense, read
+directly off a fit you already have:
+
+```python
+gt.response_bias(result)
+```
+
+```
+{'x_bias': -0.069, 'y_bias': 0.023, 'x_bias_se': 0.081, 'y_bias_se': 0.081}
+```
+
+Same sign convention as `gt.empirical_bias()` (positive favours level 2),
+but a genuinely different quantity: one describes the data, the other
+describes the decision rule the fitted model attributes it to, uncertainty
+and all (`x_bias_se`/`y_bias_se`, from the fit's own posterior).
 
 ## Plotting one participant
 
@@ -171,10 +196,14 @@ Bars for a construct the data can't decide are flagged ("insufficient
 evidence") rather than drawn as if informative.
 
 ```python
-gtplot.plot_bias(M)
+gtplot.plot_bias(result)
 ```
 
-![Response bias bar chart for dimensions A and B](img/bias_p1.png)
+![Decision-criterion response bias bar chart for dimensions A and B, with error bars](img/bias_p1.png)
+
+`gtplot.plot_empirical_bias()` is the matrix-only, no-error-bars counterpart
+to this, for the same reason `gt.empirical_bias()` exists alongside
+`gt.response_bias()`.
 
 Every plot function returns a plain matplotlib `Axes` (`.figure` for the
 parent figure; more on this in "Editing a figure further," below).
@@ -345,10 +374,14 @@ gtplot.plot_precision_group(sample, ids=list(mats.keys()))
 ![Boxplots of posterior SD per parameter group across participants -- data quality across the sample](img/precision_group.png)
 
 ```python
-gtplot.plot_bias_group(list(mats.values()))
+gtplot.plot_bias_group(sample, ids=list(mats.keys()))
 ```
 
-![Boxplots of response bias per dimension across participants](img/bias_group.png)
+![Boxplots of decision-criterion response bias per dimension across participants](img/bias_group.png)
+
+`gtplot.plot_empirical_bias_group(list(mats.values()))` is the matrix-only
+counterpart, taking the raw confusion matrices directly rather than fitted
+results.
 
 `plot_precision_group()` is useful for planning: run it on pilot data to see
 what posterior SD your trial counts are actually buying you, before picking

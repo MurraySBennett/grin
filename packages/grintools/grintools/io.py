@@ -298,21 +298,34 @@ def describe(data, *, printout=True, **kwargs):
 
 
 # =========================================================================== #
-# Response bias: computed directly from a confusion matrix, no model fit
-# required. GRT's separability/independence machinery lives entirely in
-# infer()'s 12 identified parameters; the raw tendency to over- or
-# under-report one level of a dimension, independent of how well the observer
-# discriminates it, is a property of the data alone and worth a name.
+# Response bias: two different things people mean by the term, kept
+# deliberately distinct rather than collapsed into one function.
+#
+# empirical_bias() is a description of the DATA: how often a level-2 response
+# was given, relative to chance, straight from the raw counts. It needs no
+# model fit and works even on a matrix GRIN can't otherwise fit.
+#
+# response_bias() is the SDT-native quantity: GRT is a multidimensional
+# extension of signal detection theory, and its decision bound is fixed at 0
+# by convention (see the ordering contract, above) -- an unbiased observer's
+# two levels on a dimension are mirror images about that bound, so their four
+# identified z-scores average to exactly zero. A nonzero average is a shifted
+# decision criterion in the classical SDT sense, read directly off parameters
+# infer() already estimated, no extra computation beyond an average.
+# Confirmed numerically before shipping: a deliberately asymmetric z-score
+# input and its raw-data response rate move together and agree in sign with
+# empirical_bias() on the same case.
 # =========================================================================== #
-def response_bias(counts, trials=None):
-    """Response bias from a raw confusion matrix.
+def empirical_bias(counts, trials=None):
+    """Empirical response bias from a raw confusion matrix.
 
     The signed tendency to report level 2 of a dimension more or less often
     than level 1, averaged across the four stimuli: 0 is unbiased, positive
     means the observer favours the "2" response on that dimension more than a
-    fair coin would, negative means they favour "1". This describes the data,
-    independent of infer()'s model fit -- it needs no trained network and
-    works even on a matrix GRIN can't otherwise fit.
+    fair coin would, negative means they favour "1". A description of the
+    data, independent of any model fit -- it needs no trained network and
+    works even on a matrix GRIN can't otherwise fit. See response_bias() for
+    the model-based decision-criterion counterpart.
 
     `counts`: a canonical-order 4x4 matrix, or a length-16 vector read
     row-major. `trials`: optional per-stimulus trial totals; defaults to row
@@ -334,6 +347,39 @@ def response_bias(counts, trials=None):
         "x_bias": float(p_x2.mean() - 0.5),
         "y_bias": float(p_y2.mean() - 0.5),
         "p_resp2": np.stack([p_x2, p_y2], axis=1),
+    }
+
+
+def response_bias(result):
+    """Parametric (decision-criterion) response bias from a fitted result.
+
+    The mean of a dimension's four identified z-scores: exactly zero when the
+    two levels are mirror images about the fixed decision bound (unbiased),
+    and equal to the criterion's effective offset from that symmetric point
+    otherwise -- the same sign convention as empirical_bias() (positive
+    favours level 2), but read directly off `result.params` rather than raw
+    response counts. Unlike empirical_bias(), this needs an infer() fit, and
+    carries the fit's own uncertainty forward.
+
+    `result`: an OnnxResult (e.g. the first element of infer(M)'s return, or
+    any object duck-typing `.names`/`.params`/`.std`).
+
+    Returns a dict: `x_bias`, `y_bias`, and `x_bias_se`/`y_bias_se`. The SEs
+    are a marginal-independence approximation from `result.std` (the
+    posterior's full covariance across parameters isn't exposed by infer(),
+    only per-parameter marginal SDs, so this likely under- or overstates the
+    true joint uncertainty somewhat; treat as approximate, not exact).
+    """
+    p = dict(zip(result.names, result.params))
+    s = dict(zip(result.names, result.std))
+    x_nm = [f"zx_{i}" for i in range(4)]
+    y_nm = [f"zy_{i}" for i in range(4)]
+    x_vals = np.array([p[n] for n in x_nm]); y_vals = np.array([p[n] for n in y_nm])
+    x_sds = np.array([s[n] for n in x_nm]); y_sds = np.array([s[n] for n in y_nm])
+    return {
+        "x_bias": float(x_vals.mean()), "y_bias": float(y_vals.mean()),
+        "x_bias_se": float(np.sqrt(np.sum(x_sds ** 2)) / 4),
+        "y_bias_se": float(np.sqrt(np.sum(y_sds ** 2)) / 4),
     }
 
 
