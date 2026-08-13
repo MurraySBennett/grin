@@ -103,16 +103,12 @@ grant/
 manuscript/
 # in-progress paper; goes to OSF at preprint time, not tracked here for now
 
-# Working notes, not reference documentation -- confirmed
+# Working notes, not reference documentation -- confirmed 2026-08-12
 docs/DESIGN_RECORD.md
 docs/FIGURE_EXPLAINER.md
-docs/FIGURE_OVERHAUL.md
-docs/GRT_model_spec.md
-# not mentioned either way yet -- defaulting to PRIVATE until confirmed,
-# since that's the safer direction for something undecided; delete this line
-# (or move it up to the confirmed-private block) once you've told me which
-# docs/interpreting.md and docs/PROJECT_OVERVIEW.md are intentionally NOT
-# listed here -- both go up, per confirmation
+_archive/FIGURE_OVERHAUL.md
+# docs/GRT_model_spec.md deliberately NOT listed here -- confirmed public
+# 2026-08-12 (the canonical math reference; the README links to it)
 
 # Notebooks / OS
 .ipynb_checkpoints/

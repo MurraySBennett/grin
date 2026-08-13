@@ -8,8 +8,7 @@ fast enough to run inside the trial loop for adaptive testing.
 
 - **What the numbers mean:** `docs/interpreting.md`
 - **The maths (parameterisation, constraints, prior):** `docs/GRT_model_spec.md`
-- **Why every decision was made + validated results:** `docs/DESIGN_RECORD.md`
-- **What each figure says, three ways:** `docs/FIGURE_EXPLAINER.md`
+- **What each validation check establishes:** `validation/README_validation.md`
 
 Everything runs **from the project root**. Paths in `src/config.py` are absolute, so outputs
 land in `data/` and `results/` regardless of where you invoke from.
