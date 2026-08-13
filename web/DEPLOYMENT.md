@@ -235,7 +235,6 @@ committed (not just present on your machine):
 
 - [ ] `web/assets/models/cm/npe_model.onnx`
 - [ ] `web/assets/models/cmrt/npe_rt_model.onnx`
-- [ ] `web/assets/data/benchmarks.json` (from `python scripts/build_benchmarks.py`)
 
 A missing file here doesn't fail the deploy or throw an error anywhere — it
 just means that one feature quietly doesn't work on the live site until you
