@@ -1,3 +1,6 @@
+# Claude Code harness state -- session-local, not project content
+.claude/
+
 # Python
 __pycache__/
 *.py[cod]
