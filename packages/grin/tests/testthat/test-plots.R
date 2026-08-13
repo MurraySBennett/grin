@@ -62,6 +62,51 @@ test_that("grin_plot_constructs flags a construct the data can't decide", {
   expect_true(any(labels == "insufficient evidence"))
 })
 
+test_that("plots are black-on-white by default, not the house palette", {
+  built <- ggplot2::ggplot_build(grin_plot_space(out1$result))
+  point_layer <- which(vapply(built$plot$layers, function(l) inherits(l$geom, "GeomPoint"),
+                              logical(1)))[1]
+  cols <- unique(built$data[[point_layer]]$colour)
+  expect_equal(cols, .grin_colors$ink)
+})
+
+test_that("grin_plot_space never colours per-stimulus, even with color = TRUE", {
+  built <- ggplot2::ggplot_build(grin_plot_space(out1$result, color = TRUE))
+  point_layer <- which(vapply(built$plot$layers, function(l) inherits(l$geom, "GeomPoint"),
+                              logical(1)))[1]
+  cols <- unique(built$data[[point_layer]]$colour)
+  expect_equal(length(cols), 1)          # one colour for all 4 stimuli
+  expect_equal(cols, .grin_colors$blue)  # and it's the house colour, not ink
+})
+
+.point_layer_data <- function(built) {
+  idx <- which(vapply(built$plot$layers, function(l) inherits(l$geom, "GeomPoint"), logical(1)))[1]
+  built$data[[idx]]
+}
+
+test_that("color = TRUE switches grin_plot_params off monochrome", {
+  bw <- ggplot2::ggplot_build(grin_plot_params(out1$result))
+  colored <- ggplot2::ggplot_build(grin_plot_params(out1$result, color = TRUE))
+  expect_equal(length(unique(.point_layer_data(bw)$colour)), 1)
+  expect_gt(length(unique(.point_layer_data(colored)$colour)), 1)
+})
+
+test_that("options(grin.color = TRUE) sets the default without an explicit argument", {
+  withr_opt <- options(grin.color = TRUE)
+  on.exit(options(withr_opt), add = TRUE)
+  with_option <- ggplot2::ggplot_build(grin_plot_params(out1$result))
+  explicit <- ggplot2::ggplot_build(grin_plot_params(out1$result, color = TRUE))
+  expect_identical(.point_layer_data(with_option)$colour, .point_layer_data(explicit)$colour)
+})
+
+test_that("an explicit color = FALSE overrides options(grin.color = TRUE)", {
+  withr_opt <- options(grin.color = TRUE)
+  on.exit(options(withr_opt), add = TRUE)
+  built <- ggplot2::ggplot_build(grin_plot_params(out1$result, color = FALSE))
+  expect_equal(length(unique(.point_layer_data(built)$colour)), 1)
+  expect_equal(unique(.point_layer_data(built)$colour), .grin_colors$ink)
+})
+
 test_that(".grin_long_params reshapes wide to long correctly", {
   td <- grin_tidy(many)
   long <- .grin_long_params(td)

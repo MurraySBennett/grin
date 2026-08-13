@@ -4,16 +4,20 @@
 \alias{grin_plot_params}
 \title{Plot one participant's 12 parameter estimates with credible intervals}
 \usage{
-grin_plot_params(result)
+grin_plot_params(result, color = NULL)
 }
 \arguments{
 \item{result}{A \code{grin_result}.}
+
+\item{color}{Use the house colour style (one colour per parameter group)
+instead of black-on-white? Default \code{NULL} defers to \code{options(grin.color)}.}
 }
 \value{
 A ggplot object.
 }
 \description{
-A dot-and-whisker ("forest") plot, grouped by parameter type.
+A dot-and-whisker ("forest") plot, grouped by parameter type (position
+already separates the groups, so colour is optional, not load-bearing).
 }
 \examples{
 \donttest{

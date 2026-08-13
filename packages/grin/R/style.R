@@ -1,6 +1,9 @@
-# style.R: the GRIN figure identity, ported from src/viz/style.py so package
-# plots read as the same family as the paper's own figures. Restrained
-# blue/rose on clean axes: only left+bottom spines, no gridlines.
+# style.R: the GRIN figure identity. Default is black-on-white -- publication
+# safe, photocopy/greyscale safe, no colour vision assumptions -- with the
+# house blue/rose (ported from src/viz/style.py) available as an opt-in via
+# the `color` argument every grin_plot_*() takes, or globally via
+# options(grin.color = TRUE). Either way: clean axes, only left+bottom
+# spines, no gridlines.
 
 #' @keywords internal
 .grin_colors <- list(
@@ -15,6 +18,30 @@
 
 #' @keywords internal
 .grin_diverging <- c(.grin_colors$blue_deep, "#FFFFFF", .grin_colors$red_deep)
+
+#' Should plots use colour by default?
+#'
+#' Controls every `grin_plot_*()` function's default for its `color` argument.
+#' Set once with `options(grin.color = TRUE)` rather than passing `color = TRUE`
+#' to every call; an explicit `color = ` argument always overrides this.
+#' @keywords internal
+.grin_use_color <- function(color = NULL) {
+  if (!is.null(color)) return(isTRUE(color))
+  isTRUE(getOption("grin.color", FALSE))
+}
+
+#' Resolve a set of n category colours: the house palette if colour is on,
+#' the single ink colour repeated n times if not (so callers can use the same
+#' `scale_*_manual()` machinery either way, and a bw plot never carries a
+#' legend that only distinguishes "black" from "black").
+#' @keywords internal
+.grin_group_colors <- function(n, color = NULL) {
+  if (.grin_use_color(color)) {
+    if (n <= length(.grin_palette)) return(.grin_palette[seq_len(n)])
+    return(grDevices::colorRampPalette(.grin_palette)(n))
+  }
+  rep(.grin_colors$ink, n)
+}
 
 #' GRIN's house ggplot2 theme
 #'
@@ -37,9 +64,4 @@ theme_grin <- function() {
       plot.background = ggplot2::element_rect(fill = .grin_colors$paper, color = NA),
       panel.background = ggplot2::element_rect(fill = .grin_colors$paper, color = NA)
     )
-}
-
-#' @keywords internal
-.grin_stim_colors <- function() {
-  stats::setNames(.grin_palette[1:4], c("A1B1", "A1B2", "A2B1", "A2B2"))
 }

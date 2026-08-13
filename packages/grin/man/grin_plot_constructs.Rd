@@ -4,12 +4,15 @@
 \alias{grin_plot_constructs}
 \title{Plot one participant's construct probabilities}
 \usage{
-grin_plot_constructs(result, constructs)
+grin_plot_constructs(result, constructs, color = NULL)
 }
 \arguments{
 \item{result}{A \code{grin_result}.}
 
 \item{constructs}{The paired constructs list (e.g. \code{grin_infer(M)$constructs}).}
+
+\item{color}{Use the house colour style instead of black-on-white? Default
+\code{NULL} defers to \code{options(grin.color)}.}
 }
 \value{
 A ggplot object.

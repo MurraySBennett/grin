@@ -4,12 +4,15 @@
 \alias{grin_plot_model_classes}
 \title{Plot the distribution of GRT model classes across many participants}
 \usage{
-grin_plot_model_classes(results, ids = NULL)
+grin_plot_model_classes(results, ids = NULL, color = NULL)
 }
 \arguments{
 \item{results}{A list of \code{grin_inference} objects (see \code{\link[=grin_tidy]{grin_tidy()}}).}
 
 \item{ids}{Optional participant IDs; see \code{\link[=grin_tidy]{grin_tidy()}}.}
+
+\item{color}{Use the house colour style instead of black-on-white? Default
+\code{NULL} defers to \code{options(grin.color)}.}
 }
 \value{
 A ggplot object.

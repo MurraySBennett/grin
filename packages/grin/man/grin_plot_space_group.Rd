@@ -4,20 +4,31 @@
 \alias{grin_plot_space_group}
 \title{Plot many participants' perceptual spaces}
 \usage{
-grin_plot_space_group(results, ids = NULL, facet = TRUE, ci = 0.9)
+grin_plot_space_group(
+  results,
+  ids = NULL,
+  facet = TRUE,
+  ci = 0.9,
+  color = NULL
+)
 }
 \arguments{
 \item{results}{A list of \code{grin_inference} objects (see \code{\link[=grin_tidy]{grin_tidy()}}).}
 
 \item{ids}{Optional participant IDs; see \code{\link[=grin_tidy]{grin_tidy()}}.}
 
-\item{facet}{If \code{TRUE} (default), one panel per participant. If \code{FALSE},
-overlay every participant's stimulus means (ellipses omitted -- with many
-participants, overlaid ellipses are unreadable; use \code{facet = TRUE} to see
-individual uncertainty) with a group-mean ellipse per stimulus.}
+\item{facet}{If \code{TRUE} (default), one panel per participant, each stimulus
+labelled directly rather than coloured (see \code{\link[=grin_plot_space]{grin_plot_space()}}). If
+\code{FALSE}, overlay every participant's stimulus means (individual ellipses
+omitted -- with many participants they're unreadable; use \code{facet = TRUE}
+to see individual uncertainty) with a labelled group-mean ellipse per
+stimulus.}
 
 \item{ci}{Confidence level for ellipses (facet mode) / the group-mean
 ellipse (overlay mode).}
+
+\item{color}{Use the house colour style instead of black-on-white? Default
+\code{NULL} defers to \code{options(grin.color)}.}
 }
 \value{
 A ggplot object.

@@ -1,15 +1,23 @@
 # plot-individual.R: one-participant plots. All take a grin_result (e.g.
 # grin_infer(M)$result) and, where relevant, its paired constructs list.
+# Black-on-white by default; pass color = TRUE (or options(grin.color = TRUE))
+# for the house blue/rose style.
 
 #' Plot one participant's inferred perceptual space
 #'
 #' Four stimulus means in the (zx, zy) plane, each with an ellipse showing its
 #' within-stimulus correlation (rho), and the decision bounds -- always at 0 in
 #' GRIN's identified coordinates, which is the whole point of working in them.
+#' Stimuli are told apart by a text label at each point, not by colour: with
+#' only one participant on the plot, four colours for four points is more
+#' decoration than information, and the quadrant each stimulus falls in is
+#' already fixed by the sign convention (Section 2 of the model spec).
 #'
 #' @param result A `grin_result` (e.g. `grin_infer(M)$result`).
 #' @param ci Confidence level for the ellipse radius (default 0.90, matching
 #'   `result$ci_low`/`result$ci_high`'s own convention).
+#' @param color Use the house colour style instead of black-on-white? Default
+#'   `NULL` defers to `options(grin.color = TRUE)`, itself default `FALSE`.
 #' @return A ggplot object.
 #' @examples
 #' \donttest{
@@ -18,11 +26,12 @@
 #' grin_plot_space(grin_infer(M)$result)
 #' }
 #' @export
-grin_plot_space <- function(result, ci = 0.90) {
+grin_plot_space <- function(result, ci = 0.90, color = NULL) {
   stopifnot(inherits(result, "grin_result"))
   stim <- c("A1B1", "A1B2", "A2B1", "A2B2")
   k <- stats::qnorm(0.5 + ci / 2)
   p <- stats::setNames(as.numeric(result$params), result$names)
+  col <- .grin_group_colors(1, color)
 
   centers <- data.frame(stimulus = stim,
                         zx = p[paste0("zx_", 0:3)], zy = p[paste0("zy_", 0:3)])
@@ -35,10 +44,11 @@ grin_plot_space <- function(result, ci = 0.90) {
   ggplot2::ggplot() +
     ggplot2::geom_vline(xintercept = 0, linetype = "dashed", color = .grin_colors$mute) +
     ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = .grin_colors$mute) +
-    ggplot2::geom_path(data = ellipses, ggplot2::aes(.data$x, .data$y, color = .data$stimulus)) +
-    ggplot2::geom_point(data = centers, ggplot2::aes(.data$zx, .data$zy, color = .data$stimulus),
-                        size = 3) +
-    ggplot2::scale_color_manual(values = .grin_stim_colors(), name = "stimulus") +
+    ggplot2::geom_path(data = ellipses, ggplot2::aes(.data$x, .data$y, group = .data$stimulus),
+                       color = col) +
+    ggplot2::geom_point(data = centers, ggplot2::aes(.data$zx, .data$zy), color = col, size = 3) +
+    ggplot2::geom_text(data = centers, ggplot2::aes(.data$zx, .data$zy, label = .data$stimulus),
+                       color = col, size = 3.2, vjust = -1.1) +
     ggplot2::coord_equal() +
     ggplot2::labs(x = "dimension A (zx)", y = "dimension B (zy)",
                   title = sprintf("Perceptual space (%s)", result$model_class),
@@ -48,9 +58,12 @@ grin_plot_space <- function(result, ci = 0.90) {
 
 #' Plot one participant's 12 parameter estimates with credible intervals
 #'
-#' A dot-and-whisker ("forest") plot, grouped by parameter type.
+#' A dot-and-whisker ("forest") plot, grouped by parameter type (position
+#' already separates the groups, so colour is optional, not load-bearing).
 #'
 #' @param result A `grin_result`.
+#' @param color Use the house colour style (one colour per parameter group)
+#'   instead of black-on-white? Default `NULL` defers to `options(grin.color)`.
 #' @return A ggplot object.
 #' @examples
 #' \donttest{
@@ -59,20 +72,22 @@ grin_plot_space <- function(result, ci = 0.90) {
 #' grin_plot_params(grin_infer(M)$result)
 #' }
 #' @export
-grin_plot_params <- function(result) {
+grin_plot_params <- function(result, color = NULL) {
   stopifnot(inherits(result, "grin_result"))
   group <- rep(c("zx", "zy", "rho"), each = 4)
   df <- data.frame(param = factor(result$names, levels = rev(result$names)),
                    group = group, estimate = result$params,
                    ci_low = result$ci_low, ci_high = result$ci_high)
+  use_color <- .grin_use_color(color)
+  cols <- stats::setNames(.grin_group_colors(3, color), c("zx", "zy", "rho"))
 
   ggplot2::ggplot(df, ggplot2::aes(x = .data$estimate, y = .data$param, color = .data$group)) +
     ggplot2::geom_vline(xintercept = 0, linetype = "dashed", color = .grin_colors$mute) +
     ggplot2::geom_errorbar(ggplot2::aes(xmin = .data$ci_low, xmax = .data$ci_high),
                            orientation = "y", width = 0) +
     ggplot2::geom_point(size = 2.5) +
-    ggplot2::scale_color_manual(values = stats::setNames(.grin_palette[1:3], c("zx", "zy", "rho")),
-                                name = NULL) +
+    ggplot2::scale_color_manual(values = cols, name = NULL,
+                                guide = if (use_color) "legend" else "none") +
     ggplot2::labs(x = "estimate (90% CI)", y = NULL, title = "Parameter estimates") +
     theme_grin()
 }
@@ -87,6 +102,8 @@ grin_plot_params <- function(result) {
 #'
 #' @param result A `grin_result`.
 #' @param constructs The paired constructs list (e.g. `grin_infer(M)$constructs`).
+#' @param color Use the house colour style instead of black-on-white? Default
+#'   `NULL` defers to `options(grin.color)`.
 #' @return A ggplot object.
 #' @examples
 #' \donttest{
@@ -96,7 +113,7 @@ grin_plot_params <- function(result) {
 #' grin_plot_constructs(out$result, out$constructs)
 #' }
 #' @export
-grin_plot_constructs <- function(result, constructs) {
+grin_plot_constructs <- function(result, constructs, color = NULL) {
   df <- data.frame(
     panel = c("correlation structure", "correlation structure", "correlation structure",
              "separability", "separability"),
@@ -106,15 +123,14 @@ grin_plot_constructs <- function(result, constructs) {
     evidence = c(rep(constructs$evidence_PI, 3), constructs$evidence_sep_A, constructs$evidence_sep_B)
   )
   df$label <- ifelse(df$evidence, "", "insufficient evidence")
+  fills <- stats::setNames(.grin_group_colors(2, color), c("correlation structure", "separability"))
 
   ggplot2::ggplot(df, ggplot2::aes(x = .data$construct, y = .data$prob, fill = .data$panel)) +
     ggplot2::geom_col(ggplot2::aes(alpha = .data$evidence), width = 0.6) +
     ggplot2::geom_text(ggplot2::aes(label = .data$label), vjust = -0.4, size = 3,
                        color = .grin_colors$mute) +
     ggplot2::scale_alpha_manual(values = c(`TRUE` = 1, `FALSE` = 0.35), guide = "none") +
-    ggplot2::scale_fill_manual(values = stats::setNames(.grin_palette[1:2],
-                                                        c("correlation structure", "separability")),
-                               guide = "none") +
+    ggplot2::scale_fill_manual(values = fills, guide = "none") +
     ggplot2::facet_wrap(~panel, scales = "free_x") +
     ggplot2::ylim(0, 1.08) +
     ggplot2::labs(x = NULL, y = "P(construct)",

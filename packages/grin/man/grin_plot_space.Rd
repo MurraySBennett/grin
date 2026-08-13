@@ -4,13 +4,16 @@
 \alias{grin_plot_space}
 \title{Plot one participant's inferred perceptual space}
 \usage{
-grin_plot_space(result, ci = 0.9)
+grin_plot_space(result, ci = 0.9, color = NULL)
 }
 \arguments{
 \item{result}{A \code{grin_result} (e.g. \code{grin_infer(M)$result}).}
 
 \item{ci}{Confidence level for the ellipse radius (default 0.90, matching
 \code{result$ci_low}/\code{result$ci_high}'s own convention).}
+
+\item{color}{Use the house colour style instead of black-on-white? Default
+\code{NULL} defers to \code{options(grin.color = TRUE)}, itself default \code{FALSE}.}
 }
 \value{
 A ggplot object.
@@ -19,6 +22,10 @@ A ggplot object.
 Four stimulus means in the (zx, zy) plane, each with an ellipse showing its
 within-stimulus correlation (rho), and the decision bounds -- always at 0 in
 GRIN's identified coordinates, which is the whole point of working in them.
+Stimuli are told apart by a text label at each point, not by colour: with
+only one participant on the plot, four colours for four points is more
+decoration than information, and the quadrant each stimulus falls in is
+already fixed by the sign convention (Section 2 of the model spec).
 }
 \examples{
 \donttest{
