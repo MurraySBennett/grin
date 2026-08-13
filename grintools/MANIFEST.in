@@ -1,0 +1,3 @@
+include grintools/py.typed
+recursive-include grintools/models *.onnx
+recursive-include grintools/data *.csv
