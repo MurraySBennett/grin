@@ -47,5 +47,11 @@ Useful links:
 \author{
 \strong{Maintainer}: Murray S. Bennett \email{murray.bennett92@gmail.com}
 
+Authors:
+\itemize{
+  \item Peter D. Kvam
+  \item Joseph W. Houpt
+}
+
 }
 \keyword{internal}

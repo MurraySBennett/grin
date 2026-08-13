@@ -28,4 +28,5 @@
 #'
 #' @keywords internal
 #' @importFrom stats setNames
+#' @importFrom rlang .data
 "_PACKAGE"

@@ -83,6 +83,36 @@ matrix. Probability targets carry the model's evidence flags, so a threshold on 
 construct the data cannot decide is reported in `decision$blocked_by` and does not
 stop the loop. The limit is in the data, not the tool.
 
+## Plotting and reporting
+
+Individual level (one participant):
+
+```r
+grin_plot_space(out$result)                     # perceptual space: means + correlation ellipses
+grin_plot_params(out$result)                     # all 12 estimates, dot-and-whisker with 90% CIs
+grin_plot_constructs(out$result, out$constructs) # P(PI)/P(RHO1)/P(free), P(separable A/B)
+```
+
+Group level (many participants — loop `grin_infer()` over a sample and pass the
+list straight in; `grin_tidy()` is the shared foundation if you want the raw
+data.frame instead of a plot):
+
+```r
+sample <- list(p01 = grin_infer(M1), p02 = grin_infer(M2), p03 = grin_infer(M3))
+
+grin_tidy(sample)                   # one row per participant: estimates, SDs, constructs
+grin_plot_space_group(sample)       # one panel per participant (facet = FALSE overlays instead)
+grin_plot_params_group(sample)      # per-parameter distribution across the sample
+grin_plot_model_classes(sample)     # how many participants landed in each GRT model class
+grin_plot_precision_group(sample)   # posterior SD distribution -- data quality across the sample
+```
+
+Every plot is a `ggplot` object (`theme_grin()` is exported), so it composes the
+normal way: `grin_plot_space(out$result) + ggplot2::labs(title = "Participant 7")`.
+Bars/labels for a construct the data can't decide (`evidence_* == FALSE`) are
+visually flagged rather than plotted as if informative — same principle as the
+stopping-rule API's `blocked_by`.
+
 ## Model provenance
 
 The bundled TorchScript model is pinned to the package version: `packageVersion("grin")`
