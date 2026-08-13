@@ -13,3 +13,9 @@ These modules are imported by scripts but were not in the original directory:
 `model_comparison*.py` guard this import with try/except (they degrade gracefully),
 but `pretrain_parameters.py` and `visualise_pretraining.py` import it directly and
 will crash until it is restored.
+
+All the scripts referenced above are themselves archived now (`scripts/_archive/`),
+so none of this is live. The `pretrained/*.h5` weights in this directory were
+removed from git (2026-08-13): 27MB for an architecture (26 raw parameters,
+means+covariances+criteria) the project moved away from -- nothing in the current
+pipeline loads them. `pretrained/.gitkeep` keeps the directory structure.
