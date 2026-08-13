@@ -50,7 +50,12 @@ data/simulated_grt/*
 !**/.gitkeep
 
 # tests/ deliberately NOT ignored -- the JS regression suite lives here and
-# should be tracked.
+# should be tracked. The reference JSON files ARE generated (by gen_reference.py,
+# gen_io_reference.py, get_fit_reference.py) and should NOT be tracked -- they are
+# regenerated fresh by tests/run_web.sh / CI each run, from the real Python package.
+tests/reference.json
+tests/io_reference.json
+tests/fit_reference.json
 
 www/
 # the pre-collaboration prototype -- confirmed archived, not the live site
@@ -84,6 +89,10 @@ Thumbs.db
 # Scratch notes
 grin_notes.txt
 .Rhistory
+full-tree.txt
+tracked-files.txt
+ignored-status.txt
+www
 
 # Private by nature of what they contain -- confirmed
 articles/
