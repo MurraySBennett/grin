@@ -1,0 +1,216 @@
+---
+title: "Getting started with grin"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with grin}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE, comment = "#>",
+  fig.width = 6, fig.height = 4.5, dpi = 110
+)
+```
+
+`grin` turns a 2x2 identification confusion matrix into a calibrated posterior
+over the 12 parameters of a General Recognition Theory (GRT) perceptual model
+-- in milliseconds, via a neural network trained once and shipped inside the
+package, rather than a per-participant maximum-likelihood fit. This vignette
+walks through a single participant end to end, then a small sample.
+
+```{r setup}
+library(grin)
+```
+
+## One participant
+
+A confusion matrix in **canonical order** -- rows and columns
+`A1B1, A1B2, A2B1, A2B2` (dimension A varies slower than B):
+
+```{r}
+M <- matrix(c(71, 17,  9,  5,
+              20, 67,  5,  9,
+              13,  6, 63, 20,
+               5, 10, 15, 71), nrow = 4, byrow = TRUE)
+
+out <- grin_infer(M)
+print(out$result)
+```
+
+If your data isn't already in this order -- different stimulus/response
+labelling, factors in a different sequence -- resolve it explicitly with
+`grin_to_confusion()` rather than guessing; see `?grin_to_confusion` and the
+README. A silent row/column swap would return a confident wrong posterior, so
+`grin_infer()` trusts you've already done this.
+
+Each of the 12 parameters comes back as an estimate with a posterior SD and a
+90% interval: `zx_0`..`zx_3` and `zy_0`..`zy_3` are each stimulus's position
+on dimensions A and B (sensitivity, in the identified/standardised space --
+0 is chance, ~2.5+ is excellent discrimination), and `rho_0`..`rho_3` are each
+stimulus's within-trial perceptual correlation between the two dimensions
+(0 = independent, away from 0 = linked or traded off). `out$result$model_class`
+is GRIN's best guess at the underlying GRT structure:
+
+```{r}
+out$result$model_class
+```
+
+`out$constructs` carries the probabilities behind that label -- how likely the
+correlation structure is perceptual independence (PI) / one shared correlation
+(RHO1) / a free correlation per stimulus, and how likely each dimension is
+perceptually separable:
+
+```{r}
+out$constructs$p_PI
+out$constructs$p_sep_A
+out$constructs$p_sep_B
+```
+
+`evidence_PI`/`evidence_sep_A`/`evidence_sep_B` flag whether this matrix
+actually carries enough information to decide that construct at all --
+perceptual independence in particular is information-limited from a single
+matrix. A probability near 0.5 with `evidence_* = FALSE` means "undecided,"
+not "roughly 50/50 chance."
+
+## Plotting one participant
+
+```{r, fig.alt = "Perceptual space plot for one participant: four stimulus points in the (zx, zy) plane with correlation ellipses"}
+grin_plot_space(out$result)
+```
+
+Four stimulus means in the (zx, zy) plane, one ellipse per stimulus showing
+its correlation, dashed lines at the decision bounds (always at 0 in this
+identified space -- that's the point of working in it). Stimuli are told
+apart by a label, not a colour: with everything else about the plot fixed,
+four colours for four points is decoration, not information. See "Style"
+below for switching this on anyway.
+
+```{r, fig.alt = "Forest plot of all 12 parameter estimates with 90 percent credible intervals"}
+grin_plot_params(out$result)
+```
+
+```{r, fig.alt = "Bar chart of construct probabilities: correlation structure and separability"}
+grin_plot_constructs(out$result, out$constructs)
+```
+
+Bars for a construct the data can't decide are visually flagged
+("insufficient evidence") rather than drawn as if they were informative --
+same principle as `evidence_*` above.
+
+Every plot is a `ggplot` object, so it composes the normal way:
+`grin_plot_space(out$result) + ggplot2::labs(title = "Participant 7")`.
+
+### Style
+
+Every `grin_plot_*()` defaults to black-on-white (publication- and
+greyscale-safe). Pass `color = TRUE` for the house blue/rose style instead,
+or set it once for the session with `options(grin.color = TRUE)`; an
+explicit `color =` argument always overrides the option.
+
+```{r, fig.alt = "The same parameter forest plot in the optional colour style"}
+grin_plot_params(out$result, color = TRUE)
+```
+
+## Stopping rules for adaptive designs
+
+If you're collecting data adaptively -- more trials until you know enough --
+declare what "enough" means as a `grin_criterion()` of targets, then check it
+after each `grin_infer()`:
+
+```{r}
+crit <- grin_criterion(list(
+  grin_target_precision(params = c("zx", "zy"), sd_max = 0.10),   # want the space measured
+  grin_target_probability("PS_A", at_least = 0.90)                # want the verdict
+), combine = "any")
+
+decision <- grin_evaluate(crit, out$result, out$constructs)
+print(decision)
+```
+
+Here the precision target isn't met yet (`zx_3`'s SD is still above 0.10),
+but the probability target is, so with `combine = "any"` the loop stops. A
+threshold on a construct the data cannot decide (an `evidence_* = FALSE`
+construct) is reported in `decision$blocked_by` and never stops the loop --
+the limit is in the data, not the tool.
+
+## Many participants
+
+Loop `grin_infer()` over a sample and pass the (optionally named) list
+straight to the group-level tools:
+
+```{r}
+mats <- list(
+  p1 = matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+                13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE),
+  p2 = matrix(c(50, 10, 15, 25, 12, 55, 20, 13,
+                18, 22, 48, 12,  8, 14, 18, 60), nrow = 4, byrow = TRUE),
+  p3 = matrix(c(65, 20, 10,  5, 15, 70,  3, 12,
+                 8,  4, 68, 20,  3, 10, 18, 69), nrow = 4, byrow = TRUE),
+  p4 = matrix(c(45, 40, 10,  5, 38, 47,  7,  8,
+                 6,  9, 48, 37,  8,  7, 42, 43), nrow = 4, byrow = TRUE),
+  p5 = matrix(c(30, 28, 22, 20, 26, 29, 24, 21,
+                22, 25, 27, 26, 19, 23, 26, 32), nrow = 4, byrow = TRUE),
+  p6 = matrix(c(88,  5,  5,  2,  4, 90,  2,  4,
+                 5,  3, 87,  5,  2,  4,  6, 88), nrow = 4, byrow = TRUE)
+)
+sample <- lapply(mats, grin_infer)
+```
+
+`grin_tidy()` is the shared foundation every group plot builds on -- one row
+per participant, in case you want the raw numbers instead of a plot:
+
+```{r}
+td <- grin_tidy(sample)
+td[, c("id", "model_class", "p_PI", "p_sep_A", "p_sep_B")]
+```
+
+This toy sample is illustrative, not simulated from known ground truth, but
+it's a real, if small, spread: two participants (`p2`, `p6`) come back with a
+`free`-correlation structure rather than PI, and precision (the width of
+each interval) varies with how the counts happen to fall. That variation is
+exactly what the group plots below are for.
+
+```{r, fig.width = 8, fig.height = 5, fig.alt = "One perceptual-space panel per participant, faceted"}
+grin_plot_space_group(sample)
+```
+
+One panel per participant (`facet = TRUE`, the default) so individual
+uncertainty stays visible. Set `facet = FALSE` to overlay everyone instead,
+with faint individual points and a labelled group-mean ellipse per stimulus
+-- readable with more participants than a facet grid can hold, at the cost
+of hiding each person's own uncertainty:
+
+```{r, fig.alt = "All participants' stimulus points overlaid with group-mean ellipses"}
+grin_plot_space_group(sample, facet = FALSE)
+```
+
+```{r, fig.width = 8, fig.alt = "Boxplots of each of the 12 parameters' estimates across participants"}
+grin_plot_params_group(sample)
+```
+
+```{r, fig.alt = "Bar chart of how many participants fall in each inferred GRT model class"}
+grin_plot_model_classes(sample)
+```
+
+```{r, fig.alt = "Boxplots of posterior SD per parameter group across participants -- data quality across the sample"}
+grin_plot_precision_group(sample)
+```
+
+`grin_plot_precision_group()` is useful for planning: run it on pilot data to
+see what posterior SD your trial counts are actually buying you, before
+picking a `sd_max` for `grin_target_precision()`.
+
+## Where next
+
+- `?grin_infer`, `?grin_to_confusion`, `?grin_criterion` -- full argument
+  reference for everything used above.
+- The package [README](https://github.com/MurraySBennett/grin/tree/main/packages/grin)
+  for the Python (`grintools`) equivalent of every function here, and the
+  differences in API convention between the two.
+- [Interpreting GRIN output](https://github.com/MurraySBennett/grin/blob/main/docs/interpreting.md)
+  -- a plain-language guide to reading the numbers above.
+- [The GRT model specification](https://github.com/MurraySBennett/grin/blob/main/docs/GRT_model_spec.md)
+  -- the underlying math: the 12 parameters, the model classes, the sign
+  convention, decisional separability.

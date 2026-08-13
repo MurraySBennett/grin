@@ -85,7 +85,9 @@ stop the loop. The limit is in the data, not the tool.
 
 ## Plotting and reporting
 
-Individual level (one participant):
+See `vignette("grin")` for a full walkthrough (one participant through a
+small sample) with rendered figures. Summary of the API --
+individual level (one participant):
 
 ```r
 grin_plot_space(out$result)                     # perceptual space: means + correlation ellipses

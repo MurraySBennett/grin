@@ -92,6 +92,11 @@ Thumbs.db
 # Scratch notes
 grin_notes.txt
 .Rhistory
+
+# R vignette build artifacts (rendered by devtools::build_vignettes() /
+# R CMD build; source is packages/grin/vignettes/*.Rmd, this is the output)
+packages/grin/doc/
+packages/grin/Meta/
 full-tree.txt
 tracked-files.txt
 ignored-status.txt
