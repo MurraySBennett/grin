@@ -9,7 +9,11 @@ description = "Amortised, uncertainty-calibrated inference for General Recogniti
 readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}
-authors = [{name = "Murray S. Bennett", email = "murray.bennett92@gmail.com"}]
+authors = [
+    {name = "Murray S. Bennett", email = "murray.bennett92@gmail.com"},
+    {name = "Peter D. Kvam"},
+    {name = "Joseph W. Houpt"},
+]
 keywords = ["general recognition theory", "GRT", "simulation-based inference",
             "amortised inference", "psychophysics", "perceptual independence"]
 classifiers = [

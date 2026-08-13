@@ -7,6 +7,12 @@ authors:
     given-names: "Murray S."
     email: murray.bennett92@gmail.com
     affiliation: "The Ohio State University"
+  - family-names: "Kvam"
+    given-names: "Peter D."
+    affiliation: "The Ohio State University"
+  - family-names: "Houpt"
+    given-names: "Joseph W."
+    affiliation: "The University of Texas at San Antonio"
 version: 0.1.0
 date-released: "2026-08-12"
 url: "https://github.com/MurraySBennett/grin"

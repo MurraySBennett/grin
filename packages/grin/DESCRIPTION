@@ -1,8 +1,10 @@
 Package: grin
 Title: Amortised Inference for General Recognition Theory
 Version: 0.1.0
-Authors@R:
-    person("Murray S.", "Bennett", email = "murray.bennett92@gmail.com", role = c("aut", "cre"))
+Authors@R: c(
+    person("Murray S.", "Bennett", email = "murray.bennett92@gmail.com", role = c("aut", "cre")),
+    person("Peter D.", "Kvam", role = "aut"),
+    person("Joseph W.", "Houpt", role = "aut"))
 Description: Amortised, uncertainty-calibrated inference of General Recognition
     Theory (GRT) perceptual representations from a 2x2 identification confusion
     matrix. A neural network, trained once on simulated data and shipped as a
