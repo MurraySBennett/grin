@@ -298,6 +298,46 @@ def describe(data, *, printout=True, **kwargs):
 
 
 # =========================================================================== #
+# Response bias: computed directly from a confusion matrix, no model fit
+# required. GRT's separability/independence machinery lives entirely in
+# infer()'s 12 identified parameters; the raw tendency to over- or
+# under-report one level of a dimension, independent of how well the observer
+# discriminates it, is a property of the data alone and worth a name.
+# =========================================================================== #
+def response_bias(counts, trials=None):
+    """Response bias from a raw confusion matrix.
+
+    The signed tendency to report level 2 of a dimension more or less often
+    than level 1, averaged across the four stimuli: 0 is unbiased, positive
+    means the observer favours the "2" response on that dimension more than a
+    fair coin would, negative means they favour "1". This describes the data,
+    independent of infer()'s model fit -- it needs no trained network and
+    works even on a matrix GRIN can't otherwise fit.
+
+    `counts`: a canonical-order 4x4 matrix, or a length-16 vector read
+    row-major. `trials`: optional per-stimulus trial totals; defaults to row
+    sums.
+
+    Returns a dict: `x_bias`, `y_bias` (each in [-0.5, 0.5]), and `p_resp2`,
+    a (4, 2) array giving P(respond level 2) on each dimension for each of
+    the four stimuli (so a systematic bias can be told apart from one driven
+    by a single stimulus).
+    """
+    cm = np.asarray(counts, dtype=float).reshape(4, 4)
+    if trials is None:
+        trials = cm.sum(axis=1)
+    trials = np.asarray(trials, dtype=float).reshape(4)
+    props = cm / trials[:, None]
+    p_x2 = props[:, 2] + props[:, 3]   # respond "A2" (canonical cols a2b1, a2b2)
+    p_y2 = props[:, 1] + props[:, 3]   # respond "B2" (canonical cols a1b2, a2b2)
+    return {
+        "x_bias": float(p_x2.mean() - 0.5),
+        "y_bias": float(p_y2.mean() - 0.5),
+        "p_resp2": np.stack([p_x2, p_y2], axis=1),
+    }
+
+
+# =========================================================================== #
 # Convenience: normalise -> infer (-> constructs -> decide) in one call. Network
 # imports are lazy so this module and its I/O are usable without torch present.
 # =========================================================================== #

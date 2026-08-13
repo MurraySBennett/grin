@@ -16,14 +16,14 @@ factor levels, or assert gt.to_confusion(M, order="canonical").
 """
 from importlib import resources
 
-from .io import to_confusion, describe, ConfusionInput, PARAM_NAMES, PARAM_GROUPS
+from .io import to_confusion, describe, response_bias, ConfusionInput, PARAM_NAMES, PARAM_GROUPS
 from .criterion import Criterion, Target, Decision, stop_on_precision
 from .onnx import GrinOnnx, OnnxResult
 
 __version__ = "0.1.0"
 
-__all__ = ["infer", "to_confusion", "describe", "ConfusionInput", "Criterion",
-           "Target", "Decision", "stop_on_precision", "GrinOnnx", "OnnxResult",
+__all__ = ["infer", "to_confusion", "describe", "response_bias", "ConfusionInput",
+           "Criterion", "Target", "Decision", "stop_on_precision", "GrinOnnx", "OnnxResult",
            "default_model_path", "PARAM_NAMES", "PARAM_GROUPS", "__version__"]
 
 _SESSION_CACHE = {}
