@@ -82,8 +82,11 @@ stop the loop. The limit is in the data, not the tool.
 
 ## Plotting and reporting
 
-Needs the `[plot]` extra (`pip install grintools[plot]`, adds matplotlib/pandas/scipy
--- the core package stays torch-free and dependency-light without it):
+See [`docs/quickstart.md`](docs/quickstart.md) for a full walkthrough (one
+participant through a small sample) with rendered figures. Summary of the
+API: needs the `[plot]` extra (`pip install grintools[plot]`, adds
+matplotlib/pandas/scipy -- the core package stays torch-free and
+dependency-light without it):
 
 ```python
 import grintools.plot as gtplot
