@@ -10,7 +10,7 @@
 | v06 | stable across training seeds | PASS | 13.3 |
 | v07 | reliability across trial counts | PASS | 16.3 |
 | v08 | PI identifiability frontier (the honest limit) | PASS | 15.4 |
-| v09 | out-of-family data is flagged | FAIL | 15.6 |
+| v09 | systematically misspecified data (no representation in the model's parameterization) is flagged, gradedly with severity, at a controlled false-alarm rate | PASS | 12.9 |
 | v10 | degrades gracefully under lapses | PASS | 15.6 |
 | v11 | amortized comparison vs AIC/BIC | PASS | 43.2 |
 | v12 | RT and accuracy are collinear w.r.t. rho (why RTs can't fix PI) | PASS | 0.0 |

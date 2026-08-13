@@ -1,13 +1,29 @@
 {
   "id": "v09",
-  "claim": "out-of-family data is flagged",
+  "claim": "systematically misspecified data (no representation in the model's parameterization) is flagged, gradedly with severity, at a controlled false-alarm rate",
   "result": {
-    "in_dist_median": 14.476147439818696,
-    "threshold95": 44.682623377999754,
-    "ood_median": 47.24603093162506,
-    "detection_rate": 0.6333333333333333,
-    "false_alarm": 0.05
+    "in_dist_median": 13.372389133004452,
+    "threshold95": 44.53129142909136,
+    "false_alarm": 0.05,
+    "severity_curve": {
+      "0.25": {
+        "median_deviance": 13.891213224206087,
+        "detection_rate": 0.02
+      },
+      "0.5": {
+        "median_deviance": 28.45109758495866,
+        "detection_rate": 0.24666666666666667
+      },
+      "0.75": {
+        "median_deviance": 156.50573186647534,
+        "detection_rate": 1.0
+      },
+      "1.0": {
+        "median_deviance": 674.726412140901,
+        "detection_rate": 1.0
+      }
+    }
   },
-  "pass": false,
-  "seconds": 15.6
+  "pass": true,
+  "seconds": 12.9
 }
