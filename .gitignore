@@ -109,7 +109,6 @@ manuscript/
 # Working notes, not reference documentation -- confirmed 2026-08-12
 docs/DESIGN_RECORD.md
 docs/FIGURE_EXPLAINER.md
-_archive/FIGURE_OVERHAUL.md
 # docs/GRT_model_spec.md deliberately NOT listed here -- confirmed public
 # 2026-08-12 (the canonical math reference; the README links to it)
 
