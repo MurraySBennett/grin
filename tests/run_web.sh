@@ -4,7 +4,7 @@
 set -e
 python3 tests/gen_reference.py
 python3 tests/gen_io_reference.py
-python3 tests/gen_fit_reference.py
+python3 tests/get_fit_reference.py
 for t in core io fit model; do
   echo "=== $t ==="
   node "tests/$t.test.mjs"
