@@ -181,10 +181,10 @@ def sweep_rt_speed(quick=False):
              "z_MAE": float(np.abs(p[:, :8] - ype[:, :8]).mean()),
              "rho_MAE": float(np.abs(p[:, 8:] - ype[:, 8:]).mean()),
              "arch_acc": float(np.mean(pa == yae)),
-             "dimension_neglect_acc": float(np.mean(np.isin(pa[msk], st))) if msk.sum() else None}
+             "self_terminating_recall": float(np.mean(np.isin(pa[msk], st))) if msk.sum() else None}
         out.append(r)
         print(f"   {name:11s} medRT~{mean_rt:4.2f}s | z_MAE {r['z_MAE']:.3f} | arch {r['arch_acc']:.2f} "
-              f"| neglect-detect {r['dimension_neglect_acc']:.2f}")
+              f"| self-terminating recall {r['self_terminating_recall']:.2f}")
     return out
 
 
@@ -337,8 +337,8 @@ def make_figure(out_dir=None):
         x = [r["median_RT_s"] for r in rows]
         ax[4].plot(x, [r["arch_acc"] for r in rows], "o-", color=BLUE_DEEP, lw=2,
                    label="architecture")
-        ax[4].plot(x, [r["dimension_neglect_acc"] for r in rows], "s-", color=RED_DEEP, lw=2,
-                   label="dimension-neglect")
+        ax[4].plot(x, [r["self_terminating_recall"] for r in rows], "s-", color=RED_DEEP, lw=2,
+                   label="self-terminating recall")
         ax[4].set_ylim(0, 1); ax[4].set_xlabel("median RT (s)"); ax[4].set_ylabel("accuracy")
         ax[4].set_title("Invariant to RT speed regime"); ax[4].legend(fontsize=8.5)
     else:

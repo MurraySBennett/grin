@@ -167,23 +167,34 @@ header.site .tagline {
   opacity: 0.92;
 }
 
-.site-crumb {
-  text-align: center;
-  font-size: 0.65rem;
-  margin-top: 0.6rem;
+.site-connection {
+  position: absolute;
+  top: 0.75rem;
+  left: 1rem;
 }
-.site-crumb a {
-  color: var(--mute);
+.site-home-link {
+  display: inline-block;
+  padding: 0.45rem 0.7rem;
+  border: 0.12rem solid var(--ice);
+  border-radius: 0.45rem;
+  background: var(--ice);
+  color: var(--slate);
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
   text-decoration: none;
-  opacity: 0.75;
+  box-shadow: 0.14rem 0.14rem 0 rgba(0, 0, 0, 0.22);
 }
-.site-crumb a:hover {
-  opacity: 1;
-  text-decoration: underline;
+.site-home-link:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 0.2rem 0.2rem 0 rgba(0, 0, 0, 0.22);
 }
 
 nav.site {
   margin-top: 0.9rem;
+}
+.nav-toggle {
+  display: none;
 }
 nav.site ul {
   list-style: none;
@@ -269,6 +280,10 @@ footer.site .fine {
 @media (max-width: 56rem) {
   .viz-2 {
     grid-template-columns: 1fr;
+  }
+  .site-connection {
+    position: static;
+    margin: 0.65rem auto 0;
   }
 }
 
@@ -826,6 +841,20 @@ summary:hover {
   font-size: 0.5rem;
   color: var(--slate-deep);
 }
+.primary-action {
+  border-left: 0.35rem solid var(--rose-deep);
+}
+.primary-action h2 {
+  margin: 0.35rem 0 0.7rem;
+  color: var(--slate-deep);
+  font-size: 1rem;
+}
+.section-label {
+  margin: 1.6rem 0 -0.7rem;
+}
+.release-banner {
+  margin-bottom: 1rem;
+}
 
 .lede {
   font-size: 1rem;
@@ -934,6 +963,9 @@ html.is-dark details {
 html.is-dark a {
   color: #a899f0;
 }
+html.is-dark .site-home-link {
+  color: var(--slate);
+}
 
 /* theme toggle */
 #theme-row {
@@ -1036,8 +1068,47 @@ body.konami-mode canvas {
 }
 
 @media (max-width: 40rem) {
+  header.site {
+    position: relative;
+    padding-top: 0.8rem;
+  }
   header.site h1 {
     font-size: 0.85rem;
+  }
+  button.nav-toggle {
+    display: inline-block;
+    margin: 0.65rem 0.2rem 0;
+    padding: 0.45rem 0.8rem;
+    border-color: var(--ice);
+    background: transparent;
+    color: var(--ice);
+    font-size: 0.58rem;
+  }
+  nav.site {
+    display: none;
+    margin: 0.55rem 0 0;
+    padding: 0 0.75rem;
+  }
+  nav.site.is-open {
+    display: block;
+  }
+  nav.site ul {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+  }
+  nav.site a {
+    padding: 0.55rem 0.35rem;
+  }
+  .site-connection {
+    display: inline-block;
+    margin: 0.65rem 0.2rem 0;
+    vertical-align: middle;
+  }
+  #theme-row {
+    display: inline-flex;
+    padding: 0;
+    vertical-align: middle;
   }
   .container {
     padding: 0.75rem;

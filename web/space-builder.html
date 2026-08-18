@@ -566,11 +566,11 @@
           );
 
         const mc = res.modelClass;
-        // The joint class probability is the product of three decisions:
+        // The factorized support is the product of three marginal decisions:
         // separability on A, separability on B, and the correlation class. The
         // first two are usually well identified; whether rho is 0 (perceptual
         // independence) is information-limited, so it caps the joint. Report the
-        // parts, not just the product, so a low joint reads as "PI is hard"
+        // parts, not just the product, so low support reads as "PI is hard"
         // rather than "the fit failed".
         const sepConf = Math.min(
           Math.max(res.sep.A, 1 - res.sep.A),
@@ -583,8 +583,9 @@
       <p>
         The separability structure is identified with confidence ${(100 * sepConf).toFixed(0)}%.
         Whether the dimensions are independent is the information-limited part: its
-        best option sits at ${(100 * corrConf).toFixed(0)}%, which is what holds the joint
-        class probability down to ${mc.joint.toFixed(2)}.
+        best option sits at ${(100 * corrConf).toFixed(0)}%, which is what holds the
+        factorized class support down to ${mc.factorizedSupport.toFixed(2)}. That product is
+        a compact summary of three marginal heads, not a calibrated joint probability.
         ${
           corrConf >= 0.6
             ? "Here the data carry enough to lean one way on the correlation as well."

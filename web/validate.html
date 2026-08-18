@@ -41,15 +41,33 @@
         <span class="eyebrow">What this page is for</span>
         <p>
           Everywhere else on this site works with a single dataset. This page
-          asks if GRIN can <strong>recover</strong> the tru representation from
+          asks if GRIN can <strong>recover</strong> the true representation from
           many simulated participants, and do its uncertainty intervals
           <strong>mean what they say</strong>?
         </p>
         <p style="margin-bottom: 0">
           Because the data are simulated, the true answer is known for every
-          participant, so the estimates can be checked directly against. For the
+          participant, so the estimates can be checked directly against it. For the
           same kind of comparison on your own or published data, visit the
           <a href="./analyse.html">Analyse</a> page.
+        </p>
+      </div>
+
+      <div class="card">
+        <span class="eyebrow">The manuscript-scale check</span>
+        <p>
+          On <strong>24,000 held-out simulated matrices</strong>, mean recovery
+          correlations were <strong>0.91</strong> for the eight location
+          parameters and <strong>0.59</strong> for the four within-stimulus
+          correlations. The nominal 90% marginal intervals covered the truth
+          <strong>92.8%</strong> of the time.
+        </p>
+        <p class="cap" style="margin-bottom: 0">
+          These are pooled results from the fixed research checkpoint on test
+          matrices spanning 5–500 trials per stimulus. The small live exercise
+          below is for intuition and will vary from run to run. The browser's
+          legacy checkpoint still needs to be replaced before this page can be
+          called a direct reproduction of the manuscript result.
         </p>
       </div>
 
@@ -87,7 +105,7 @@
               style="width: 0%; transition: width 0.1s linear"
             ></div>
           </div>
-          <!-- <p class="status" id="status">Set the batch, then run.</p> -->
+          <p class="status" id="status">Set the batch, then run.</p>
         </aside>
 
         <!-- ------------------------------------------------------------------ -->

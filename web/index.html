@@ -24,7 +24,7 @@
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>GRIN - General Recognition Inversion Network</title>
+    <title>GRIN - General Recognition Inference Network</title>
     <meta
       name="description"
       content="GRIN fits General Recognition Theory models to identification data in milliseconds, with calibrated uncertainty. Explore the theory, analyse your own data, and check the tool against the alternatives."
@@ -41,8 +41,8 @@
     <header class="site">
       <h1>GRIN</h1>
       <p class="tagline">
-        General Recognition Inversion Network, fit GRT models to identification
-        data in milliseconds, with uncertainty you can trust.
+        General Recognition Inference Network: fit GRT models to identification
+        data in milliseconds, with uncertainty that has been tested.
       </p>
       <div id="nav-placeholder"></div>
     </header>
@@ -63,7 +63,7 @@
           participant and each candidate model, and returns a point estimate.
           <strong
             >GRIN replaces the optimiser with a neural network trained on
-            millions of simulated experiments.</strong
+            simulated experiments.</strong
           >
           Inference becomes a single forward pass, about a millisecond, and
           returns a posterior over parameter estimates and model
@@ -71,10 +71,28 @@
         </p>
         <p class="lede">
           Everything on this site runs <strong>in your browser</strong>. Your
-          data are never uploaded anywhere.
+          experimental data are not uploaded for analysis.
         </p>
       </div>
 
+      <div class="card primary-action">
+        <span class="eyebrow">Use GRIN</span>
+        <h2>Start with your own data</h2>
+        <p>
+          Upload a trial-level CSV or enter a 4×4 confusion matrix. You will get
+          GRIN's parameter and construct estimates beside a classical
+          maximum-likelihood reference, plus the warnings needed to judge how
+          much weight to put on the result.
+        </p>
+        <div class="row">
+          <a class="button" href="./analyse.html">Analyse data</a>
+          <a class="button" href="./learn.html">Read the assumptions first</a>
+        </div>
+      </div>
+
+      <div class="section-label">
+        <span class="eyebrow">Learn GRT by seeing it</span>
+      </div>
       <div class="doors">
         <a class="door" href="./space-builder.html">
           <h3>Space Builder</h3>
@@ -85,27 +103,6 @@
             back to what you built.
           </p>
           <span class="kicker">Start here →</span>
-        </a>
-
-        <a class="door" href="./space-builder-time-attack.html">
-          <h3>Space Builder: +RT</h3>
-          <p>
-            The same, plus response times. Accuracy data can give you only so
-            much. Including Response Times in the model (GRIN +RT) with
-            confusions helps us extract and identify separability and processing
-            architectures.
-          </p>
-          <span class="kicker">An interesting extra →</span>
-        </a>
-
-        <a class="door" href="./validate.html">
-          <h3>Validate</h3>
-          <p>
-            Parameter recovery, interval calibration, and head-to-head
-            comparison against <code>grtools</code>, <code>mdsdt</code>, and
-            maximum likelihood, on simulated and real data.
-          </p>
-          <span class="kicker">Kick the tyres →</span>
         </a>
 
         <a class="door" href="./independence.html">
@@ -119,26 +116,44 @@
           <span class="kicker">Where to be careful →</span>
         </a>
 
-        <a class="door" href="./analyse.html">
-          <h3>Analyse</h3>
+      </div>
+
+      <div class="section-label">
+        <span class="eyebrow">Evidence</span>
+      </div>
+      <div class="doors">
+        <a class="door" href="./validate.html">
+          <h3>Recovery and calibration</h3>
           <p>
-            Bring your own data. Upload a trial-level CSV and, in milliseconds,
-            get GRT parameters, model comparison, and a maximum-likelihood fit
-            for reference, side by side, so you can see exactly where they agree
-            and where they don't.
+            See the manuscript-scale held-out results, then run a smaller
+            simulation yourself to see what changes as the trial count falls.
           </p>
-          <span class="kicker">Bring your data →</span>
+          <span class="kicker">Check the estimator →</span>
+        </a>
+      </div>
+
+      <div class="section-label">
+        <span class="eyebrow">Research previews</span>
+      </div>
+      <div class="doors">
+        <a class="door" href="./space-builder-time-attack.html">
+          <h3>Counts + response time</h3>
+          <p>
+            A worked proof of concept for combining the perceptual space with
+            processing architecture. This model is experimental and is not
+            shipped in the released packages.
+          </p>
+          <span class="kicker">Explore the RT idea →</span>
         </a>
 
         <a class="door" href="./dynamics.html">
-          <h3>Dynamics</h3>
+          <h3>Repeated fitting and stopping</h3>
           <p>
-            Everywhere else on this site examines or explores a single fit. GRIN
-            is fast enough that fitting isn't something you need to wait for
-            data collection to conclude, it's something you can do
-            <em>during</em> it. Explore what this can unlock.
+            Explore drift tracking and an illustrative stopping rule. The page
+            shows what speed might make possible; it is not a validated
+            adaptive-design procedure.
           </p>
-          <span class="kicker">Fit as a process →</span>
+          <span class="kicker">Try the playground →</span>
         </a>
       </div>
 
@@ -151,20 +166,22 @@
             </h3>
             <ul>
               <li>
-                <strong>Speed.</strong> A participant is a forward pass. Fitting
-                200 people is about as fast as fitting one, which makes
-                hierarchical and adaptive designs practical to run.
+                <strong>Speed.</strong> Each participant is a forward pass, so
+                large batches are practical without running a fresh optimiser
+                for every person and candidate model.
               </li>
               <li>
-                <strong>Calibrated uncertainty.</strong> The network returns a
-                posterior over each parameter and model class. We check that its
-                90% intervals actually contain the truth 90% of the time, see
-                <a href="./validate.html">Validate</a>.
+                <strong>Tested uncertainty.</strong> The network returns an
+                approximate posterior for each parameter and separate
+                probabilities for the structural questions. We check interval
+                coverage on held-out simulations; see
+                <a href="./validate.html">Evidence</a>.
               </li>
               <li>
-                <strong>Small samples.</strong> It was trained down to a single
-                trial per stimulus, so it degrades gracefully instead of failing
-                to converge.
+                <strong>Small samples.</strong> It can return an estimate where
+                an optimiser may fail to converge. That does not create
+                information: with few trials, expect wide intervals and weak
+                structural conclusions.
               </li>
             </ul>
           </div>
@@ -175,18 +192,19 @@
             <ul>
               <li>
                 <strong>It is not assumption-free.</strong> GRIN is amortised
-                over a prior. Feed it something that prior never generated and
-                it will hand you a confident answer that means nothing. The app
-                checks for this and says so.
+                over a fixed simulation prior. The app catches malformed inputs
+                and some obvious training-envelope problems; it cannot prove
+                that GRT generated your data or detect every kind of
+                extrapolation.
               </li>
               <li>
                 <strong>It assumes decisional separability</strong> throughout,
                 and (currently) 2×2 designs only.
               </li>
               <li>
-                <strong>It is not a replacement for thinking.</strong> A winning
-                model class with a probability of 0.4 is not a conclusive
-                finding, and GRIN will tell you that, too.
+                <strong>It is not a replacement for thinking.</strong> A
+                construct probability near 0.5 or weak factorized class support
+                is not a conclusive finding.
               </li>
             </ul>
           </div>
@@ -203,6 +221,19 @@
         </p>
         <div class="row">
           <a class="button" href="./learn.html">GRT primer</a>
+          <a class="button" href="https://github.com/MurraySBennett/grin"
+            >Source on GitHub</a
+          >
+          <a
+            class="button"
+            href="https://github.com/MurraySBennett/grin/tree/main/packages/grintools"
+            >Python package</a
+          >
+          <a
+            class="button"
+            href="https://github.com/MurraySBennett/grin/tree/main/packages/grin"
+            >R package</a
+          >
         </div>
       </div>
     </main>
@@ -215,7 +246,7 @@
         >
       </p>
       <p class="fine">
-        Everything here runs client-side. No data leaves your machine.
+        Analysis runs client-side. Your experimental data are not uploaded.
       </p>
     </footer>
 

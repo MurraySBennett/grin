@@ -37,15 +37,25 @@ trials the label is a best guess. And the perceptual-vs-decisional distinction i
 resolved here by convention (decisional separability), not measured — pinning it down
 requires extra experimental conditions.
 
-## The fit / OOD flag
+## The envelope check (`envelope_deviance`)
 
-**Good fit** — GRT describes this participant; trust the estimates.
-**Questionable** — the matrix has structure no GRT-Gaussian model can produce (lapses,
-a strategy shift, non-standard responding). Interpret with caution, or fall back to a
-careful maximum-likelihood fit and inspect residuals.
+This is **not** a test of whether GRT describes the participant — a single confusion
+matrix almost always has *some* GRT-Gaussian parameters that reproduce it exactly, so
+that question can't be answered from a matrix alone (lapses, a strategy shift, and
+non-standard responding all still just produce some ordinary-looking matrix, fittable
+like any other). What this actually checks is narrower and more mechanical: does
+GRIN's own fitted answer reproduce this specific matrix well.
+
+**Good (low deviance)** — GRIN's fit reproduces the matrix; nothing more to check.
+**Flagged (high deviance)** — GRIN's fit does *not* reproduce the matrix well, most
+often because the matrix falls outside the range of data the network was trained on
+(very extreme sensitivity, an unusual trial-count regime, or similar). Treat the
+estimate with more caution and, if it matters, cross-check with a direct
+maximum-likelihood fit — not because GRT has been shown not to apply, but because
+GRIN's amortised answer may be extrapolating.
 
 ## Rule of thumb
 
 Read it as: _"They discriminate A [well/poorly] and B [well/poorly], perceive the
-features [independently/together], the data fit a [model] model, and GRT [does/doesn't]
-describe them — with [tight/loose] certainty given the trial count."_
+features [independently/together], the data fit a [model] model, and the envelope
+check is [clear/flagged] — with [tight/loose] certainty given the trial count."_

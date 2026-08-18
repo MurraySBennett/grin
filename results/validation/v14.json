@@ -1,6 +1,6 @@
 {
   "id": "v14",
-  "claim": "architecture recovery (5-way SFT); dimension-neglect detection",
+  "claim": "architecture recovery (5-way SFT)",
   "result": {
     "overall": 0.8614583333333333,
     "per_architecture": {
@@ -14,5 +14,5 @@
     "chance": 0.2
   },
   "pass": true,
-  "seconds": 7.5
+  "seconds": 3.4
 }

@@ -654,8 +654,6 @@ def poster_rt_dumbbell(data, path):
          "baselines": base_sep or None},
         {"metric": "processing architecture", "counts": M["arch"]["chance"],
          "rt": M["arch"]["rt"], "chance": M["arch"]["chance"]},
-        {"metric": "dimension neglect", "counts": M["dimneglect"]["cm"],
-         "rt": M["dimneglect"]["rt"], "chance": 0.5},
         {"metric": "perceptual independence", "counts": M["pi"]["cm"], "rt": M["pi"]["rt"],
          "counts_ci": ci(M["pi"].get("cm_ci")), "rt_ci": ci(M["pi"].get("rt_ci")),
          "baselines": base_corr or None},

@@ -4,17 +4,21 @@ import torch.nn as nn
 from .heads import GaussianHead, N_PARAMS
 
 
+def featurize_square(counts, trials, n_stimuli):
+    """Featurize a square identification matrix without assuming a 2x2 design."""
+    counts = counts.reshape(-1, n_stimuli, n_stimuli).float()
+    trials = trials.reshape(-1, n_stimuli).float().clamp(min=1)
+    props = counts / trials.unsqueeze(-1)
+    return torch.cat([props.reshape(-1, n_stimuli ** 2), torch.log10(trials)], dim=-1)
+
+
 def featurize(counts, trials):
     """
     counts (N,16) int, trials (N,4) -> (N,20): row-proportions (16) + log10 trial
     counts (4). Proportions are the signal; log-trials tell the net the noise level
     so the posterior can widen when data are scarce.
     """
-    counts = counts.reshape(-1, 4, 4).float()
-    trials = trials.float().clamp(min=1)
-    props = counts / trials.unsqueeze(-1)
-    log_trials = torch.log10(trials)
-    return torch.cat([props.reshape(-1, 16), log_trials], dim=-1)
+    return featurize_square(counts, trials, n_stimuli=4)
 
 
 def _mlp(in_dim, hidden, activation, dropout):
@@ -71,4 +75,3 @@ class NPEModel(nn.Module):
         h = self.encoder(x)
         mean, L = self.head(h)
         return mean, L, self.corr_head(h), self.sepA_head(h), self.sepB_head(h)
-    

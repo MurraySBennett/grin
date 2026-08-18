@@ -1,27 +1,43 @@
-# plot-diagnostics.R: goodness-of-fit reporting for one participant. Unlike
-# grin_plot_space()/_params()/_constructs(), these need the ORIGINAL confusion
-# matrix as well as the fitted result, because they compare what was observed
-# against what the fitted parameters predict -- grin_infer()'s return value
-# alone doesn't carry the input matrix back out.
+# plot-diagnostics.R: predicted-vs-observed reconstruction reporting for one
+# participant. Unlike grin_plot_space()/_params()/_constructs(), these need the
+# ORIGINAL confusion matrix as well as the fitted result, because they compare
+# what was observed against what the fitted parameters predict -- grin_infer()'s
+# return value alone doesn't carry the input matrix back out.
+#
+# Deliberately NOT called "goodness-of-fit": the identified 12-parameter model is
+# saturated (see the manuscript's Introduction/identifiability-frontier study), so
+# a single confusion matrix's response proportions cannot, in principle, be used
+# to test whether Gaussian perceptual effects or decisional separability hold --
+# essentially any proportion table has SOME fitting parameter vector. What this
+# view actually shows is whether GRIN's OWN fitted parameters reconstruct the
+# matrix, which is informative in one direction only: a poor reconstruction is a
+# real signal (network approximation error, or a matrix outside the trained
+# envelope -- worth a second look, possibly a fresh maximum-likelihood fit), but
+# a good reconstruction does not validate the underlying GRT assumptions, because
+# the saturated model was essentially guaranteed to reconstruct it regardless.
 
-#' Predicted-vs-observed and marginal-distribution diagnostics for one participant
+#' Predicted-vs-observed reconstruction and marginal-distribution diagnostics for one participant
 #'
-#' Two independent checks of how well the fitted parameters describe the data
-#' actually observed, either or both of which can be switched off:
+#' Two independent views of how well GRIN's own fitted parameters reconstruct the
+#' data actually observed, either or both of which can be switched off. Neither is
+#' a goodness-of-fit test of the GRT model itself -- see the note above the source
+#' of this function for why not.
 #'
 #' \itemize{
 #'   \item \strong{Predicted vs. observed}: the forward model's predicted
 #'     response probability for each of the 16 stimulus/response cells,
 #'     plotted against the cell's observed proportion. Points near the
-#'     diagonal indicate a good fit; systematic departure for one stimulus
-#'     (told apart by point shape, not colour) says where the model is
-#'     struggling.
+#'     diagonal indicate a good reconstruction; systematic departure for one
+#'     stimulus (told apart by point shape, not colour) says where the fit is
+#'     struggling and is worth a second look -- but points near the diagonal
+#'     are not themselves evidence that GRT describes this participant, only
+#'     that GRIN's fit reconstructs the matrix it was given.
 #'   \item \strong{Marginal distributions}: the predicted `Normal(mean, 1)`
 #'     density on each dimension for each of the four stimuli (the model's own
 #'     unit-variance convention), which is what [grin_plot_space()]'s
 #'     `show_marginals = TRUE` also draws alongside the space plot itself --
 #'     this function is the same marginals without the perceptual-space panel,
-#'     paired instead with the goodness-of-fit check above.
+#'     paired instead with the reconstruction check above.
 #' }
 #'
 #' @param result A `grin_result` (e.g. `grin_infer(M)$result`).

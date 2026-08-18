@@ -23,7 +23,7 @@ Writes to results/figures/rt/ (all RT output lives in its own directory):
     rt_vs_counts_constructs.png       — model class / correlation type / separability, counts vs RT
 
   RT-specific:
-    rt_architecture.png   — 5-way SFT confusion + dimension-neglect detection
+    rt_architecture.png   — 5-way SFT confusion + PI/rho gains + input-ablation comparison
     rt_by_architecture.png— recovery error broken down by processing architecture
     rt_lba.png             — LBA parameter recovery
 
@@ -41,7 +41,7 @@ matplotlib.use("Agg")
 from src.config import (FIGURES_DIR, RESULTS_DIR, TRIAL_RANGE, Z_MAX, R_MAX,
                         RT_DRIFT_SD, MODEL_FILE)
 from src.data.rt_lba_generator import RTLBAGenerator, ARCHITECTURES, LBA_NAMES, featurize_lba
-from src.inference.predict_rt import load_rt_model, predict_rt
+from src.inference.predict_rt import load_rt_model, predict_rt, architecture_ablation
 from src.inference.predict import predict_point
 from src.inference.model_posterior import construct_labels, amortized_compare
 from src.viz.labels import labels_from_amortized
@@ -234,24 +234,38 @@ def main(n_per_class=150, seed=999):
 
     # ===================== 3. RT-specific: architecture + LBA =====================
     K = len(ARCHITECTURES)
-    pa = p["p_arch"].argmax(1)
-    cm_arch = np.zeros((K, K))
-    for t, q in zip(ya, pa):
-        cm_arch[t, q] += 1
-    cm_arch_n = cm_arch / cm_arch.sum(1, keepdims=True).clip(min=1)
+    # The single source of truth for "how much does architecture recovery depend on
+    # correctly paired RT" -- baseline confusion/recall/precision AND both ablations,
+    # computed once here and written to a result artifact so the figure (below) and
+    # any manuscript number are reading the same, reproducible thing rather than a
+    # hardcoded stand-in. See architecture_ablation()'s docstring for exactly what
+    # the ablation conditions do and do not establish -- this is NOT a from-scratch
+    # counts-only classifier, and the mean-profile condition is NOT in-distribution
+    # for the trained network, only an uninformative-but-plausible-looking input.
+    abl = architecture_ablation(rt_model, X, RTQ, Xt, ya)
+    abl_path = os.path.join(RESULTS_DIR, "rt_architecture_ablation.json")
+    with open(abl_path, "w") as fh:
+        json.dump(abl, fh, indent=2)
+    print(f"  wrote {abl_path}")
+
+    cm_arch_n = (np.array(abl["baseline"]["confusion_matrix"], dtype=float)
+                / np.array(abl["baseline"]["confusion_matrix"], dtype=float).sum(1, keepdims=True).clip(min=1))
     pi_acc_rt = float(np.mean((rt_pred_corr == 0) == (tc == 0)))
     pi_acc_cm = float(np.mean((cm_pred_corr == 0) == (tc == 0)))
-    # Third element = chance level, drawn as a reference on the bar. rho recovery is
-    # reported as MAE on its own axis rather than as 1-MAE next to accuracies: the "1 -"
-    # only existed to make it point the same way as the accuracy bars, which is exactly
-    # the kind of arithmetic that makes three different quantities look like one.
-    gains = {
-        "PI\n(yes/no)": (pi_acc_cm, pi_acc_rt, 0.5),
-        "architecture": (1 / K, float(np.mean(pa == ya)), 1 / K),
-        "\u03c1 recovery\n(MAE)": (rho_mae_cm, rho_mae_rt),
-    }
-    F.architecture_figure(cm_arch_n, ARCHITECTURES, gains, fig("rt_architecture.png"),
-                          regime="RT model vs shipped counts-only model, same held-out matrices")
+    # Passed as three SEPARATE parameters, not one dict keyed by label string -- see
+    # architecture_figure()'s docstring for why: PI/rho are a real counts-only-trained
+    # comparison ("counts only"/"counts + RT"), architecture is an ablation on the
+    # joint network ("mean-profile ablation"/"correctly paired RT"), and these must
+    # not be able to share a legend, which is exactly what happened before this fix.
+    F.architecture_figure(
+        cm_arch_n, ARCHITECTURES,
+        pi_gains=(pi_acc_cm, pi_acc_rt, 0.5),
+        arch_ablation=(abl["ablation_mean_profile"]["accuracy"], abl["baseline"]["accuracy"], 1 / K),
+        rho_gains=(rho_mae_cm, rho_mae_rt),
+        path=fig("rt_architecture.png"),
+        regime="RT model vs shipped counts-only model, same held-out matrices. "
+               "Architecture panel = ablation on this network, not a counts-only fit "
+               "(see results/rt_architecture_ablation.json).")
 
     # ---- export counts-vs-+RT construct accuracies for the poster RT dumbbell ----
     # The poster's rt_vs_counts_dumbbell reads this; baselines are added there from the R set.
@@ -272,10 +286,14 @@ def main(n_per_class=150, seed=999):
         "sep": {"cm": sep_cm, "rt": sep_rt},
         "pi": {"cm": pi_acc_cm, "rt": pi_acc_rt,
                "cm_ci": _ci(pi_acc_cm), "rt_ci": _ci(pi_acc_rt)},
-        "arch": {"rt": float(np.mean(pa == ya)), "chance": 1.0 / K},
-        # TODO: fill dimension-neglect detection accuracy from your architecture metric.
-        # Counts-only has no RT signal, so its value is chance; set "cm" accordingly.
-        "dimneglect": {"cm": None, "rt": None},
+        # NOT a counts-only-trained comparison -- "mean_profile_ablation" is deliberately
+        # not called "cm" (unlike corr/sep/pi above, which ARE real counts-only network
+        # measurements) so nothing downstream can mistake this ablation-on-the-joint-
+        # network value for one. See architecture_ablation()'s docstring for what this
+        # value does and does not establish.
+        "arch": {"rt": abl["baseline"]["accuracy"],
+                 "mean_profile_ablation": abl["ablation_mean_profile"]["accuracy"],
+                 "chance": 1.0 / K},
     }
     with open(os.path.join(RESULTS_DIR, "rt_construct_metrics.json"), "w") as _fh:
         _json.dump(dumbbell, _fh, indent=2)

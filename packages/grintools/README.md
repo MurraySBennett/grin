@@ -2,8 +2,12 @@
 
 Amortised Bayesian inference for General Recognition Theory (GRT) from 2x2
 identification confusion matrices. Feed a confusion matrix, get a calibrated
-posterior over the 12 GRT parameters plus construct probabilities (perceptual
-independence, separability), and an optional stopping decision for adaptive designs.
+approximate posterior over the 12 GRT parameters plus construct probabilities
+(perceptual independence, separability), and an optional stopping decision for
+adaptive designs. "Calibrated" means checked against simulated ground truth
+over the trained model's prior envelope (trial counts, parameter ranges) --
+see the validation studies in the accompanying paper for what that covers and
+does not.
 
 Run time is torch-free: the trained network ships as an ONNX graph and runs under
 `onnxruntime`. Retraining the pipeline re-exports the `.onnx`; this package is
@@ -86,6 +90,21 @@ See [`docs/data_collection.md`](../../docs/data_collection.md) for the full
 walkthrough by platform (including running `grintools` live inside a PsychoPy
 trial loop), and a note on where `grin` (R) fits in against this package for
 post-hoc analysis.
+
+## Scope: native 2×2 designs only
+
+`grintools` is built for a design that actually crosses two binary
+dimensions -- four stimuli, four responses. If your experiment has a third
+dimension (a 2×2×2 or larger identification design) and you're tempted to
+hand `grintools` a pairwise margin -- summing over the third dimension to get
+a 2×2 table for each pair -- know that this is **not** equivalent to fitting
+the full higher-dimensional GRT model. Marginalising over a dimension the
+observer was actually attending to folds a mixture into what `grintools`
+will read as a single bivariate-normal representation, and the
+perceptual-independence and separability conclusions it reports are about
+that pairwise projection, not about the design as a whole. Treat a pairwise
+margin as a descriptive summary if you use one at all, not as a native
+`grintools` analysis of a 2×2×2 experiment.
 
 ## Response bias
 

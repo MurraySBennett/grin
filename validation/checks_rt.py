@@ -110,7 +110,9 @@ def _arch_accuracy(gen_cls, n_per_class=800, epochs=20, seed=1):
 def v14_architecture(**kw):
     overall, per, lba_r, grt = _arch_accuracy(RTLBAGenerator)
     stop = np.mean([per[a] for a in ARCHITECTURES if "self_terminating" in a])
-    return {"id": "v14", "claim": "architecture recovery (5-way SFT); dimension-neglect detection",
+    # This check establishes 5-way architecture recovery and the mean recall for
+    # the two self-terminating rows. It is not evidence of stable dimension neglect.
+    return {"id": "v14", "claim": "architecture recovery (5-way SFT)",
             "result": {"overall": overall, "per_architecture": per,
                        "self_terminating_mean": float(stop), "chance": 1 / K},
             "pass": stop > 0.85}

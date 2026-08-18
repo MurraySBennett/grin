@@ -30,10 +30,7 @@
   },
   "arch": {
     "rt": 0.8455555555555555,
+    "mean_profile_ablation": 0.28833333333333333,
     "chance": 0.2
-  },
-  "dimneglect": {
-    "cm": null,
-    "rt": null
   }
 }

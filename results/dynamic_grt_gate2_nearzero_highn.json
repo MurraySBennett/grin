@@ -1,0 +1,40 @@
+{
+  "condition": {
+    "label": "near-zero drift",
+    "drift": 0.0,
+    "boundary": 1.0,
+    "rate": 2.0,
+    "dt_fine": 0.0025,
+    "dt_coarse": 0.005
+  },
+  "total_n_requested": 2000000,
+  "batch_size": 50000,
+  "n_batches": 40,
+  "n_both_complete": 1999994,
+  "censor_rate_fine": 2.5e-06,
+  "censor_rate_coarse": 3e-06,
+  "response_agreement": 0.9941914825744477,
+  "response_agreement_se": 5.373451346786816e-05,
+  "response_agreement_95ci": [
+    0.9940861629280506,
+    0.9942968022208447
+  ],
+  "threshold": 0.995,
+  "passes_threshold_point_estimate": false,
+  "ci_confirms_below_threshold": true,
+  "ci_confirms_at_or_above_threshold": false,
+  "hitting_time_diff_median": 0.0006384258243538332,
+  "hitting_time_diff_p95": 0.03696873195671952,
+  "hitting_time_diff_criteria": {
+    "median_limit": 0.01,
+    "p95_limit": 0.05,
+    "median_pass": true,
+    "p95_pass": true
+  },
+  "runtime_seconds": 126.01565051078796,
+  "original_n8000_result": {
+    "response_agreement": 0.9945,
+    "hitting_time_diff_median": 0.0006445375074992238,
+    "hitting_time_diff_p95": 0.03386727661643085
+  }
+}

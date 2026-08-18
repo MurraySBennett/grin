@@ -1,9 +1,10 @@
 {
   "id": "cmrt",
   "label": "GRIN — counts + response times",
-  "description": "As the counts-only model, and additionally infers the processing architecture (SFT) and the LBA accumulator parameters.",
+  "description": "Experimental model that adds SFT architecture and parameters from a simplified ballistic timing simulator; it is not a full LBA choice model.",
   "file": "npe_rt_model.onnx",
-  "version": "0.0.0-pending",
+  "version": "0.0.0-preview-legacy",
+  "artifact_sha256": "DB2BE0068E43B4CA48AD6BC348A00CF272F754802849E5F3A62B7472165AA5B4",
   "exported_by": "scripts/export_onnx.py --rt",
   "inputs": [
     { "name": "counts", "dim": 16, "note": "row-major 4x4" },
@@ -52,14 +53,10 @@
     "stimulus_order": ["A1B1", "A1B2", "A2B1", "A2B2"]
   },
   "training": {
-    "n_per_class": 20000,
-    "trial_range": [1, 1000],
-    "trial_sampling": "log-uniform",
-    "z_max": 3.0,
-    "r_max": 0.9,
-    "rt_seconds_range": [0.1, 10.0],
-    "rt_drift_sd": 0.35,
+    "provenance_status": "unverified_legacy_checkpoint",
+    "intended_release_trial_range": [1, 1000],
+    "intended_release_rt_seconds_range": [0.1, 10.0],
     "quantiles": [0.1, 0.3, 0.5, 0.7, 0.9],
-    "seed": 42
+    "note": "This browser artifact predates the checkpoint provenance manifest. Its exact training data, bounds, and seed cannot be verified; current-config bounds must not be represented as historical checkpoint metadata."
   }
 }

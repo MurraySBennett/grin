@@ -37,6 +37,16 @@
     </header>
 
     <main class="container">
+      <div class="note warn" style="margin-bottom: 1.25rem">
+        <h4>Research playground</h4>
+        <p>
+          This page explores what fast repeated fitting might make possible. It
+          is not a validated adaptive-design procedure. In particular, the
+          stopping thresholds still need sequential operating-characteristic
+          simulations before anyone should use them to end a real session.
+        </p>
+      </div>
+
       <div class="plain" style="margin-bottom: 1.25rem">
         <span class="eyebrow">The point of this page</span>
         <p>
@@ -216,7 +226,7 @@
             </div>
             <div id="window-size-row" hidden>
               <label
-                >Window size (<emph>n</emph> trials)
+                >Window size (<em>n</em> trials)
                 <span class="val" id="v-window">100</span></label
               >
               <input
@@ -237,7 +247,7 @@
             <div class="row">
               <button id="run-trail" class="wide">Run</button>
             </div>
-            <!-- <p class="status" id="trail-status">Set the truth, then run.</p> -->
+          <p class="status" id="trail-status">Set the truth, then run.</p>
           </aside>
 
           <section>
@@ -269,11 +279,11 @@
       <div class="card">
         <span class="eyebrow">Early stopping</span>
         <p class="cap" style="margin-top: 0">
-          A fixed-N protocol runs every participant for the same number of
-          trials regardless of how the data look. GRIN is fast and easy to fit
-          and, more importantly for this use-case, returns uncertainty of it's
-          estimates. This means that you can stop data collection the moment
-          you're confident enough in the estimates, and skip the rest.
+          This is a simulation of a possible stopping rule, not a recommendation
+          to deploy one. At each checkpoint it asks whether either side of a
+          predeclared construct has crossed a threshold. A real rule would still
+          need false-stop rates, expected sample size, and calibration checked
+          across the intended design before use.
         </p>
         <div class="tool">
           <aside class="panel sticky">
@@ -326,7 +336,7 @@
               <option value="sepA">Only: Separability of dimension A?</option>
               <option value="sepB">Only: Separability of dimension B?</option>
               <option value="pi">
-                Only: Percpetual independence (harder)?
+                Only: Perceptual independence (harder)?
               </option>
             </select>
             <p class="cap" id="construct-note" style="margin-top: 0.2rem"></p>
@@ -376,7 +386,7 @@
             <div class="row">
               <button id="run-stop" class="wide">Run</button>
             </div>
-            <!-- <p class="status" id="stop-status">Set the truth, then run.</p> -->
+          <p class="status" id="stop-status">Set the truth, then run.</p>
           </aside>
 
           <section>
@@ -435,7 +445,7 @@
         if (!cmModel) cmModel = await loadModel("./assets/models/cm");
         return cmModel;
       }
-      function jointProbOfClass(res, className) {
+      function factorizedSupportForClass(res, className) {
         const spec = Core.MODEL_SPECS[className];
         const pCorr = res.corr[spec.corr];
         const pSepA = spec.psA ? res.sep.A : 1 - res.sep.A;
@@ -673,8 +683,8 @@
         const construct = $("construct").value;
         $("construct-note").textContent =
           construct === "full"
-            ? "Confidence in the exact model class matching everything you set above."
-            : "Confidence toward whichever side is true above, for that one question, the rest of the representation is ignored.";
+            ? "The largest factorized support assigned to any of the 12 model classes."
+            : "The larger probability assigned to either answer for that one question; the simulation truth is not used by the rule.";
       }
       [
         "stop-rho",
@@ -697,21 +707,26 @@
         });
       }
 
-      function confidenceFor(construct, res, trueClass, truth) {
-        if (construct === "full") return jointProbOfClass(res, trueClass);
+      function decisionFor(construct, res) {
+        if (construct === "full") {
+          const ranked = Object.keys(Core.MODEL_SPECS)
+            .map((name) => ({
+              decision: name,
+              confidence: factorizedSupportForClass(res, name),
+            }))
+            .sort((a, b) => b.confidence - a.confidence);
+          return ranked[0];
+        }
         const pYes =
           construct === "pi"
             ? res.corr.pi
             : construct === "sepA"
               ? res.sep.A
               : res.sep.B;
-        const truthIsYes =
-          construct === "pi"
-            ? truth.rho === 0
-            : construct === "sepA"
-              ? truth.dA === 0
-              : truth.dB === 0;
-        return truthIsYes ? pYes : 1 - pYes;
+        return {
+          decision: pYes >= 0.5,
+          confidence: Math.max(pYes, 1 - pYes),
+        };
       }
 
       let stopAbort = null;
@@ -762,13 +777,13 @@
             rtq: null,
           });
           totalGrinMs += res.ms || 0;
-          const conf = confidenceFor(construct, res, trueClass, truth);
-          rows.push({ n: snap.trialCount, conf });
+          const decision = decisionFor(construct, res);
+          rows.push({ n: snap.trialCount, ...decision });
 
-          const firstHitIdx = rows.findIndex((r) => r.conf >= threshold);
+          const firstHitIdx = rows.findIndex((r) => r.confidence >= threshold);
           $("stop-track").innerHTML = rows
             .map((r, idx) =>
-              Plot.pbar(`${Math.round(r.n / 4)} trials/stim.`, r.conf, {
+              Plot.pbar(`${Math.round(r.n / 4)} trials/stim.`, r.confidence, {
                 dimBelow: threshold,
                 highlight: idx === firstHitIdx,
               }),
@@ -779,7 +794,7 @@
           $("stop-progress").style.width =
             `${((100 * snap.trialCount) / trials.length).toFixed(0)}%`;
 
-          if (stoppedAt === null && conf >= threshold)
+          if (stoppedAt === null && decision.confidence >= threshold)
             stoppedAt = snap.trialCount;
         }
         await new Promise((resolve) => setTimeout(resolve, 0));
@@ -796,41 +811,44 @@
     <h4>Checked against a classical MLE fit (one fit on the final dataset)</h4>
     <p>For reference, maximum likelihood's own best-supported class on the full session is
     <code>${mleSel.best.model}</code> (${mleAgrees ? "agrees with" : "differs from"} the true
-    <code>${trueClass}</code>). GRIN refits from scratch at each checkpoint because a fit is about
-    a millisecond, near enough the same whatever the trial count, which is what makes checking
-    the stopping rule every few trials something you can build a design around.</p>
+    <code>${trueClass}</code>). This comparison uses the known simulation truth only after the
+    run; the stopping decision itself does not get to see it.</p>
   </div>`;
 
-        const labelFor =
+        const firstHit = rows.find((r) => r.confidence >= threshold);
+        const trueDecision =
           construct === "full"
-            ? `P(exactly <code>${trueClass}</code>)`
-            : {
-                sepA: "P(A separable)",
-                sepB: "P(B separable)",
-                pi: "P(independent)",
-              }[construct];
+            ? trueClass
+            : construct === "pi"
+              ? truth.rho === 0
+              : construct === "sepA"
+                ? truth.dA === 0
+                : truth.dB === 0;
+        const stopWasCorrect = firstHit
+          ? firstHit.decision === trueDecision
+          : null;
+        const labelFor = construct === "full"
+          ? `factorized support for <code>${firstHit?.decision ?? "the leading class"}</code>`
+          : `support for the ${firstHit?.decision ? "yes" : "no"} answer`;
         const savedPct = stoppedAt
           ? Math.round(100 * (1 - stoppedAt / trials.length))
           : 0;
-        const stoppedPerStim = Math.round(stoppedAt / 4);
+        const stoppedPerStim = stoppedAt ? Math.round(stoppedAt / 4) : null;
         const budgetPerStim = Math.round(trials.length / 4);
         $("stop-verdict").innerHTML = stoppedAt
           ? `<div class="note">
-        <h4>Could have stopped at ${stoppedPerStim} trials/stimulus</h4>
-        <p>${labelFor} first crossed ${threshold.toFixed(2)} there (highlighted below), but this run
-        kept going to the full ${budgetPerStim}-trial budget anyway, on purpose, so you can see what
-        the rest of the session actually bought. Look at the bars after the highlighted one:
-        confidence mostly just sits there. That's <strong>${savedPct}% of the session</strong> spent
-        confirming something already known. This is only practical to check for in the first place
-        because refitting costs about a millisecond, cheap enough to check every
-        few trials.</p>
+        <h4>The illustrative rule first crossed at ${stoppedPerStim} trials/stimulus</h4>
+        <p>${labelFor} first crossed ${threshold.toFixed(2)} there (highlighted below). In this
+        simulated run the decision was <strong>${stopWasCorrect ? "correct" : "wrong"}</strong>
+        relative to the known truth, leaving ${savedPct}% of the planned session unused. That is a
+        description of this run, not evidence that the rule controls false stops or saves that much
+        on average.</p>
       </div>`
           : `<div class="note warn">
         <h4>Never reached ${threshold.toFixed(2)} confidence</h4>
-        <p>Across the whole ${budgetPerStim}-trial-per-stimulus budget, ${labelFor} didn't cross the
-        threshold. Waiting for PI checks can be tedious and sometimes unattainable. Try checking for models that do not rely on PI, or try raising the trial budget, lower the threshold, or this effect size may need
-        more data than a fixed-N protocol of this length would give it anyway, which is itself a
-        useful thing to find out before running real participants.</p>
+        <p>Across the whole ${budgetPerStim}-trial-per-stimulus budget, no side crossed the
+        threshold. This one run may be weakly informative, but it does not tell us the operating
+        characteristics of the rule. Those need a proper repeated simulation before real use.</p>
       </div>`;
         $("stop-status").innerHTML = `<span class="pill ok">Done.</span>`;
       }

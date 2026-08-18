@@ -1,14 +1,18 @@
 """Evaluate the trained RT model. Run from the project root:
     python scripts/evaluate_rt.py
 Reports: GRT recovery, construct accuracy, 5-way architecture recovery,
-dimension-neglect detection, and LBA parameter recovery.
+self-terminating-vs-exhaustive classification, and timing-parameter recovery.
 """
 import numpy as np
 import torch
 
 from src.config import TRIAL_RANGE, Z_MAX, R_MAX, RT_DRIFT_SD
 from src.data.rt_lba_generator import RTLBAGenerator, ARCHITECTURES, LBA_NAMES
-from src.inference.predict_rt import load_rt_model, predict_rt, dimension_neglect
+from src.inference.predict_rt import (
+    load_rt_model,
+    predict_rt,
+    self_terminating_probability,
+)
 from src.inference.model_posterior import construct_labels
 
 
@@ -38,13 +42,13 @@ def main(n_per_class=120, seed=999):
         if m.sum():
             print(f"     {a:26s} {np.mean(pa[m] == i):.2f}")
 
-    print("\n=== dimension neglect (the training-relevant one) ===")
+    print("\n=== self-terminating vs exhaustive/coactive ===")
     st = [i for i, a in enumerate(ARCHITECTURES) if "self_terminating" in a]
-    true_neglect = np.isin(ya, st)
-    pred_neglect = dimension_neglect(p) > 0.5
-    print(f"   detection accuracy {np.mean(pred_neglect == true_neglect):.2f} | "
-          f"hit rate {np.mean(pred_neglect[true_neglect]):.2f} | "
-          f"false alarm {np.mean(pred_neglect[~true_neglect]):.2f}")
+    true_self_terminating = np.isin(ya, st)
+    pred_self_terminating = self_terminating_probability(p) > 0.5
+    print(f"   classification accuracy {np.mean(pred_self_terminating == true_self_terminating):.2f} | "
+          f"hit rate {np.mean(pred_self_terminating[true_self_terminating]):.2f} | "
+          f"false alarm {np.mean(pred_self_terminating[~true_self_terminating]):.2f}")
 
     print("\n=== LBA parameters ===")
     for j, nm in enumerate(LBA_NAMES):

@@ -8,7 +8,7 @@
  *
  * Per trial, ONE perceptual sample is drawn, and that single sample determines
  * BOTH the response (which quadrant it fell in) AND the response time (its
- * distance from each bound drives the LBA drift rate). Counts and RTs are
+ * distance from each bound drives a noisy ballistic drift rate). Counts and RTs are
  * matched by construction — that coupling is the entire reason RTs carry
  * information about the perceptual representation.
  *
@@ -50,11 +50,10 @@ export const ARCH_LABELS = {
 };
 
 /**
- * The self-terminating models deserve a health warning, and the generator's own
- * docstring gives it: in an IDENTIFICATION task the response must name BOTH
- * levels, so stopping early means GUESSING the un-processed dimension. These
- * are not a normal processing mode — they are the participant who is not using
- * a dimension (incapacity, inattention, or strategy). A pathology to detect.
+ * Identification still requires a response on both dimensions. For the two
+ * self-terminating variants, the simulator therefore chooses which dimension
+ * is processed on each trial and guesses the other. That changes the response
+ * proportions, but it is not stable neglect of a particular dimension.
  */
 export const SELF_TERMINATING = ARCHITECTURES.filter((a) =>
   a.includes("self_terminating"),
@@ -259,7 +258,7 @@ function shuffleInPlace(arr, rng) {
 }
 
 // --------------------------------------------------------------------------- //
-// Counts + RT: the LBA / SFT simulator
+// Counts + RT: simplified ballistic timing linked to SFT architectures
 // --------------------------------------------------------------------------- //
 /**
  * Simulate a full identification experiment WITH response times.
@@ -299,7 +298,8 @@ export function simulateRT(
       const rx = x >= 0 ? 1 : 0;
       const ry = y >= 0 ? 1 : 0;
 
-      // LBA drift rates: distance from the bound, scaled, plus noise
+      // Ballistic drift rates: distance from the bound, scaled, plus noise.
+      // This is not a full LBA response-accumulator race.
       const vx = Math.max(kA * Math.abs(x) + DRIFT_SD * rng.normal(), 0.05);
       const vy = Math.max(kB * Math.abs(y) + DRIFT_SD * rng.normal(), 0.05);
       const tx = A / vx;

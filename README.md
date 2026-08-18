@@ -3,8 +3,8 @@
 Fast, amortized, uncertainty-calibrated inference of General Recognition Theory (GRT)
 perceptual representations from a 2×2 identification confusion matrix. A neural network,
 trained once on simulated data, replaces per-participant maximum-likelihood fitting:
-milliseconds instead of seconds, with a calibrated posterior and a model-class inference,
-fast enough to run inside the trial loop for adaptive testing.
+milliseconds instead of seconds, with a calibrated approximate posterior and a
+model-class inference, fast enough to run inside the trial loop for adaptive testing.
 
 - **What the numbers mean:** `docs/interpreting.md`
 - **The maths (parameterisation, constraints, prior):** `docs/GRT_model_spec.md`
@@ -152,10 +152,13 @@ python scripts/compare_real_data.py            # -> GRIN on the same matrices, v
 mdsdt ships five real 2×2 matrices (`thomas01a/b`, `silbert09a/b`, `silbert12`). No ground
 truth, so the check is agreement with the published gold standard — does GRIN reach the same
 conclusions (PI, separability) as mdsdt's AIC model selection, in microseconds rather than
-seconds — plus each matrix's OOD/goodness-of-fit score, since a high value there means the
-observed matrix has structure the GRT-Gaussian family can't produce and the estimate should
-be treated with caution. Distinct from `compare_to_r.py` (2.4): that script scores simulated
-data against ground truth; this one has none, so it scores agreement instead.
+seconds — plus each matrix's envelope/reconstruction deviance, since a high value there means
+the network's own fitted parameters don't reproduce the observed matrix well, most likely
+because it falls outside the region the training prior populated, and the estimate should be
+treated with caution (this is not a test of whether the GRT-Gaussian family itself could fit
+the matrix — some parameter vector almost always can; see `src/inference/ood.py`). Distinct
+from `compare_to_r.py` (2.4): that script scores simulated data against ground truth; this
+one has none, so it scores agreement instead.
 
 ### 2.8 — Poster figures
 
@@ -202,7 +205,7 @@ result = infer(confusion_matrix, trials)   # trials optional (defaults to row su
 result.summary()
 result.as_dict()          # {param: {estimate, sd, ci90}}
 result.model_class        # inferred GRT model
-result.fit_deviance       # goodness-of-fit / OOD flag
+result.envelope_deviance  # is this matrix outside the region GRIN was trained on?
 ```
 
 Adaptive / real-time:

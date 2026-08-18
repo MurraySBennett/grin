@@ -1,16 +1,38 @@
 """
-ood.py — out-of-distribution / misspecification detection via posterior-predictive
-checks.
+ood.py — training-envelope / input-support diagnostics.
 
-Given an observed confusion matrix, we infer the posterior, then for each posterior
-sample simulate a replicate matrix at the same trial counts and compare how well the
-OBSERVED matrix fits (multinomial log-likelihood) against how well the REPLICATES
-fit. If the observed matrix fits far worse than the model's own replicates, it lies
-outside what the model family can produce — flag it.
+WHAT THIS DOES NOT DO, stated first because the name of this module invites the
+wrong reading: neither function here tests whether the observed matrix is
+consistent with the Gaussian-GRT model family in the abstract. It can't. A single
+stimulus's response distribution is three numbers (two marginals, one joint cell),
+and the unconstrained twelve-parameter model spends exactly three free parameters
+per stimulus, so for essentially any response-proportion table -- however it was
+generated: a lapse mixture, a mid-block criterion shift, a non-Gaussian process, a
+reversed response mapping -- SOME choice of the twelve parameters reproduces it
+exactly (Frechet-Hoeffding + IVT on the per-stimulus tetrachoric correlation; see
+`docs/GRT_model_spec.md` / the manuscript's Introduction for the full argument).
+There is no "no representation in the model family" case to detect at the level of
+response proportions alone.
 
-posterior_predictive_pvalue returns, per matrix, a value in [0,1]:
-  ~uniform for in-distribution data; near 0 for misspecified/OOD data.
-Flag when p < alpha (e.g. 0.05) and route those cases to MLE or human review.
+WHAT THIS ACTUALLY DOES: both functions score agreement between the observed
+matrix and the TRAINED NETWORK's own fit to it (its posterior mean, or replicates
+drawn from its posterior) -- not agreement with the best-fitting parameters an
+exhaustive search would find. A large value means the network's own answer for
+this matrix doesn't reproduce the matrix well, which can happen for several
+distinct reasons that this score does not itself distinguish:
+  - the matrix genuinely falls outside the training prior's support (extreme z/rho
+    magnitude, reversed sign/orientation, an unusual trial-count regime) and the
+    network extrapolated poorly;
+  - ordinary network approximation error, unrelated to support;
+  - posterior shrinkage pulling the point estimate away from a good fit;
+  - low trial counts inflating the deviance's own sampling variance;
+  - model-class averaging in the point estimate blurring a matrix that any single
+    model class would fit well.
+Read a large value as "this input warrants caution, inspect it" -- an envelope /
+input-support warning -- not as a hypothesis test result about which GRT
+assumption, if any, the data violate. `flag_envelope_warning`/`envelope_deviance`
+are the names to use going forward; `flag_ood`/`ood_deviance` remain as aliases
+below for existing callers, not because "OOD" is still the right description.
 """
 import numpy as np
 
@@ -38,7 +60,9 @@ def _vec_multinomial(probs, T, rng):
 
 
 def posterior_predictive_pvalue(model, counts, trials, n_post=300, rng=None):
-    """counts (N,16), trials (N,4) -> p-values (N,). Low p => OOD / misspecified."""
+    """counts (N,16), trials (N,4) -> p-values (N,). Low p => the observed matrix is
+    atypical of what the network's OWN posterior predicts for it -- an
+    input-support/envelope signal, not a model-family test (see module docstring)."""
     rng = np.random.default_rng() if rng is None else rng
     counts = np.asarray(counts); trials = np.asarray(trials)
     N = counts.shape[0]
@@ -55,29 +79,34 @@ def posterior_predictive_pvalue(model, counts, trials, n_post=300, rng=None):
     return pvals
 
 
-def flag_ood(pvalues, alpha=0.05):
+def flag_envelope_warning(pvalues, alpha=0.05):
     return np.asarray(pvalues) < alpha
 
 
+flag_ood = flag_envelope_warning  # deprecated alias -- see module docstring
+
+
 def _deviance(counts4, probs):
-    """GOF deviance: 2*(LL_saturated - LL_model). ~0 => model reproduces the matrix."""
+    """Reconstruction deviance: 2*(LL_saturated - LL_model). ~0 => the network's own fitted
+    parameters reproduce the matrix; this is NOT a test of whether some other,
+    unfound parameter vector could -- the saturated model can basically always
+    find one (see module docstring)."""
     T = counts4.sum(2, keepdims=True)
     phat = np.clip(counts4 / np.maximum(T, 1), 1e-12, 1.0)
     p = np.clip(probs, 1e-12, 1.0)
     return 2.0 * np.sum(counts4 * (np.log(phat) - np.log(p)), axis=(1, 2))
 
 
-def ood_deviance(model, counts, trials):
+def envelope_deviance(model, counts, trials):
     """
-    Fast out-of-family score: the goodness-of-fit deviance of the network's own
-    posterior-mean fit. ~0 => the GRT-Gaussian family reproduces the matrix (in
-    distribution); large => the matrix has structure (e.g. non-normal within-
-    stimulus dependence) that NO parameter setting can produce => genuinely OOD.
-
-    Preferred over the posterior-predictive p-value here, because the full model is
-    saturated: it fits almost any single matrix, so only truly out-of-family data
-    (off the achievable manifold) produces a large deviance. counts (N,16),
-    trials (N,4) -> deviance (N,).
+    Fast input-support/envelope score: the posterior-mean reconstruction deviance of the
+    network's own posterior-mean fit against the observed matrix. ~0 => the
+    network's fitted parameters reproduce the matrix; large => the network's
+    fitted parameters do not, which most often means this matrix falls outside
+    the region its training prior populated (unusual sign/orientation, an
+    extreme z or rho magnitude, an atypical trial-count regime) -- see the
+    module docstring for the other possible causes and why this is not a test
+    of the abstract model family. counts (N,16), trials (N,4) -> deviance (N,).
     """
     from .predict import predict_point
     counts = np.asarray(counts)
@@ -85,3 +114,6 @@ def ood_deviance(model, counts, trials):
     zx, zy, rho = gm.unpack(pred)
     probs = gm.forward_probabilities(zx, zy, rho)          # (N,4,4)
     return _deviance(counts.reshape(-1, 4, 4).astype(float), probs)
+
+
+ood_deviance = envelope_deviance  # deprecated alias -- see module docstring

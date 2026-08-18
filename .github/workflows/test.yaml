@@ -10,12 +10,18 @@ name: Test
 #     Installed as a real wheel and run from an empty directory, not the repo
 #     checkout -- a real bug this avoided during development (a bare grintools/
 #     folder in the working directory shadowed the installed package via Python's
-#     implicit namespace-package resolution), not paranoia.
+#     implicit namespace-package resolution), not paranoia. Two smoke tests run
+#     this way: the core package (test_packaged.py) and, with the [plot] extra
+#     installed, the plotting suite (test_plot.py) -- added 2026-08-13 after an
+#     external review noted the plotting suite had never actually run in CI.
 #   - r-package: the native-R companion, via devtools::check() (0 errors/warnings
 #     is the bar; a sandbox "unable to verify current time" NOTE is unavoidable and
 #     not a failure). torch::install_torch() downloads libtorch (~500MB); the
 #     inference/parity tests skip gracefully if that step fails rather than failing
-#     the whole job, so a flaky download degrades coverage, not the build.
+#     the whole job -- a deliberate choice, so a flaky download degrades coverage,
+#     not the build. That used to be silent; a step now checks whether torch
+#     actually installed and emits a loud ::warning:: annotation if not, so a
+#     degraded run is visible in the checks UI instead of only in the log.
 on:
   push:
     branches: [main]
@@ -67,6 +73,13 @@ jobs:
           cp packages/grintools/tests/test_packaged.py "$RUNNER_TEMP/grintools_smoketest/"
           cd "$RUNNER_TEMP/grintools_smoketest" && pytest test_packaged.py -v
         shell: bash
+      - name: Install the [plot] extra
+        run: pip install "grintools[plot]"
+      - name: Plotting suite, same outside-the-repo isolation as the core smoke test
+        run: |
+          cp packages/grintools/tests/test_plot.py "$RUNNER_TEMP/grintools_smoketest/"
+          cd "$RUNNER_TEMP/grintools_smoketest" && pytest test_plot.py -v
+        shell: bash
 
   r-package:
     runs-on: ubuntu-latest
@@ -81,6 +94,14 @@ jobs:
         continue-on-error: true
         run: |
           Rscript -e 'torch::install_torch()'
+        working-directory: packages/grin
+      - name: Flag it loudly if libtorch didn't actually install
+        run: |
+          if Rscript -e 'quit(status = if (isTRUE(torch::torch_is_installed())) 0 else 1)'; then
+            echo "libtorch OK -- inference/parity tests will run for real this build."
+          else
+            echo "::warning::libtorch did not install -- this build's R inference/parity tests were SKIPPED, not run. Coverage is degraded for this run; re-run the workflow if you need it verified."
+          fi
         working-directory: packages/grin
       - uses: r-lib/actions/check-r-package@v2
         with:

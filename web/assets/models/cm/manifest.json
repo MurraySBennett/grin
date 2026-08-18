@@ -3,7 +3,8 @@
   "label": "GRIN — counts only",
   "description": "Infers the 12 identified GRT parameters plus the PI/RHO1/free and separability constructs from a 4x4 confusion matrix.",
   "file": "npe_model.onnx",
-  "version": "0.0.0-pending",
+  "version": "0.0.0-preview-legacy",
+  "artifact_sha256": "B03A032A0733D889A6BFA2B854D11FAC2278C041F07D5325CB9729D00701D718",
   "exported_by": "scripts/export_onnx.py",
   "inputs": [
     {
@@ -37,12 +38,8 @@
     "stimulus_order": ["A1B1", "A1B2", "A2B1", "A2B2"]
   },
   "training": {
-    "n_per_class": 20000,
-    "trial_range": [1, 1000],
-    "trial_sampling": "log-uniform",
-    "z_max": 3.0,
-    "r_max": 0.9,
-    "seed": 42,
-    "note": "Amortized over this prior. Input outside it gets a confident answer that means nothing."
+    "provenance_status": "unverified_legacy_checkpoint",
+    "intended_release_trial_range": [1, 1000],
+    "note": "This browser artifact predates the checkpoint provenance manifest. Its exact training data, bounds, and seed cannot be verified; current-config bounds must not be represented as historical checkpoint metadata."
   }
 }

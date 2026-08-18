@@ -117,6 +117,10 @@ docs/FIGURE_EXPLAINER.md
 # docs/GRT_model_spec.md deliberately NOT listed here -- confirmed public
 # 2026-08-12 (the canonical math reference; the README links to it)
 
+# External-literature review materials -- stays local for now, confirmed 2026-08-13
+docs/literature_review_findings.md
+data/literature/
+
 # Notebooks / OS
 .ipynb_checkpoints/
 .DS_Store

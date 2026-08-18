@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot-diagnostics.R
 \name{grin_plot_diagnostics}
 \alias{grin_plot_diagnostics}
-\title{Predicted-vs-observed and marginal-distribution diagnostics for one participant}
+\title{Predicted-vs-observed reconstruction and marginal-distribution diagnostics for one participant}
 \usage{
 grin_plot_diagnostics(
   result,
@@ -42,23 +42,27 @@ A single ggplot object if only one panel is requested; otherwise a
 is returned instead, with a warning).
 }
 \description{
-Two independent checks of how well the fitted parameters describe the data
-actually observed, either or both of which can be switched off:
+Two independent views of how well GRIN's own fitted parameters reconstruct the
+data actually observed, either or both of which can be switched off. Neither is
+a goodness-of-fit test of the GRT model itself -- see the note above the source
+of this function for why not.
 }
 \details{
 \itemize{
 \item \strong{Predicted vs. observed}: the forward model's predicted
 response probability for each of the 16 stimulus/response cells,
 plotted against the cell's observed proportion. Points near the
-diagonal indicate a good fit; systematic departure for one stimulus
-(told apart by point shape, not colour) says where the model is
-struggling.
+diagonal indicate a good reconstruction; systematic departure for one
+stimulus (told apart by point shape, not colour) says where the fit is
+struggling and is worth a second look -- but points near the diagonal
+are not themselves evidence that GRT describes this participant, only
+that GRIN's fit reconstructs the matrix it was given.
 \item \strong{Marginal distributions}: the predicted \code{Normal(mean, 1)}
 density on each dimension for each of the four stimuli (the model's own
 unit-variance convention), which is what \code{\link[=grin_plot_space]{grin_plot_space()}}'s
 \code{show_marginals = TRUE} also draws alongside the space plot itself --
 this function is the same marginals without the perceptual-space panel,
-paired instead with the goodness-of-fit check above.
+paired instead with the reconstruction check above.
 }
 }
 \examples{

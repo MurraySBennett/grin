@@ -16,16 +16,17 @@ ES modules need an origin — opening the files over `file://` will not work.
     index.html                       landing
     space-builder.html               teaching tier, counts only — build a space,
                                        run a virtual experiment, watch it recover
-    space-builder-time-attack.html   teaching tier, counts + response times ("+RT")
-                                       — processing architecture and accumulators
+    space-builder-time-attack.html   research preview, counts + response times ("+RT")
+                                       — processing architecture under a simplified
+                                       ballistic timing model
     independence.html               we try demonstrating and exploring the difficulty in
                                         identifying perceptual independence.
     analyse.html                     bring your own data (upload CSV, paste, or type
                                        a matrix); GRIN beside a maximum-likelihood fit
     validate.html                    recovery + interval calibration, simulated live
                                        in-browser over many participants
-    dynamics.html                    fitting as a process: drift tracking and early
-                                       stopping, made practical by ~1 ms refits
+    dynamics.html                    research playground: drift tracking and an
+                                       illustrative, not yet validated stopping rule
     learn.html                       primer, glossary, FAQ, limitations, references
 
 Each page has a distinct role and tries not to duplicate another: Space Builder builds
@@ -39,7 +40,8 @@ Validate checks recovery and calibration on simulated data where the truth is kn
     assets/js/grt-core.js       port of the GRT model (forward map, params, classes)
     assets/js/grt-io.js         CSV -> counts / trials / RT quantiles
     assets/js/grt-fit.js        maximum-likelihood baseline (Nelder-Mead + selection)
-    assets/js/grt-sim.js        the forward simulator (counts, trial streams, RT/LBA)
+    assets/js/grt-sim.js        the forward simulator (counts, trial streams,
+                                  simplified ballistic RT timing)
     assets/js/grt-plot.js       canvas + DOM rendering, theme, palettes
     assets/js/grin-model.js     manifest-driven ONNX wrapper (loadModel)
     assets/js/grin-shell.js     theme, shared nav injection, konami

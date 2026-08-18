@@ -37,6 +37,17 @@
     </header>
 
     <main class="container">
+      <div class="note warn" style="margin-bottom: 1.25rem">
+        <h4>Research preview, not part of the released estimator</h4>
+        <p>
+          This page is us exploring what a joint counts-and-response-time model
+          could look like. The released Python and R packages fit counts only.
+          The RT checkpoint is not bundled, and the simulator below is a
+          simplified ballistic linking model rather than a full LBA. Treat the
+          results as a worked proof of concept, not a ready-made analysis.
+        </p>
+      </div>
+
       <div class="plain" style="margin-bottom: 1.25rem">
         <span class="eyebrow">The point of this page</span>
         <p>
@@ -370,7 +381,7 @@
               Compare all 5 architectures
             </button>
           </div>
-          <!-- <p class="status" id="status">Pick an architecture, then run.</p> -->
+          <p class="status" id="status">Pick an architecture, then run.</p>
         </aside>
 
         <!-- ------------------------------------------------------------------ -->
@@ -729,17 +740,17 @@
           return Plot.pbar(Sim.ARCH_LABELS[a].name + truth, res.arch[a]);
         }).join("");
 
-        const dn = res.dimensionNeglect;
+        const pST = res.selfTerminatingProbability;
         const isST = Sim.SELF_TERMINATING.includes(arch);
         $("neglect").innerHTML = `
-    <div class="note ${dn > 0.5 ? "warn" : ""}">
-      <h4>Dimension neglect: ${dn.toFixed(2)}</h4>
+    <div class="note">
+      <h4>Self-terminating architectures: ${pST.toFixed(2)}</h4>
       <p>
-        The probability that this participant <strong>stopped before processing both
-        dimensions</strong>, which, in an identification task, means they <em>guessed</em> the
-        one they skipped. ${
+        Total probability assigned to the serial and parallel self-terminating
+        models. In this simulation, one dimension is selected at random on each
+        trial and the other is guessed. ${
           isST
-            ? "That is exactly what you simulated, so a high number here is the model catching a real pathology."
+            ? "That is the architecture you simulated. It is not evidence that the participant consistently neglected one particular dimension."
             : "You simulated exhaustive processing, so this should be low."
         }
       </p>
@@ -879,9 +890,9 @@
       </p>
       <p style="margin-bottom:0">
         The two self-terminating rows are different in kind: they <em>do</em> move the confusion
-        matrix, because skipping a dimension means guessing it, and guessing shows up as
-        error. That is why GRIN reports them as <strong>dimension neglect</strong> rather than as just
-        another processing style.
+        matrix, because the simulated process selects one dimension and guesses the other.
+        That makes self-terminating versus exhaustive processing partly visible in the counts;
+        it does not establish stable neglect of either dimension.
       </p>
     </div>`;
 

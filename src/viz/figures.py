@@ -985,72 +985,91 @@ def rt_gain_figure(metrics, frontier, path, scale=1.0):
     fig.tight_layout(); fig.savefig(path); plt.close(fig)
 
 
-def architecture_figure(cm_norm, arch_names, gains, path, regime="", scale=1.0):
-    """Processing-architecture recovery, plus the honest single-RT gain.
+def architecture_figure(cm_norm, arch_names, pi_gains, arch_ablation, rho_gains,
+                        path, regime="", scale=1.0):
+    """Processing-architecture recovery, plus what each remaining panel actually
+    measures -- kept as three STRUCTURALLY SEPARATE parameters (an earlier version
+    took one dict keyed by label string) specifically so a real counts-only
+    comparison (PI) and an ablation on one already-trained network (architecture)
+    cannot end up sharing a legend that is only accurate for one of them. That
+    exact mislabelling happened once already: the architecture panel inherited
+    PI's "counts only"/"counts + RT" legend and a "the honest gain from RT" title,
+    both wrong for an ablation, until this was flagged and fixed.
 
-    The gain panel is SPLIT by unit. The previous version put "1 - MAE" and two accuracies
-    on one 0-1 axis under the label "accuracy / 1-MAE", which invites reading three
-    different quantities off one scale. Accuracies now sit together with their chance
-    levels marked; rho recovery is shown as MAE on its own axis, where lower is better and
-    no arithmetic has been done to make it point the same way as the accuracies.
-
-    gains: {label: (counts_only_value, plus_rt_value)}. Any key containing "MAE" (case
-    insensitive) is routed to the error panel; everything else is treated as an accuracy.
-    Chance for a key is taken from `gains[key][2]` if a third element is present.
+    pi_gains, rho_gains: (value_a, value_b[, chance]) from a REAL counts-only-
+    trained-network comparison; drawn with a "counts only"/"counts + RT" legend.
+    arch_ablation: (mean_profile_value, correctly_paired_value[, chance]) from an
+    ablation on the joint network, NOT a counts-only comparison; drawn with its
+    own "mean-profile ablation"/"correctly paired RT" legend and panel title so
+    it cannot be misread as the same kind of quantity as the other two panels.
+    Pass rho_gains=None to omit that panel.
     """
+    # 2x2 grid, not 1x4: at four panels across one row, page-width figures render
+    # small enough that most bar/tick labels are effectively unreadable -- flagged
+    # after the first version of this fix shipped. A grid gives every panel a full
+    # row's height, not just a quarter of the width.
     set_style(scale)
     K = len(arch_names)
-    fig, ax = plt.subplots(1, 3, figsize=(16.5, 5), width_ratios=[1.25, 1, 0.8])
+    fig, ax = plt.subplots(2, 2, figsize=(11.5, 10.5))
+    ax = ax.ravel()
 
     im = ax[0].imshow(cm_norm, cmap=CMAP_SEQ, vmin=0, vmax=1)
     short = [a_.replace("_", "\n") for a_ in arch_names]
     ax[0].set_xticks(range(K)); ax[0].set_yticks(range(K))
-    ax[0].set_xticklabels(short, fontsize=8 * scale)
-    ax[0].set_yticklabels(short, fontsize=8 * scale)
+    ax[0].set_xticklabels(short, fontsize=9 * scale)
+    ax[0].set_yticklabels(short, fontsize=9 * scale)
     ax[0].set_xlabel("inferred"); ax[0].set_ylabel("true")
     bal = float(np.trace(cm_norm)) / K
-    ax[0].set_title(f"Processing architecture (balanced acc = {bal:.2f}, chance = {1/K:.2f})")
+    ax[0].set_title(f"Processing architecture (acc = {bal:.2f}, chance = {1/K:.2f})",
+                    fontsize=11.5 * scale)
     for i in range(K):
         for j in range(K):
             if cm_norm[i, j] > .01:
                 ax[0].text(j, i, f"{cm_norm[i, j]:.2f}", ha="center", va="center",
-                           fontsize=8.5 * scale,
+                           fontsize=9.5 * scale,
                            color="white" if cm_norm[i, j] > .55 else INK)
     despine_heatmap(ax[0])
     clean_colorbar(fig.colorbar(im, ax=ax[0], fraction=0.046, pad=0.04), "proportion")
 
-    acc_keys = [k for k in gains if "mae" not in k.lower()]
-    err_keys = [k for k in gains if "mae" in k.lower()]
-
-    def paired(axis, keys, ylabel, title, clamp01):
-        if not keys:
-            axis.set_visible(False); return
-        x = np.arange(len(keys)); w = 0.38
-        b = [gains[k][0] for k in keys]; r = [gains[k][1] for k in keys]
-        axis.bar(x - w / 2, b, w, color=MUTE, label="counts only")
-        axis.bar(x + w / 2, r, w, color=BLUE, label="+ single RT")
-        for i, k in enumerate(keys):
-            for off, v in ((-w / 2, gains[k][0]), (w / 2, gains[k][1])):
-                if np.isfinite(v):
-                    axis.text(i + off, v, f"{v:.2f}", ha="center", va="bottom",
-                              fontsize=8 * scale)
-            if len(gains[k]) > 2 and np.isfinite(gains[k][2]):
-                axis.hlines(gains[k][2], i - 0.45, i + 0.45, color=INK, lw=1.2,
-                            ls=(0, (3, 3)))
-        axis.set_xticks(x); axis.set_xticklabels(keys, fontsize=9 * scale)
-        axis.set_ylabel(ylabel); axis.set_title(title)
+    def one_pair(axis, before, after, label_before, label_after, ylabel, title, clamp01):
+        x = np.array([0.0]); w = 0.38
+        axis.bar(x - w / 2, [before], w, color=MUTE, label=label_before)
+        axis.bar(x + w / 2, [after], w, color=BLUE, label=label_after)
+        for off, v in ((-w / 2, before), (w / 2, after)):
+            if np.isfinite(v):
+                axis.text(off, v, f"{v:.2f}", ha="center", va="bottom", fontsize=9.5 * scale)
+        axis.set_xticks([]); axis.set_xlim(-0.7, 0.7)
+        axis.set_ylabel(ylabel); axis.set_title(title, fontsize=11.5 * scale)
         if clamp01:
             axis.set_ylim(0, 1.08)
-        axis.legend(fontsize=9 * scale)
+        axis.legend(fontsize=9.5 * scale, loc="upper left" if clamp01 else "best")
 
-    paired(ax[1], acc_keys, "accuracy", "A single RT: the honest gain", True)
-    paired(ax[2], err_keys, "MAE (lower is better)", r"$\rho$ recovery", False)
+    one_pair(ax[1], pi_gains[0], pi_gains[1], "counts only", "counts + RT",
+             "accuracy", "PI (yes/no)", True)
+    if len(pi_gains) > 2 and np.isfinite(pi_gains[2]):
+        ax[1].hlines(pi_gains[2], -0.45, 0.45, color=INK, lw=1.2, ls=(0, (3, 3)))
 
-    fig.suptitle("Processing architecture and what one RT buys", x=0.02, ha="left",
-                 fontweight="bold", fontsize=15 * scale, color=INK)
+    one_pair(ax[2], arch_ablation[0], arch_ablation[1], "mean-profile ablation",
+             "correctly paired RT", "accuracy", "Architecture-input ablation", True)
+    if len(arch_ablation) > 2 and np.isfinite(arch_ablation[2]):
+        ax[2].hlines(arch_ablation[2], -0.45, 0.45, color=INK, lw=1.2, ls=(0, (3, 3)))
+
+    if rho_gains is not None:
+        one_pair(ax[3], rho_gains[0], rho_gains[1], "counts only", "counts + RT",
+                 "MAE (lower is better)", r"$\rho$ recovery", False)
+    else:
+        ax[3].set_visible(False)
+
+    fig.suptitle("Processing architecture: recovery and input ablation", x=0.02, ha="left",
+                 fontweight="bold", fontsize=16 * scale, color=INK, y=0.99)
     if regime:
-        fig.text(0.02, 0.945, regime, ha="left", va="top", fontsize=10 * scale, color=MUTE)
-    fig.tight_layout(rect=[0, 0, 1, 0.93]); fig.savefig(path); plt.close(fig)
+        fig.text(0.02, 0.955, regime, ha="left", va="top", fontsize=10 * scale, color=MUTE,
+                 wrap=True)
+    # Extra headroom (0.90, not 0.94 as the 1x4 layout used) -- a 2x2 grid's top-row
+    # panel titles sit much closer to the suptitle/regime text than a single row did,
+    # and the regime string can wrap to two lines; this rect leaves room for both
+    # without the overlap an earlier version of this figure had.
+    fig.tight_layout(rect=[0, 0, 1, 0.90]); fig.savefig(path); plt.close(fig)
 
 
 def lba_recovery(true, pred, names, path, regime="", scale=1.0):

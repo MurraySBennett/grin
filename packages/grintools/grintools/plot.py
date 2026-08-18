@@ -270,7 +270,8 @@ def plot_space(result, ci=0.90, palette=None, title=None, xlabel="dimension A (z
     curve per stimulus) above and to the right of the main panel, and returns
     a Figure instead of an Axes; incompatible with passing your own `ax`. See
     also `plot_diagnostics()`, which pairs marginals with a
-    predicted-vs-observed panel for a fuller goodness-of-fit report.
+    predicted-vs-observed reconstruction panel for a fuller view (not a
+    goodness-of-fit test of GRT itself -- see that function's docstring).
     """
     if len(stim_labels) != 4:
         raise ValueError("stim_labels must have exactly 4 entries")
@@ -435,22 +436,35 @@ def plot_empirical_bias(counts, trials=None, palette=None, title=None, dim_label
 
 def plot_diagnostics(result, counts, trials=None, show_predicted_observed=True,
                      show_marginals=True, palette=None, title=None, base_size=12):
-    """Predicted-vs-observed and marginal-distribution diagnostics for one
-    participant. Needs the ORIGINAL confusion matrix as well as the fitted
-    result, because it compares what was observed against what the fitted
-    parameters predict -- gt.infer()'s return value alone doesn't carry the
-    input matrix back out.
+    """Predicted-vs-observed reconstruction and marginal-distribution
+    diagnostics for one participant. Needs the ORIGINAL confusion matrix as
+    well as the fitted result, because it compares what was observed against
+    what the fitted parameters predict -- gt.infer()'s return value alone
+    doesn't carry the input matrix back out.
+
+    Deliberately not a "goodness-of-fit" test: the identified 12-parameter
+    model is saturated (see the accompanying paper's Introduction and
+    identifiability-frontier study), so a single confusion matrix's response
+    proportions cannot, in principle, be used to test whether the underlying
+    GRT assumptions hold -- essentially any proportion table has SOME fitting
+    parameter vector. What this view shows is whether GRIN's OWN fitted
+    parameters reconstruct the matrix, informative in one direction only: a
+    poor reconstruction is a real signal (network approximation error, or a
+    matrix outside the trained envelope) worth a second look, but a good
+    reconstruction does not itself validate the GRT assumptions, because the
+    saturated model was essentially guaranteed to reconstruct it regardless.
 
     `show_predicted_observed`: the forward model's predicted response
     probability for each of the 16 stimulus/response cells, plotted against
     the cell's observed proportion. Points near the diagonal indicate a good
-    fit; systematic departure for one stimulus (told apart by marker shape,
-    not colour) says where the model is struggling.
+    reconstruction; systematic departure for one stimulus (told apart by
+    marker shape, not colour) says where the fit is struggling and is worth a
+    second look.
 
     `show_marginals`: the predicted Normal(mean, 1) density on each dimension
     for each of the four stimuli -- the same marginals plot_space()'s
     `show_marginals=True` draws alongside the space plot itself, here paired
-    with the goodness-of-fit check instead.
+    with the reconstruction check instead.
 
     Returns a single Axes if only one panel is requested, otherwise a Figure.
     """

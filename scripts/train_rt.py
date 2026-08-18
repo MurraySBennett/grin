@@ -1,11 +1,16 @@
-"""Train the RT-augmented model (GRT + constructs + architecture + LBA).
+"""Reproduce the superseded ballistic RT-augmented model.
 
     python scripts/generate_data.py --rt      # first, make the RT dataset
-    python scripts/train_rt.py                # then train
+    python scripts/train_rt.py --allow-legacy-ballistic  # then train
 
-Only needed if your data include response times. The counts-only pipeline
-(`scripts/train.py`) is independent and remains the default.
+This script trains the developmental model based on
+``src/data/rt_lba_generator.py``. It is retained for reproducibility but is not
+the accepted model for new RT results. The counts-only pipeline
+(`scripts/train.py`) is independent and remains the default. The explicit flag
+prevents an expensive accidental retrain while the dynamic-GRT replacement is
+being validated.
 """
+import argparse
 import os
 import numpy as np
 import pandas as pd
@@ -27,9 +32,23 @@ from src.models.rt_network import RTNPEModel
 from src.models.heads import params_to_train_space
 from src.data.rt_lba_generator import featurize_lba
 from src.inference.model_posterior import construct_labels
+from src.provenance import build_rt_manifest
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--allow-legacy-ballistic",
+        action="store_true",
+        help="acknowledge that this reproduces the superseded ballistic RT model",
+    )
+    args = parser.parse_args()
+    if not args.allow_legacy_ballistic:
+        parser.error(
+            "legacy RT training is disabled by default; use "
+            "--allow-legacy-ballistic only to reproduce the old checkpoint"
+        )
+
     torch.manual_seed(TRAIN_SEED)
     device = DEVICE if torch.cuda.is_available() else "cpu"
     d = np.load(RT_DATASET_FILE, allow_pickle=True)
@@ -54,6 +73,9 @@ def main():
 
     model = RTNPEModel(in_dim=feats.shape[1], hidden=RT_HIDDEN_LAYERS,
                        dropout=RT_DROPOUT).to(device)
+    # Computed once (hashes the RT dataset file), same pattern as scripts/train.py --
+    # the dynamic best_epoch/best_val_nll fields are merged in at save time below.
+    manifest = build_rt_manifest()
     opt = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
     sched = torch.optim.lr_scheduler.ReduceLROnPlateau(
         opt, factor=RLRP_FACTOR, patience=RLRP_PATIENCE, min_lr=RLRP_MIN_LR)
@@ -91,7 +113,9 @@ def main():
             best, wait = vloss, 0
             torch.save({"state_dict": model.state_dict(), "in_dim": feats.shape[1],
                         "hidden": list(RT_HIDDEN_LAYERS), "dropout": RT_DROPOUT,
-                        "lba_mu": lba_mu, "lba_sd": lba_sd}, RT_MODEL_FILE)
+                        "lba_mu": lba_mu, "lba_sd": lba_sd,
+                        "provenance": {**manifest, "best_epoch": epoch, "best_val_nll": best}},
+                       RT_MODEL_FILE)
         else:
             wait += 1
         print(f"epoch {epoch:3d}  train {train_loss:.4f}  val {vloss:.4f}  (best {best:.4f})  "

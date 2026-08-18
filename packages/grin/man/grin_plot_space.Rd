@@ -53,8 +53,9 @@ Set \code{FALSE} if the crosshairs make a crowded plot harder to read.}
 per stimulus, \code{Normal(mean, 1)} under the model's own unit-variance
 convention) above and to the right of the main panel? Default \code{FALSE}.
 Requires the \pkg{patchwork} package. See also \code{\link[=grin_plot_diagnostics]{grin_plot_diagnostics()}},
-which pairs marginals with a predicted-vs-observed panel for a fuller
-goodness-of-fit report.}
+which pairs marginals with a predicted-vs-observed reconstruction panel
+for a fuller view (not a goodness-of-fit test of GRT itself -- see that
+function's documentation for why).}
 
 \item{base_size}{Base font size in points (default 12); see
 \code{\link[=theme_grin]{theme_grin()}}.}

@@ -1,29 +1,29 @@
 {
   "id": "v09",
-  "claim": "systematically misspecified data (no representation in the model's parameterization) is flagged, gradedly with severity, at a controlled false-alarm rate",
+  "claim": "data outside the trained envelope (reversed response mapping) is flagged, gradedly with severity, at a controlled false-alarm rate against in-envelope data",
   "result": {
-    "in_dist_median": 13.372389133004452,
-    "threshold95": 44.53129142909136,
+    "in_dist_median": 13.372402852596366,
+    "threshold95": 44.53130172252909,
     "false_alarm": 0.05,
     "severity_curve": {
       "0.25": {
-        "median_deviance": 13.891213224206087,
+        "median_deviance": 13.891185238260668,
         "detection_rate": 0.02
       },
       "0.5": {
-        "median_deviance": 28.45109758495866,
+        "median_deviance": 28.45110841029492,
         "detection_rate": 0.24666666666666667
       },
       "0.75": {
-        "median_deviance": 156.50573186647534,
+        "median_deviance": 156.50572881355495,
         "detection_rate": 1.0
       },
       "1.0": {
-        "median_deviance": 674.726412140901,
+        "median_deviance": 674.726394543367,
         "detection_rate": 1.0
       }
     }
   },
   "pass": true,
-  "seconds": 12.9
+  "seconds": 6.0
 }

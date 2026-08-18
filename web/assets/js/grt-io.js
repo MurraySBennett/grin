@@ -29,10 +29,13 @@ import { STIMULUS_ORDER } from "./grt-core.js";
 export const QUANTILES = [0.1, 0.3, 0.5, 0.7, 0.9];
 export const N_Q = QUANTILES.length;
 
-/** Training-distribution bounds, from src/config.py + rt_lba_generator.py. */
+/** Intended release bounds from the current configuration. The legacy browser
+ * checkpoints predate provenance manifests, so these are provisional until the
+ * release artifacts are retrained/exported with embedded provenance. */
 export const TRAIN_BOUNDS = {
   trialsPerStimulus: [1, 1000], // config.TRIAL_RANGE
   rtSeconds: [0.1, 10.0], // generator clips to this
+  checkpointProvenanceVerified: false,
 };
 
 // --------------------------------------------------------------------------- //
@@ -356,10 +359,11 @@ export function byParticipant(parsed) {
 }
 
 // --------------------------------------------------------------------------- //
-// Validation / out-of-distribution checks
+// Input and observable training-envelope checks
 //
-// The networks are amortized over the prior they were trained on. Input outside
-// that support gets a confident answer that means nothing, so we say so loudly.
+// These checks catch malformed inputs and some observable departures from the
+// training regime. They cannot test whether the latent GRT model generated the
+// table, or detect every form of extrapolation.
 // --------------------------------------------------------------------------- //
 /**
  * @param {{counts, trials, rtq}} agg
@@ -384,9 +388,9 @@ export function checkInputs(agg, { hasRT = false, rawRTs = [] } = {}) {
       warnings.push(`Stimulus ${STIMULUS_ORDER[s]} has only ${n} trial(s).`);
     else if (n > tMax)
       warnings.push(
-        `Stimulus ${STIMULUS_ORDER[s]} has ${n} trials, above the ${tMax} the network ` +
-          `was trained on. Estimates should still be fine (more data is easier), but the ` +
-          `uncertainty may be slightly conservative.`,
+        `Stimulus ${STIMULUS_ORDER[s]} has ${n} trials, above the intended release ` +
+          `range of ${tMax}. The legacy browser checkpoint's exact bounds cannot be ` +
+          `verified; check the result against another fit.`,
       );
   });
 
@@ -420,8 +424,8 @@ export function checkInputs(agg, { hasRT = false, rawRTs = [] } = {}) {
       const nHigh = finite.filter((v) => v > rMax).length;
       if (nLow || nHigh)
         warnings.push(
-          `${nLow + nHigh} RT(s) fell outside the trained range [${rMin}, ${rMax}] s and ` +
-            `were clipped to it (as the training simulator does).`,
+          `${nLow + nHigh} RT(s) fell outside the intended release range [${rMin}, ${rMax}] s and ` +
+            `were clipped to the current simulator's range.`,
         );
       notes.push(`RT median ${med.toFixed(3)} s.`);
     }

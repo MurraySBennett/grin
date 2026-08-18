@@ -96,11 +96,43 @@ function wireThemeToggle() {
  * so a page can move or an anchor can carry query params without breaking
  * the highlight. */
 function initNav() {
-  const page = document.body.dataset.page;
+  const pageGroups = {
+    "space-builder": "explore",
+    "time-attack": "explore",
+    independence: "explore",
+    validate: "evidence",
+    dynamics: "evidence",
+  };
+  const rawPage = document.body.dataset.page;
+  const page = pageGroups[rawPage] ?? rawPage;
   if (!page) return;
   document.querySelectorAll("nav.site [data-nav]").forEach((a) => {
     if (a.dataset.nav === page) a.classList.add("active");
   });
+
+  const toggle = document.getElementById("nav-toggle");
+  const nav = document.getElementById("site-nav");
+  toggle?.addEventListener("click", () => {
+    const open = nav?.classList.toggle("is-open") ?? false;
+    toggle.setAttribute("aria-expanded", String(open));
+    toggle.textContent = open ? "Close" : "Pages";
+  });
+  nav?.querySelectorAll("a").forEach((a) =>
+    a.addEventListener("click", () => {
+      nav.classList.remove("is-open");
+      toggle?.setAttribute("aria-expanded", "false");
+      if (toggle) toggle.textContent = "Pages";
+    }),
+  );
+}
+
+function initReleaseBanner() {
+  const main = document.querySelector("main.container");
+  if (!main || document.querySelector(".release-banner")) return;
+  const banner = document.createElement("div");
+  banner.className = "note warn release-banner";
+  banner.innerHTML = `<p><strong>Pre-release browser demo.</strong> The final checkpoint and its provenance manifest are not installed here yet. Use these pages to explore GRIN, not as the release estimator.</p>`;
+  main.prepend(banner);
 }
 
 /** It's his site. It stays. */
@@ -140,8 +172,11 @@ applyTheme(resolve());
 
 async function init() {
   await injectNav();
+  // The toggle does not exist until the shared fragment has been injected.
+  applyTheme(resolve());
   wireThemeToggle();
   initNav();
+  initReleaseBanner();
   initKonami();
 }
 

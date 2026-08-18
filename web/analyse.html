@@ -91,7 +91,7 @@
                 Use this matrix
               </button>
               <p class="cap">
-                <emph>Counts only</emph>, response times need trial-level data.
+                <em>Counts only</em>; response times need trial-level data.
               </p>
             </div>
           </details>
@@ -186,7 +186,7 @@
                 <select id="overlay-select">
                   <option value="mle">MLE, unconstrained fit</option>
                   <option value="class">
-                    GRIN onlyown best-fitting model class
+                    GRIN's best-supported model class
                   </option>
                 </select>
                 <p class="cap" id="overlay-cap" style="margin-top: 0.3rem"></p>
@@ -730,15 +730,21 @@
 
       function renderValidationSummary(result) {
         const el = $("validation-card");
-        if (!result.warnings?.length) {
-          el.innerHTML = "";
-          return;
-        }
-        el.innerHTML =
-          `<span class="eyebrow">Parsing notes</span>` +
-          result.warnings
-            .map((w) => `<div class="note warn"><p>${escapeHTML(w)}</p></div>`)
-            .join("");
+        el.innerHTML = trustNoteHTML() +
+          (result.warnings?.length
+            ? `<span class="eyebrow">Parsing notes</span>` +
+              result.warnings
+                .map((w) => `<div class="note warn"><p>${escapeHTML(w)}</p></div>`)
+                .join("")
+            : "");
+      }
+
+      function trustNoteHTML() {
+        return `<span class="eyebrow">Before interpreting the fit</span>
+          <div class="note">
+            <h4>No warning does not mean “the model must be right”</h4>
+            <p>These checks catch file problems and some observable departures from the training regime. They cannot show that GRT generated the data, or diagnose lapses, drift, mixtures, or changing response criteria. Read GRIN's probabilities as conditional on its model and training prior; pay attention to wide intervals, weak factorized support, and disagreement with the MLE reference.</p>
+          </div>`;
       }
 
       // --------------------------------------------------------------------------- //
@@ -802,6 +808,7 @@
         for (const w of checks.warnings)
           parts.push(`<div class="note warn"><p>${escapeHTML(w)}</p></div>`);
         $("validation-card").innerHTML =
+          trustNoteHTML() +
           (parsed.warnings?.length
             ? `<span class="eyebrow">Parsing notes</span>` +
               parsed.warnings
@@ -862,13 +869,13 @@
           Plot.pbar("ρ varies by stimulus", grin.corr.free);
         const mc = grin.modelClass;
         $("grin-verdict").innerHTML =
-          `<div class="note ${mc.joint >= 0.5 ? "" : "warn"}">
+          `<div class="note ${mc.factorizedSupport >= 0.5 ? "" : "warn"}">
     <h4>Best-supported class: <code>${mc.name}</code> <span class="cap">(${Core.modelLabel(mc.name)})</span></h4>
-    <p>Joint probability ${mc.joint.toFixed(2)}.${
-      mc.joint < 0.5
+    <p>Factorized support ${mc.factorizedSupport.toFixed(2)}.${
+      mc.factorizedSupport < 0.5
         ? " Not decisive, treat the structural conclusion as tentative."
         : ""
-    }</p>
+    } This is the product of three marginal outputs, not a separately calibrated joint probability.</p>
   </div>`;
 
         if (hasRT && grin.archBest) {
@@ -877,9 +884,9 @@
       ${Object.entries(grin.arch)
         .map(([k, v]) => Plot.pbar(k.replace(/_/g, " "), v))
         .join("")}
-      <div class="note ${grin.dimensionNeglect > 0.5 ? "warn" : ""}">
-        <h4>Dimension neglect: ${grin.dimensionNeglect.toFixed(2)}</h4>
-        <p>Probability this participant stopped before processing both dimensions.</p>
+      <div class="note">
+        <h4>Self-terminating architectures: ${grin.selfTerminatingProbability.toFixed(2)}</h4>
+        <p>Total probability assigned to the serial and parallel self-terminating models. In this simulator, one randomly selected dimension is processed and the other is guessed; this is not a diagnosis of stable dimension neglect.</p>
       </div>`;
         } else {
           $("grin-rt-block").innerHTML = "";
@@ -1407,7 +1414,7 @@
 
       function renderBatch(rows, skipped) {
         const header = `<tr><th style="text-align:left">Participant</th><th>n</th><th>Acc.</th>
-    <th>GRIN class</th><th>P(joint)</th><th>GRIN ms</th>
+    <th>GRIN class</th><th>Factorized support</th><th>GRIN ms</th>
     <th>MLE class (BIC)</th><th>MLE weight</th><th>MLE ms</th></tr>`;
         const body = rows
           .map(
@@ -1415,7 +1422,7 @@
     <td style="text-align:left"><a href="#" class="batch-row-link" data-id="${escapeAttr(r.id)}"
         style="font-family:Inter,sans-serif">${escapeHTML(r.id)}</a></td>
     <td>${r.total}</td><td>${(100 * r.acc).toFixed(1)}%</td>
-    <td>${r.grin.modelClass.name}</td><td>${r.grin.modelClass.joint.toFixed(2)}</td>
+    <td>${r.grin.modelClass.name}</td><td>${r.grin.modelClass.factorizedSupport.toFixed(2)}</td>
     <td>${r.grin.ms.toFixed(2)}</td>
     <td>${r.mleSel.best.model}</td><td>${r.mleSel.best.weight.toFixed(2)}</td>
     <td>${r.mleSel.ms.toFixed(1)}</td>
@@ -1455,7 +1462,7 @@
           "n_trials",
           "accuracy",
           "grin_model",
-          "grin_joint_p",
+          "grin_factorized_support",
           "grin_ms",
           "mle_bic_model",
           "mle_bic_weight",
@@ -1471,7 +1478,7 @@
               r.total,
               r.acc.toFixed(4),
               r.grin.modelClass.name,
-              r.grin.modelClass.joint.toFixed(3),
+              r.grin.modelClass.factorizedSupport.toFixed(3),
               r.grin.ms.toFixed(3),
               r.mleSel.best.model,
               r.mleSel.best.weight.toFixed(3),

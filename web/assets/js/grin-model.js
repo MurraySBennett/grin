@@ -247,9 +247,10 @@ export class GrinModel {
       const names = mf.outputs.p_arch.names;
       out.arch = Object.fromEntries(names.map((n, i) => [n, out.p_arch[i]]));
       out.archBest = names[out.p_arch.indexOf(Math.max(...out.p_arch))];
-      // P(the participant is NOT using a dimension) — the self-terminating models.
-      // Mirrors predict_rt.dimension_neglect.
-      out.dimensionNeglect = names.reduce(
+      // Total probability assigned to the two self-terminating architectures.
+      // In this simulator they process one randomly selected dimension and guess
+      // the other; this is not evidence of stable neglect of a particular dimension.
+      out.selfTerminatingProbability = names.reduce(
         (a, n, i) => a + (n.includes("self_terminating") ? out.p_arch[i] : 0),
         0,
       );
@@ -274,9 +275,9 @@ export class GrinModel {
         pCorr: corrBest[1],
         pSepA: out.sep.A,
         pSepB: out.sep.B,
-        // joint probability under the factorized heads — usually the honest,
-        // and sobering, number
-        joint:
+        // Product of separately trained marginal heads. This is useful as a
+        // compact support score, but is not a directly calibrated joint posterior.
+        factorizedSupport:
           corrBest[1] *
           (psA ? out.sep.A : 1 - out.sep.A) *
           (psB ? out.sep.B : 1 - out.sep.B),

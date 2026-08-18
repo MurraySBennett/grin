@@ -132,8 +132,18 @@ prior experiment-specific).
   Rigid-translation map: means_i = (zx_i-zx_0, zy_i-zy_0); bounds = (-zx_0,-zy_0);
   cov_i = [[1,rho_i],[rho_i,1]]. Means/bounds map is exact and round-trips to
   machine precision. The covariance-reference detail (whether grtools pins s0's
-  covariance) is PROVISIONAL and must be validated against grtools output in
-  Phase 4 before numeric cross-checks rely on it.
+  covariance) as implemented in `to_grtools()` here is PROVISIONAL and remains
+  unvalidated against grtools' own output -- **but this specific utility function
+  is not what any reported number depends on.** The manuscript's actual
+  grtools comparisons (`scripts/R/fit_baselines.R`'s `extract_grtools_params()`,
+  feeding `results/mle_fits/baseline_fits.csv` and every `\rhoGrin`/`\rhoAicbic`-
+  style number in the paper) read `rho` directly off grtools' own
+  `best_model$covmat[[i]][1,2]` in a live R session, confirmed against grtools'
+  source and a live run (see the RESOLVED note in `fit_baselines.R`'s header) --
+  an independent extraction path that does not go through this transform. If a
+  future use needs `to_grtools()` itself (e.g. converting a GRIN fit into
+  grtools' own plotting functions), validate it first; nothing currently
+  published relies on it being correct.
 
 ---
 
@@ -171,8 +181,11 @@ a target separation to speed pilot testing).
 3. Uncertainty calibration: empirical coverage of credible intervals (nominal 90%
    contains truth ~90% of the time).
 4. Head-to-head vs grtools and mdsdt on shared matrices: accuracy AND wall-clock.
-5. Out-of-distribution / posterior-predictive checks on real data; flag and defer
-   ambiguous/OOD cases to MLE.
+5. Training-envelope / posterior-predictive checks on real data; flag and defer
+   cases outside the trained envelope to MLE. (This is an input-support
+   diagnostic, not a test of the Gaussian-GRT model family itself -- see
+   `src/inference/ood.py`'s module docstring and the manuscript's
+   identifiability-frontier study for why that distinction is load-bearing.)
 
 Gates 1-3 are hard requirements; 4 quantifies the payoff; 5 is the safety net.
 
@@ -197,8 +210,11 @@ original roadmap are in Section 9.
 - **Non-DS models.** This spec is DS-only throughout (Section 1); relaxing
   decisional separability needs design-based identification (RTs, multiple bound
   conditions) and is out of scope for the current model family.
-- **The grtools covariance-reference map** (Section 5) is flagged provisional there
-  pending validation against grtools' own output on shared matrices.
+- **The `to_grtools()` covariance-reference map** (Section 5) is flagged provisional
+  there, pending validation against grtools' own output on shared matrices --
+  narrowly scoped to that one utility function, which nothing published currently
+  depends on; the manuscript's own grtools comparisons use an independent,
+  already-verified extraction path (see Section 5).
 - **Design-consistent sign convention** for z-scores (Section 2) is a documented
   prior choice, not a derived necessity -- revisitable if a use case needs it.
 

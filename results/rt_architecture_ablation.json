@@ -1,0 +1,88 @@
+{
+  "architectures": [
+    "serial_exhaustive",
+    "serial_self_terminating",
+    "parallel_exhaustive",
+    "parallel_self_terminating",
+    "coactive"
+  ],
+  "n": 1800,
+  "chance": 0.2,
+  "baseline": {
+    "accuracy": 0.8455555555555555,
+    "confusion_matrix": [
+      [
+        253,
+        1,
+        97,
+        1,
+        2
+      ],
+      [
+        1,
+        323,
+        4,
+        27,
+        3
+      ],
+      [
+        73,
+        11,
+        286,
+        0,
+        5
+      ],
+      [
+        1,
+        16,
+        1,
+        331,
+        8
+      ],
+      [
+        0,
+        4,
+        3,
+        20,
+        329
+      ]
+    ],
+    "recall": [
+      0.7146892655367232,
+      0.9022346368715084,
+      0.7626666666666667,
+      0.927170868347339,
+      0.9241573033707865
+    ],
+    "precision": [
+      0.7713414634146342,
+      0.9098591549295775,
+      0.731457800511509,
+      0.8733509234828496,
+      0.9481268011527377
+    ]
+  },
+  "ablation_mean_profile": {
+    "accuracy": 0.28833333333333333,
+    "recall": [
+      0.025423728813559324,
+      0.2849162011173184,
+      0.552,
+      0.1484593837535014,
+      0.4157303370786517
+    ],
+    "description": "every observer's RT-quantile input replaced by the across-observer mean profile; NOT in-distribution for the trained network (see function docstring)"
+  },
+  "ablation_shuffled": {
+    "accuracy": 0.32,
+    "recall": [
+      0.10451977401129943,
+      0.43854748603351956,
+      0.304,
+      0.35014005602240894,
+      0.40168539325842695
+    ],
+    "shuffle_seed": 0,
+    "description": "RT-quantile inputs permuted across observers, preserving the marginal RT distribution but breaking matrix-RT correspondence"
+  }
+}

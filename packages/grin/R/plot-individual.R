@@ -58,8 +58,9 @@
 #'   per stimulus, `Normal(mean, 1)` under the model's own unit-variance
 #'   convention) above and to the right of the main panel? Default `FALSE`.
 #'   Requires the \pkg{patchwork} package. See also [grin_plot_diagnostics()],
-#'   which pairs marginals with a predicted-vs-observed panel for a fuller
-#'   goodness-of-fit report.
+#'   which pairs marginals with a predicted-vs-observed reconstruction panel
+#'   for a fuller view (not a goodness-of-fit test of GRT itself -- see that
+#'   function's documentation for why).
 #' @param base_size Base font size in points (default 12); see
 #'   [theme_grin()].
 #' @return A `ggplot` object (or, if `show_marginals = TRUE`, a `patchwork`

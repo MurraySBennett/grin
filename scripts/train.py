@@ -16,6 +16,7 @@ from src.models.network import NPEModel, featurize
 from src.models.heads import params_to_train_space
 from src.models.losses import joint_loss
 from src.inference.model_posterior import construct_labels
+from src.provenance import build_manifest
 
 TRAINING_CURVE_FIG = os.path.join(FIGURES_DIR, "training_curve.png")
 TRAINING_HISTORY_CSV = os.path.join(TRAINING_HISTORY_DIR, "training_history.csv")
@@ -28,6 +29,10 @@ def main():
     targets = params_to_train_space(torch.tensor(d["y_params"], dtype=torch.float32))
     _corr, _sa, _sb = construct_labels(d["y_cls_label"])
     corr = torch.tensor(_corr, dtype=torch.long); sepA = torch.tensor(_sa, dtype=torch.long); sepB = torch.tensor(_sb, dtype=torch.long)
+
+    # Computed once (hashes the ~350MB dataset file, so not worth redoing per checkpoint
+    # save); the dynamic best_epoch/best_val_nll fields are merged in at save time below.
+    manifest = build_manifest()
 
     n = feats.shape[0]
     idx = torch.randperm(n, generator=torch.Generator().manual_seed(TRAIN_SEED))
@@ -65,7 +70,9 @@ def main():
         if vloss < best - MIN_DELTA:
             best, wait = vloss, 0
             torch.save({"state_dict": model.state_dict(), "hidden": list(HIDDEN_LAYERS),
-                        "dropout": DROPOUT, "activation": ACTIVATION, "comparison": True}, MODEL_FILE)
+                        "dropout": DROPOUT, "activation": ACTIVATION, "comparison": True,
+                        "provenance": {**manifest, "best_epoch": epoch, "best_val_nll": best}},
+                       MODEL_FILE)
         else:
             wait += 1
         lr = opt.param_groups[0]["lr"]

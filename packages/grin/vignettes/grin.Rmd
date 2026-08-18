@@ -14,10 +14,10 @@ knitr::opts_chunk$set(
 )
 ```
 
-`grin` turns a 2x2 identification confusion matrix into a calibrated posterior
-over the 12 parameters of a General Recognition Theory (GRT) perceptual model.
-This vignette walks through a single participant end to end, then a small
-sample.
+`grin` turns a 2x2 identification confusion matrix into a calibrated
+approximate posterior over the 12 parameters of a General Recognition Theory
+(GRT) perceptual model. This vignette walks through a single participant end
+to end, then a small sample.
 
 ```{r setup}
 library(grin)

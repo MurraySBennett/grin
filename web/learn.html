@@ -107,7 +107,7 @@
           pin the decision bounds to align with their axes). Traditionally this
           fit is done by numerical maximum likelihood, one optimiser run per
           participant per candidate model. GRIN replaces that optimiser with a
-          network that we have trained offline on millions of simulated
+          network that we have trained offline on many simulated
           experiments so that inference becomes a single forward pass through
           that trained network. See <a href="./validate.html">Validate</a> for
           how it holds up.
@@ -171,7 +171,7 @@
             <h4>Systems Factorial Technology (SFT)</h4>
             <p>
               SFT carries the architecture side of the +RT model. We can ask if
-              a two-dimensional decision <isindex> made serially or in parallel, and
+              a two-dimensional decision is made serially or in parallel, and
               does it stop as soon as one dimension is settled (self-terminating) or
               wait for both (exhaustive)? Five architectures in total (the 4
               serial/parallel × exhaustive/self-terminating combinations,
@@ -180,13 +180,14 @@
             </p>
           </div>
           <div class="note" style="margin-bottom: 0.6rem">
-            <h4>Linear Ballistic Accumulator (LBA)</h4>
+            <h4>Simplified ballistic accumulator</h4>
             <p>
-              The evidence-accumulation model behind the RT predictions. We model
-              evidence for a response rising linearly at a noisy drift rate
-              toward a threshold and whichever accumulator gets there first wins.
-              Its parameters (non-decision time, threshold, drift) are what the
-              +RT model additionally estimates.
+              The exploratory RT simulator gives each dimension a noisy drift
+              rate and a ballistic finishing time, then combines the two times
+              under five processing architectures. It is <em>not</em> a full
+              Linear Ballistic Accumulator: the GRT sample determines the
+              response, there is no random starting point, and response
+              accumulators do not race within a dimension.
             </p>
           </div>
           <div class="note" style="margin-bottom: 0">
@@ -232,10 +233,11 @@
               Not directly. GRIN is trained specifically on 2-dimension, 2-level
               identification designs. A 3-level or 3-dimension design has a
               different-shaped confusion matrix and a different parameter count,
-              and the network has never seen it, feeding it in would be exactly
-              the out-of-distribution situation the
-              <a href="./analyse.html">Analyse page's validator</a> is built to
-              catch. Extending to larger designs is future scope.
+              and the network has never seen it. The
+              <a href="./analyse.html">Analyse page</a> rejects the wrong matrix
+              shape, but that input check is not a general detector of model
+              misspecification. A separate 3×3 estimator is now being explored,
+              but it is not part of the released tool.
             </p>
           </div>
         </details>
@@ -262,15 +264,13 @@
           </summary>
           <div class="details-body">
             <p style="margin-top: 0">
-              Same target posterior, different cost profile. A full Bayesian fit
-              (Stan, or MLE with bootstrapped intervals) is more flexible
-              per-analysis but costs real compute every time you run it. GRIN
-              pays that cost once, at training time, and every subsequent
-              inference, one participant or ten thousand, is a forward pass. The
-              trade is amortisation for flexibility: GRIN is fast because it was
-              trained on exactly this family of models and this exact design; it
-              isn't a general-purpose sampler you can repoint at a different
-              model.
+              They are not automatically the same target. GRIN currently makes
+              a separate, fixed-prior inference for each participant. A
+              hierarchical Stan model estimates population and participant
+              effects jointly and lets the data determine the amount of pooling.
+              GRIN is much faster for the model and prior it was trained on;
+              Stan is slower but can express different priors, hierarchies, and
+              model extensions directly.
             </p>
           </div>
         </details>
@@ -299,10 +299,17 @@
           <p>
             GRIN was trained on data simulated from a specific range of
             sensitivities, correlations, and trial counts (see the manifest
-            shipped with each model, or <a href="./analyse.html">Analyse</a>'s
-            validator, which checks your data against exactly this range). Data
-            far outside that range get a confident-looking answer that means
-            nothing, the network has no way to know it's extrapolating.
+            shipped with each model). <a href="./analyse.html">Analyse</a>
+            checks matrix shape, trial counts, accuracy, and RT units where it
+            can. Those are useful input checks, not proof that a dataset falls
+            inside the latent training distribution or that GRT generated it.
+          </p>
+          <p>
+            The browser currently uses a legacy preview checkpoint that predates
+            the new provenance manifest. Its exact historical training bounds
+            cannot be verified. That artifact will be replaced for release; the
+            1–1000-trial range shown by the input checks is the intended release
+            configuration, not reconstructed metadata for the legacy model.
           </p>
         </div>
         <div class="note warn">
@@ -334,11 +341,12 @@
         <div class="note warn">
           <h4>The RT model adds assumptions</h4>
           <p>
-            Architecture and accumulator-parameter estimates additionally assume
-            the LBA evidence-accumulation model is the right description of the
-            response-time-generating process. If it isn't, those specific
-            estimates, not the underlying GRT parameters, which are estimated
-            the same way with or without RT, are the part to distrust.
+            The +RT page is an exploratory proof of concept built around a
+            simplified ballistic timing model. It does not implement the full
+            LBA choice race, and the checkpoint is not distributed with the
+            released packages. Its architecture and timing-parameter outputs
+            should be read as demonstrations of this particular simulator, not
+            as a validated general-purpose RT analysis.
           </p>
         </div>
       </div>

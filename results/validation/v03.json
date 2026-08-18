@@ -2,10 +2,10 @@
   "id": "v03",
   "claim": "parameter recovery",
   "result": {
-    "zscore_MAE": 0.15044492427611775,
-    "rho_MAE": 0.2714457677288477,
-    "zx0_r": 0.9734921342513705
+    "zscore_MAE": 0.15044491768073703,
+    "rho_MAE": 0.27144574882723566,
+    "zx0_r": 0.9734921336906187
   },
   "pass": true,
-  "seconds": 14.6
+  "seconds": 7.3
 }

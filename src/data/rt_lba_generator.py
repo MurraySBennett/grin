@@ -1,14 +1,21 @@
 """
-rt_lba_generator.py — GRT + LBA + processing architecture, VECTORISED.
+rt_lba_generator.py — LEGACY distance-to-bound ballistic RT simulator.
 
-Produces exactly the same thing as the counts-only generator (`src/data/generator.py`)
-— confusion matrices from the same GRT prior — and ADDITIONALLY the response times that
-those same trials produced. Counts and RTs are MATCHED BY CONSTRUCTION: each trial draws
-one perceptual sample, and that single sample determines both the response (which quadrant
-it fell in) and the RT (its distance from each bound drives the LBA drift rate).
+SUPERSEDED FOR NEW SCIENTIFIC WORK (2026-08-14). This module is retained only
+to reproduce the developmental RT checkpoint and its figures. It is not a
+conventional Linear Ballistic Accumulator: responses are selected by the sign
+of a GRT sample before a single ballistic timer is evaluated on each dimension,
+so there is no race between response accumulators. New work uses the dynamic-GRT
+specification in ``docs/dynamic_grt_rt_design.md`` and the reference simulator
+in ``src/data/rt_dynamic_grt.py``.
 
-Everything else — the prior, z_max, r_max, trial_range, the model classes — is identical
-to the counts-only generator. The ONLY difference is that RTs come out too.
+For the exhaustive branches, confusion matrices use the same response rule as the
+counts-only generator and add response times from the same perceptual samples. The
+self-terminating branches do *not* preserve the count-only response rule: they guess
+an unprocessed dimension and therefore change the response proportions.
+
+The prior, z_max, r_max, trial_range, and model classes otherwise match the
+count-only generator.
 
 Implementation notes (vectorisation)
 ------------------------------------
@@ -24,10 +31,10 @@ SFT taxonomy: architecture (serial / parallel / coactive) x stopping rule (exhau
 self-terminating). Coactive has no stopping-rule crossing (evidence pools into a single
 accumulator), hence 5 models, not 6.
 
-NOTE on the self-terminating models: in an IDENTIFICATION task the response must name BOTH
-levels, so stopping early necessarily means guessing the un-processed dimension. These
-therefore represent the participant who is NOT using a dimension (incapacity, inattention,
-or strategy) — a pathology to DETECT, not a normal processing mode.
+NOTE on the self-terminating labels: in an identification task the response must
+name both levels, so these legacy branches add an explicit guessing mechanism for
+the unprocessed dimension. That is not the standard logical-rule meaning of
+self-termination and must not be interpreted as recovery of that architecture.
 """
 import numpy as np
 
