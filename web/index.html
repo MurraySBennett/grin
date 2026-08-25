@@ -29,6 +29,13 @@
       name="description"
       content="GRIN fits General Recognition Theory models to identification data in milliseconds, with calibrated uncertainty. Explore the theory, analyse your own data, and check the tool against the alternatives."
     />
+    <link rel="canonical" href="https://grin.murraysbennett.com/" />
+    <meta property="og:title" content="GRIN - General Recognition Inference Network" />
+    <meta property="og:description" content="GRIN fits General Recognition Theory models to identification data in milliseconds, with calibrated uncertainty. Explore the theory, analyse your own data, and check the tool against the alternatives." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://grin.murraysbennett.com/" />
+    <meta property="og:image" content="https://grin.murraysbennett.com/assets/images/og-card.svg" />
+    <link rel="icon" href="./assets/images/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -94,66 +101,23 @@
         <span class="eyebrow">Learn GRT by seeing it</span>
       </div>
       <div class="doors">
-        <a class="door" href="./space-builder.html">
-          <h3>Space Builder</h3>
+        <a class="door" href="./explore.html">
+          <h3>Explore</h3>
           <p>
-            Build an underlying perceptual space then try breaking assumptions
-            of separability and independence. Watch the confusion matrix change
-            then run virtual experiments to see whether GRIN can find its way
-            back to what you built.
+            Space Builder, the independence problem, and research previews for
+            response times and repeated fitting — interactive pages that share
+            the same in-browser model as Analyse.
           </p>
-          <span class="kicker">Start here →</span>
+          <span class="kicker">Open the toolkit →</span>
         </a>
 
-        <a class="door" href="./independence.html">
-          <h3>An independence problem</h3>
-          <p>
-            GRT readily recovers perceptual separability but, depending on
-            accuracy, can struggle to recover whether two dimensions are
-            perceptually independent. We demonstrate why, what it means for how
-            you design a study, and how GRIN can help.
-          </p>
-          <span class="kicker">Where to be careful →</span>
-        </a>
-
-      </div>
-
-      <div class="section-label">
-        <span class="eyebrow">Evidence</span>
-      </div>
-      <div class="doors">
         <a class="door" href="./validate.html">
-          <h3>Recovery and calibration</h3>
+          <h3>Evidence</h3>
           <p>
-            See the manuscript-scale held-out results, then run a smaller
-            simulation yourself to see what changes as the trial count falls.
+            Manuscript-scale held-out recovery and calibration, plus a smaller
+            live simulation you can run yourself as the trial count falls.
           </p>
           <span class="kicker">Check the estimator →</span>
-        </a>
-      </div>
-
-      <div class="section-label">
-        <span class="eyebrow">Research previews</span>
-      </div>
-      <div class="doors">
-        <a class="door" href="./space-builder-time-attack.html">
-          <h3>Counts + response time</h3>
-          <p>
-            A worked proof of concept for combining the perceptual space with
-            processing architecture. This model is experimental and is not
-            shipped in the released packages.
-          </p>
-          <span class="kicker">Explore the RT idea →</span>
-        </a>
-
-        <a class="door" href="./dynamics.html">
-          <h3>Repeated fitting and stopping</h3>
-          <p>
-            Explore drift tracking and an illustrative stopping rule. The page
-            shows what speed might make possible; it is not a validated
-            adaptive-design procedure.
-          </p>
-          <span class="kicker">Try the playground →</span>
         </a>
       </div>
 
@@ -161,9 +125,7 @@
         <span class="eyebrow">What it does and doesn't do</span>
         <div class="viz-2">
           <div>
-            <h3 style="font-size: 0.66rem; color: var(--steel); margin-top: 0">
-              What GRIN is good at
-            </h3>
+            <h3 class="card-subhead">What GRIN is good at</h3>
             <ul>
               <li>
                 <strong>Speed.</strong> Each participant is a forward pass, so
@@ -186,9 +148,7 @@
             </ul>
           </div>
           <div>
-            <h3 style="font-size: 0.66rem; color: var(--steel); margin-top: 0">
-              What it is not
-            </h3>
+            <h3 class="card-subhead">What it is not</h3>
             <ul>
               <li>
                 <strong>It is not assumption-free.</strong> GRIN is amortised
@@ -213,11 +173,11 @@
 
       <div class="card">
         <span class="eyebrow">Cite / source</span>
-        <p style="margin: 0">
+        <p class="flush">
           The paper is in preparation. The simulator, the networks, the
-          validation suite, and this site will be released together as open
-          source. If you find a case where GRIN breaks, please get in touch,
-          that is the useful kind of bug.
+          validation suite, and this site are open source. If you find a case
+          where GRIN breaks, please get in touch — that is the useful kind of
+          bug.
         </p>
         <div class="row">
           <a class="button" href="./learn.html">GRT primer</a>
@@ -238,17 +198,7 @@
       </div>
     </main>
 
-    <footer class="site">
-      <p>GRIN, amortised Bayesian inference for General Recognition Theory.</p>
-      <p class="fine">
-        <a href="https://murraysbennett.com"
-          >Part of Murray S. Bennett's research</a
-        >
-      </p>
-      <p class="fine">
-        Analysis runs client-side. Your experimental data are not uploaded.
-      </p>
-    </footer>
+    <div id="footer-placeholder"></div>
 
     <script type="module" src="./assets/js/grin-shell.js"></script>
   </body>

@@ -19,10 +19,10 @@
  *
  * STUB BACKEND
  * ------------
- * Until the .onnx files exist, `createStub()` returns an object with the same
- * interface, backed by the in-browser MLE fitter. It is NOT the network and
- * says so (`result.backend === "stub"`); the UI must surface that. It exists so
- * every page can be built and tested against a realistic response shape today.
+ * `createStub()` returns an object with the same interface, backed by the
+ * in-browser MLE fitter. It is NOT the network and says so
+ * (`result.backend === "stub"`); the UI must surface that. Useful for offline
+ * tests and for pages that want a realistic response shape without ORT.
  *
  * ES module. Depends on grt-fit.js (stub only) and, at runtime, onnxruntime-web.
  */
@@ -39,6 +39,9 @@ export const ORT_DIR = "./assets/vendor/ort/";
 export const ORT_SCRIPT = ORT_DIR + "ort.min.js";
 
 let ortLoading = null;
+/** Load onnxruntime-web only when inference is first requested — not on page
+ * paint. The WASM binary is ~10MB; deferring it keeps teaching pages snappy
+ * until the visitor actually runs a fit. */
 function loadOrtScript() {
   if (typeof ort !== "undefined") return Promise.resolve();
   if (ortLoading) return ortLoading;
@@ -55,6 +58,36 @@ function loadOrtScript() {
     document.head.appendChild(s);
   });
   return ortLoading;
+}
+
+const modelCache = new Map();
+
+/**
+ * Load (and memoize) a model directory. Optional `onStatus(msg)` reports
+ * progress so pages can show "Loading model…" instead of looking hung while
+ * the WASM runtime downloads.
+ * @param {string} dir e.g. "./assets/models/cm"
+ * @param {(msg:string)=>void} [onStatus]
+ * @returns {Promise<GrinModel>}
+ */
+export async function loadModelCached(dir, onStatus) {
+  if (modelCache.has(dir)) return modelCache.get(dir);
+  const p = (async () => {
+    onStatus?.("Loading ONNX runtime…");
+    await loadOrtScript();
+    onStatus?.("Loading model weights…");
+    // loadModel also calls loadOrtScript; the second call is a no-op once loaded.
+    const model = await loadModel(dir);
+    onStatus?.("Model ready.");
+    return model;
+  })();
+  modelCache.set(dir, p);
+  try {
+    return await p;
+  } catch (err) {
+    modelCache.delete(dir);
+    throw err;
+  }
 }
 
 // --------------------------------------------------------------------------- //

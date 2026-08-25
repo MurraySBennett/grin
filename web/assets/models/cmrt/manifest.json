@@ -57,6 +57,6 @@
     "intended_release_trial_range": [1, 1000],
     "intended_release_rt_seconds_range": [0.1, 10.0],
     "quantiles": [0.1, 0.3, 0.5, 0.7, 0.9],
-    "note": "This browser artifact predates the checkpoint provenance manifest. Its exact training data, bounds, and seed cannot be verified; current-config bounds must not be represented as historical checkpoint metadata."
+    "note": "Experimental RT preview weights. Replace this .onnx and update version/artifact_sha256/training when installing a release checkpoint. Prefer a versioned filename so CloudFront's long immutable cache cannot serve stale weights."
   }
 }

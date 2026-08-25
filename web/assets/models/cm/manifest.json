@@ -40,6 +40,6 @@
   "training": {
     "provenance_status": "unverified_legacy_checkpoint",
     "intended_release_trial_range": [1, 1000],
-    "note": "This browser artifact predates the checkpoint provenance manifest. Its exact training data, bounds, and seed cannot be verified; current-config bounds must not be represented as historical checkpoint metadata."
+    "note": "Replace this .onnx and update version/artifact_sha256/training when installing the release checkpoint. Prefer a versioned filename (e.g. npe_model.v1.onnx) so CloudFront's long immutable cache cannot serve stale weights."
   }
 }

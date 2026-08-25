@@ -1,24 +1,19 @@
 /**
- * grin-shell.js — the chrome. Nav injection, theme, and the Konami code.
+ * grin-shell.js — the chrome. Nav/footer injection, theme, and the Konami code.
  *
- * Every page has one `<div id="nav-placeholder"></div>` in its header instead
- * of a copy-pasted <nav>; this fetches web/components/nav.html once and
- * injects it there, matching the same pattern the main site's components.js
- * uses for nav.html/footer.html. One nav to edit, not seven.
+ * Every page has `<div id="nav-placeholder">` and `<div id="footer-placeholder">`
+ * instead of copy-pasted chrome; this fetches web/components/nav.html and
+ * footer.html once and injects them, matching the main site's components.js
+ * pattern. One place to edit, not eight.
  *
  * Theme is driven by ONE class on <html> (`is-dark`, on documentElement, not
- * body). That's deliberate, not incidental: <html> exists the instant the
- * parser starts, before <body> exists at all, which is what lets a tiny
- * SYNCHRONOUS inline <script> in every page's <head> (right after
- * <meta charset>) apply the class before the browser paints anything —
- * eliminating the flash a JS-module-only approach fundamentally cannot,
- * since deferred/module scripts only run after the whole document has
- * already been parsed (and often already painted). This file's own
- * `applyTheme(resolve())` call below re-applies the same logic afterward —
- * redundant with the inline script by design, both as a safety net and
- * because it's what actually redraws the canvases via themeChanged().
- * The CSS and the <canvas> drawing code both read from that single class, so
- * they can never disagree with each other.
+ * body). That's deliberate: <html> exists the instant the parser starts, before
+ * <body> exists at all, which is what lets a tiny SYNCHRONOUS inline <script>
+ * in every page's <head> (right after <meta charset>) apply the class before
+ * the browser paints anything — eliminating the flash a JS-module-only approach
+ * cannot. This file's `applyTheme(resolve())` re-applies the same logic
+ * afterward — redundant with the inline script by design, both as a safety net
+ * and because it's what actually redraws the canvases via themeChanged().
  *
  * ES module, side-effecting on import.
  */
@@ -27,16 +22,19 @@ import { themeChanged } from "./grt-plot.js";
 
 const KEY = "msb-dark-mode"; // shared with the main site; "dark" | "light" | absent -> follow the OS
 
-async function injectNav() {
-  const placeholder = document.getElementById("nav-placeholder");
-  if (!placeholder) return; // a page that hasn't been migrated to the shared nav yet
+async function injectFragment(placeholderId, url) {
+  const placeholder = document.getElementById(placeholderId);
+  if (!placeholder) return null;
   try {
-    const response = await fetch("./components/nav.html");
+    const response = await fetch(url);
     if (!response.ok)
-      throw new Error(`Failed to load nav.html: ${response.status}`);
-    placeholder.outerHTML = await response.text();
+      throw new Error(`Failed to load ${url}: ${response.status}`);
+    const html = await response.text();
+    placeholder.outerHTML = html;
+    return true;
   } catch (err) {
     console.error(err);
+    return false;
   }
 }
 
@@ -91,48 +89,74 @@ function wireThemeToggle() {
     });
 }
 
-/** Matches the main site's convention exactly: a data-nav on each link, a
- * data-page on <body>, the two compared directly — no URL/filename matching,
- * so a page can move or an anchor can carry query params without breaking
- * the highlight. */
+/** Matches the main site's convention: data-nav on each top link, data-page on
+ * <body>, compared directly — no URL/filename matching. Explore children use
+ * data-nav-sub and also light up the parent Explore item. */
 function initNav() {
   const pageGroups = {
+    explore: "explore",
     "space-builder": "explore",
     "time-attack": "explore",
     independence: "explore",
+    dynamics: "explore",
     validate: "evidence",
-    dynamics: "evidence",
   };
   const rawPage = document.body.dataset.page;
   const page = pageGroups[rawPage] ?? rawPage;
   if (!page) return;
+
   document.querySelectorAll("nav.site [data-nav]").forEach((a) => {
     if (a.dataset.nav === page) a.classList.add("active");
+  });
+  document.querySelectorAll("nav.site [data-nav-sub]").forEach((a) => {
+    if (a.dataset.navSub === rawPage) {
+      a.classList.add("active");
+      a.closest(".has-sub")?.classList.add("is-current");
+    }
   });
 
   const toggle = document.getElementById("nav-toggle");
   const nav = document.getElementById("site-nav");
+  const closeMobile = () => {
+    nav?.classList.remove("is-open");
+    toggle?.setAttribute("aria-expanded", "false");
+    if (toggle) toggle.textContent = "Pages";
+  };
+
   toggle?.addEventListener("click", () => {
     const open = nav?.classList.toggle("is-open") ?? false;
     toggle.setAttribute("aria-expanded", String(open));
     toggle.textContent = open ? "Close" : "Pages";
   });
+
+  // Explore submenu: click toggles on coarse pointers; hover works via CSS.
+  document.querySelectorAll(".nav-item.has-sub").forEach((item) => {
+    const trigger = item.querySelector(":scope > a");
+    trigger?.addEventListener("click", (e) => {
+      // On narrow layouts, first tap opens the submenu; second follows the link
+      // only if already open. Desktop keeps the link as the Explore landing.
+      if (window.matchMedia("(max-width: 40rem)").matches) {
+        if (!item.classList.contains("is-open")) {
+          e.preventDefault();
+          item.classList.add("is-open");
+          return;
+        }
+      }
+    });
+  });
+
   nav?.querySelectorAll("a").forEach((a) =>
     a.addEventListener("click", () => {
-      nav.classList.remove("is-open");
-      toggle?.setAttribute("aria-expanded", "false");
-      if (toggle) toggle.textContent = "Pages";
+      // Don't collapse mobile nav when only opening a submenu.
+      if (a.parentElement?.classList.contains("has-sub") &&
+          a.parentElement.classList.contains("is-open") &&
+          a.getAttribute("href") === "./explore.html" &&
+          window.matchMedia("(max-width: 40rem)").matches) {
+        return;
+      }
+      closeMobile();
     }),
   );
-}
-
-function initReleaseBanner() {
-  const main = document.querySelector("main.container");
-  if (!main || document.querySelector(".release-banner")) return;
-  const banner = document.createElement("div");
-  banner.className = "note warn release-banner";
-  banner.innerHTML = `<p><strong>Pre-release browser demo.</strong> The final checkpoint and its provenance manifest are not installed here yet. Use these pages to explore GRIN, not as the release estimator.</p>`;
-  main.prepend(banner);
 }
 
 /** It's his site. It stays. */
@@ -160,23 +184,19 @@ function initKonami() {
   });
 }
 
-// Re-apply immediately, synchronously, at module load -- this does NOT wait
-// on the async nav fetch, but on its own it still couldn't eliminate the
-// flash: this file only runs after the browser has finished parsing (and
-// often already painted) the document, same as any deferred/module script.
-// The inline <script> in each page's <head> (right after <meta charset>) is
-// what actually prevents the flash, by running before <body> is parsed at
-// all. This call exists as a fallback (covers any state drift) and because
-// it's what triggers themeChanged() to redraw canvases once they exist.
+// Re-apply immediately at module load — does NOT wait on the async fragment
+// fetch. The inline <script> in each page's <head> is what prevents the flash.
 applyTheme(resolve());
 
 async function init() {
-  await injectNav();
+  await Promise.all([
+    injectFragment("nav-placeholder", "./components/nav.html"),
+    injectFragment("footer-placeholder", "./components/footer.html"),
+  ]);
   // The toggle does not exist until the shared fragment has been injected.
   applyTheme(resolve());
   wireThemeToggle();
   initNav();
-  initReleaseBanner();
   initKonami();
 }
 

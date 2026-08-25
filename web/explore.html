@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <script>
+      (function () {
+        try {
+          var s = localStorage.getItem("msb-dark-mode");
+          var dark =
+            s === "dark" ||
+            (s !== "light" &&
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) document.documentElement.classList.add("is-dark");
+        } catch (e) {}
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Explore - GRIN</title>
+    <meta
+      name="description"
+      content="Interactive tools for seeing General Recognition Theory: build a perceptual space, probe independence, and try research previews for response times and repeated fitting."
+    />
+    <link rel="canonical" href="https://grin.murraysbennett.com/explore.html" />
+    <meta property="og:title" content="Explore - GRIN" />
+    <meta
+      property="og:description"
+      content="Build a perceptual space, probe independence, and try research previews — all in your browser."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://grin.murraysbennett.com/explore.html" />
+    <meta
+      property="og:image"
+      content="https://grin.murraysbennett.com/assets/images/og-card.svg"
+    />
+    <link rel="icon" href="./assets/images/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./assets/css/grin.css" />
+  </head>
+  <body data-page="explore">
+    <header class="site">
+      <h1>Explore</h1>
+      <p class="tagline">
+        See GRT by building spaces, stressing independence, and trying what
+        speed makes possible.
+      </p>
+      <div id="nav-placeholder"></div>
+    </header>
+
+    <main class="container">
+      <div class="plain plain-lead">
+        <span class="eyebrow">Where to start</span>
+        <p>
+          These pages share the same in-browser model as Analyse. Use them to
+          build intuition before you bring your own data — or to stress-test
+          what a confusion matrix can and cannot tell you.
+        </p>
+      </div>
+
+      <div class="section-label">
+        <span class="eyebrow">Core</span>
+      </div>
+      <div class="doors">
+        <a class="door" href="./space-builder.html">
+          <h3>Space Builder</h3>
+          <p>
+            Build an underlying perceptual space, break separability or
+            independence, watch the confusion matrix change, then run a virtual
+            experiment and see whether GRIN recovers what you built.
+          </p>
+          <span class="kicker">Start here →</span>
+        </a>
+        <a class="door" href="./independence.html">
+          <h3>An independence problem</h3>
+          <p>
+            Separability is often recoverable; within-stimulus correlation is
+            harder. This page shows why, what it means for study design, and how
+            GRIN surfaces the uncertainty.
+          </p>
+          <span class="kicker">Where to be careful →</span>
+        </a>
+      </div>
+
+      <div class="section-label">
+        <span class="eyebrow">Research previews</span>
+      </div>
+      <div class="doors">
+        <a class="door" href="./space-builder-time-attack.html">
+          <h3>Counts + response time</h3>
+          <p>
+            A worked proof of concept for combining the perceptual space with
+            processing architecture under a simplified ballistic timing model.
+            Not shipped in the released packages.
+          </p>
+          <span class="kicker">Explore the RT idea →</span>
+        </a>
+        <a class="door" href="./dynamics.html">
+          <h3>Repeated fitting and stopping</h3>
+          <p>
+            Drift tracking and an illustrative stopping rule. Shows what speed
+            might make possible; not a validated adaptive-design procedure.
+          </p>
+          <span class="kicker">Try the playground →</span>
+        </a>
+      </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+    <script type="module" src="./assets/js/grin-shell.js"></script>
+  </body>
+</html>

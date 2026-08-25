@@ -14,13 +14,14 @@ ES modules need an origin — opening the files over `file://` will not work.
 ## Pages
 
     index.html                       landing
+    explore.html                     hub for interactive teaching / preview tools
     space-builder.html               teaching tier, counts only — build a space,
                                        run a virtual experiment, watch it recover
     space-builder-time-attack.html   research preview, counts + response times ("+RT")
                                        — processing architecture under a simplified
                                        ballistic timing model
-    independence.html               we try demonstrating and exploring the difficulty in
-                                        identifying perceptual independence.
+    independence.html                demonstrating the difficulty of identifying
+                                       perceptual independence
     analyse.html                     bring your own data (upload CSV, paste, or type
                                        a matrix); GRIN beside a maximum-likelihood fit
     validate.html                    recovery + interval calibration, simulated live
@@ -43,10 +44,12 @@ Validate checks recovery and calibration on simulated data where the truth is kn
     assets/js/grt-sim.js        the forward simulator (counts, trial streams,
                                   simplified ballistic RT timing)
     assets/js/grt-plot.js       canvas + DOM rendering, theme, palettes
-    assets/js/grin-model.js     manifest-driven ONNX wrapper (loadModel)
-    assets/js/grin-shell.js     theme, shared nav injection, konami
+    assets/js/grin-model.js     manifest-driven ONNX wrapper (loadModel / loadModelCached)
+    assets/js/grin-shell.js     theme, shared nav/footer injection, konami
+    assets/js/pages/*.js        per-page application logic (ES modules)
 
-    assets/components/nav.html  fetched and injected by grin-shell.js
+    components/nav.html         fetched and injected by grin-shell.js
+    components/footer.html      same
 
     assets/models/cm/           manifest.json + npe_model.onnx        (counts-only network)
     assets/models/cmrt/         manifest.json + npe_rt_model.onnx     (counts + RT network)
@@ -55,13 +58,14 @@ Validate checks recovery and calibration on simulated data where the truth is kn
 
 ## Inference wiring
 
-Pages load a network with `loadModel("./assets/models/cm")` (or `.../cmrt`). The
-**manifest is the contract**: each `manifest.json` declares the network's input and
-output names, shapes, parameter order, and the prior it was trained under, so nothing
-about the layout is hardcoded in the JS. If a manifest and its `.onnx` fall out of
-sync, `grin-model.js` fails loudly at load rather than silently mis-decoding the
-output. Single-threaded SIMD WASM keeps a fit at roughly a millisecond without needing
-SharedArrayBuffer or special response headers.
+Pages load a network with `loadModelCached("./assets/models/cm")` (or `.../cmrt`).
+The **manifest is the contract**: each `manifest.json` declares the network's input
+and output names, shapes, parameter order, and the prior it was trained under, so
+nothing about the layout is hardcoded in the JS. If a manifest and its `.onnx` fall
+out of sync, `grin-model.js` fails loudly at load rather than silently mis-decoding
+the output. Single-threaded SIMD WASM keeps a fit at roughly a millisecond without
+needing SharedArrayBuffer or special response headers. The ORT runtime is fetched
+only on first inference, not on page paint.
 
 If you're building a *different* experiment (jsPsych, lab.js, or similar) and want
 this same live in-browser inference in it, `grin-model.js` is reusable as example
@@ -72,10 +76,10 @@ code — copy it in and adapt it, it's not a published package. See
 
 One class on `<html>` (`is-dark`) drives everything. A tiny synchronous inline
 `<script>` in each page's `<head>` (right after `<meta charset>`) applies it before
-first paint to avoid that dumb flash you were getting, reading the shared `msb-dark-mode`
-key; `grin-shell.js` re-applies the same logic afterwards and wires the toggle.
-The CSS and the canvas drawing both read from that one class, so they can never disagree.
+first paint to avoid flash, reading the shared `msb-dark-mode` key; `grin-shell.js`
+re-applies the same logic afterwards and wires the toggle. The CSS and the canvas
+drawing both read from that one class, so they can never disagree.
 
 ## Deploy
 
-    see github\workflows\deploy.yaml
+See [DEPLOYMENT.md](./DEPLOYMENT.md) and `.github/workflows/deploy.yaml`.

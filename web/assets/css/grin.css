@@ -196,7 +196,9 @@ nav.site {
 .nav-toggle {
   display: none;
 }
-nav.site ul {
+/* Only the top-level list — do NOT match .nav-sub or it stays permanently open
+   (nav.site ul beats .nav-sub on specificity). */
+nav.site > ul {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -230,6 +232,63 @@ nav.site a.active {
   border-color: var(--rose-deep);
   transform: translateY(-0.25rem);
   box-shadow: 0.12rem 0.12rem 0 #333;
+}
+
+/* Explore dropdown */
+.nav-item.has-sub {
+  position: relative;
+}
+nav.site ul.nav-sub {
+  display: none;
+  list-style: none;
+  margin: 0;
+  padding: 0.45rem;
+  min-width: 12.5rem;
+  position: absolute;
+  /* Flush under the trigger so the pointer never crosses a dead gap.
+     A short ::before bridge covers any subpixel/shadow gap above. */
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--slate-deep);
+  border: 0.12rem solid var(--ice);
+  border-radius: 0.5rem;
+  box-shadow: 0.18rem 0.18rem 0 rgba(0, 0, 0, 0.28);
+  z-index: 1100;
+  text-align: left;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+nav.site ul.nav-sub::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -0.5rem;
+  height: 0.5rem;
+}
+nav.site .nav-item.has-sub:hover > ul.nav-sub,
+nav.site .nav-item.has-sub:focus-within > ul.nav-sub,
+nav.site .nav-item.has-sub.is-open > ul.nav-sub {
+  display: flex;
+}
+nav.site ul.nav-sub a {
+  font-size: 0.52rem;
+  padding: 0.45rem 0.55rem;
+  text-shadow: none;
+  white-space: nowrap;
+}
+nav.site ul.nav-sub a.active {
+  background: var(--rose);
+}
+.nav-badge {
+  font-family: "Inter", sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+  opacity: 0.85;
+  margin-left: 0.25rem;
 }
 
 footer.site {
@@ -852,6 +911,70 @@ summary:hover {
 .section-label {
   margin: 1.6rem 0 -0.7rem;
 }
+.card-subhead {
+  font-size: 0.66rem;
+  color: var(--steel);
+  margin-top: 0;
+}
+.plain-lead,
+.plain {
+  margin-bottom: 1.25rem;
+}
+.flush {
+  margin: 0;
+}
+.flush-bottom {
+  margin-bottom: 0;
+}
+.dropzone {
+  border: 2px dashed var(--line);
+  border-radius: var(--radius-sm);
+  padding: 1.4rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--mute);
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.dropzone:hover,
+.dropzone:focus-visible,
+.dropzone.is-active {
+  border-color: var(--slate);
+  background: var(--line-soft);
+  color: var(--ink);
+}
+.learn-toc {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 1rem;
+  margin: 0 0 1.25rem;
+  padding: 0.85rem 1rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.learn-toc .eyebrow {
+  margin: 0;
+}
+.learn-toc ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.85rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.learn-toc a {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.learn-toc a:hover {
+  text-decoration: underline;
+}
 .release-banner {
   margin-bottom: 1rem;
 }
@@ -1075,6 +1198,9 @@ body.konami-mode canvas {
   header.site h1 {
     font-size: 0.85rem;
   }
+  .site-connection {
+    display: none; /* declutter sticky chrome; link remains in the footer */
+  }
   button.nav-toggle {
     display: inline-block;
     margin: 0.65rem 0.2rem 0;
@@ -1092,18 +1218,28 @@ body.konami-mode canvas {
   nav.site.is-open {
     display: block;
   }
-  nav.site ul {
+  nav.site > ul {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.4rem;
   }
+  nav.site > ul > .nav-item.has-sub {
+    grid-column: 1 / -1;
+  }
+  nav.site ul.nav-sub {
+    position: static;
+    transform: none;
+    margin-top: 0.35rem;
+    min-width: 0;
+  }
+  nav.site .nav-item.has-sub:hover > ul.nav-sub {
+    display: none; /* mobile uses tap-to-open only */
+  }
+  nav.site .nav-item.has-sub.is-open > ul.nav-sub {
+    display: flex;
+  }
   nav.site a {
     padding: 0.55rem 0.35rem;
-  }
-  .site-connection {
-    display: inline-block;
-    margin: 0.65rem 0.2rem 0;
-    vertical-align: middle;
   }
   #theme-row {
     display: inline-flex;
@@ -1118,5 +1254,9 @@ body.konami-mode canvas {
   }
   .pbar .lbl {
     width: 8rem;
+  }
+  .learn-toc {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

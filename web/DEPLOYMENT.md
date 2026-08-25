@@ -228,17 +228,18 @@ account.
 
 ## Part 3: before the first push
 
-The deploy workflow (`.github/workflows/deploy.yml`) has no build step — it
+The deploy workflow (`.github/workflows/deploy.yaml`) has no build step — it
 deploys exactly what's committed to `web/`, nothing generated on the fly.
-Before pushing to `main` for the first time, confirm these are actually
-committed (not just present on your machine):
+Before pushing to `main`, confirm these are actually committed (not just
+present on your machine). The workflow's smoke-check step also verifies them:
 
-- [ ] `web/assets/models/cm/npe_model.onnx`
-- [ ] `web/assets/models/cmrt/npe_rt_model.onnx`
+- [ ] `web/assets/models/cm/npe_model.onnx` (+ matching `manifest.json`)
+- [ ] `web/assets/models/cmrt/npe_rt_model.onnx` (+ matching `manifest.json`)
 
-A missing file here doesn't fail the deploy or throw an error anywhere — it
-just means that one feature quietly doesn't work on the live site until you
-notice and fix it.
+When you replace the release checkpoint, update the `.onnx` **and** the
+manifest `version` / `artifact_sha256` / `training` fields together. Prefer
+versioned filenames (e.g. `npe_model.v1.onnx`) if you want the long CloudFront
+cache to stay safe across weight swaps.
 
 ---
 
@@ -329,7 +330,7 @@ unreliable depending on the runner's Python build.
 **A deploy succeeded but the site looks unchanged:**
 Browser cache, not a deploy failure — HTML is served `no-cache` so this
 should self-correct on reload, but JS/CSS/assets are cached for an hour by
-design (see the comment block in `deploy.yml` for why). Hard-refresh
+design (see the comment block in `deploy.yaml` for why). Hard-refresh
 (Ctrl/Cmd+Shift+R) to confirm before assuming something's actually broken.
 
 **GitHub Action fails with an AWS auth error:**

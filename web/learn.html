@@ -21,6 +21,13 @@
       name="description"
       content="A primer on General Recognition Theory, a glossary of terms,  and a statement of GRIN's limitations."
     />
+    <link rel="canonical" href="https://grin.murraysbennett.com/learn.html" />
+    <meta property="og:title" content="Learn - GRIN" />
+    <meta property="og:description" content="A primer on General Recognition Theory, a glossary of terms, and a statement of GRIN's limitations." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://grin.murraysbennett.com/learn.html" />
+    <meta property="og:image" content="https://grin.murraysbennett.com/assets/images/og-card.svg" />
+    <link rel="icon" href="./assets/images/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -37,8 +44,19 @@
     </header>
 
     <main class="container">
+      <nav class="learn-toc" aria-label="On this page">
+        <span class="eyebrow">On this page</span>
+        <ul>
+          <li><a href="#primer">Primer</a></li>
+          <li><a href="#glossary">Glossary</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><a href="#limitations">Limitations</a></li>
+          <li><a href="#reading">Further reading</a></li>
+        </ul>
+      </nav>
+
       <!-- ================================================================ -->
-      <div class="card">
+      <div class="card" id="primer">
         <span class="eyebrow">A 5-minute primer</span>
 
         <h3 style="font-size: 0.75rem; color: var(--steel)">1. The task</h3>
@@ -115,7 +133,7 @@
       </div>
 
       <!-- ================================================================ -->
-      <div class="card">
+      <div class="card" id="glossary">
         <span class="eyebrow">Glossary</span>
         <dl style="margin: 0">
           <div class="note" style="margin-bottom: 0.6rem">
@@ -203,7 +221,7 @@
       </div>
 
       <!-- ================================================================ -->
-      <div class="card">
+      <div class="card" id="faq">
         <span class="eyebrow">FAQ</span>
 
         <details open>
@@ -292,7 +310,7 @@
       </div>
 
       <!-- ================================================================ -->
-      <div class="card">
+      <div class="card" id="limitations">
         <span class="eyebrow">Limitations</span>
         <div class="note warn">
           <h4>Amortised over a fixed prior</h4>
@@ -303,13 +321,6 @@
             checks matrix shape, trial counts, accuracy, and RT units where it
             can. Those are useful input checks, not proof that a dataset falls
             inside the latent training distribution or that GRT generated it.
-          </p>
-          <p>
-            The browser currently uses a legacy preview checkpoint that predates
-            the new provenance manifest. Its exact historical training bounds
-            cannot be verified. That artifact will be replaced for release; the
-            1–1000-trial range shown by the input checks is the intended release
-            configuration, not reconstructed metadata for the legacy model.
           </p>
         </div>
         <div class="note warn">
@@ -351,7 +362,7 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" id="reading">
         <span class="eyebrow">Further reading</span>
         <ul style="margin: 0">
           <li>
@@ -383,17 +394,7 @@
       </div>
     </main>
 
-    <footer class="site">
-      <p>GRIN, amortised Bayesian inference for General Recognition Theory.</p>
-      <p class="fine">
-        <a href="https://murraysbennett.com"
-          >Part of Murray S. Bennett's research</a
-        >
-      </p>
-      <p class="fine">
-        Everything runs client-side. No data leaves your machine.
-      </p>
-    </footer>
+    <div id="footer-placeholder"></div>
 
     <script type="module" src="./assets/js/grin-shell.js"></script>
   </body>

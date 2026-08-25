@@ -24,6 +24,37 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 1b. Smoke-check web/ artifacts BEFORE uploading. Catches the silent
+      #     "model missing from the commit" failure mode early.
+      - name: Smoke-check web/ artifacts
+        run: |
+          set -euo pipefail
+          test -f web/index.html
+          test -f web/analyse.html
+          test -f web/explore.html
+          test -f web/components/nav.html
+          test -f web/components/footer.html
+          test -f web/assets/js/grin-shell.js
+          test -f web/assets/js/grin-model.js
+          test -f web/assets/js/pages/analyse.js
+          test -f web/assets/models/cm/manifest.json
+          test -f web/assets/models/cm/npe_model.onnx
+          test -f web/assets/models/cmrt/manifest.json
+          test -f web/assets/models/cmrt/npe_rt_model.onnx
+          test -f web/assets/vendor/ort/ort.min.js
+          test -f web/assets/vendor/ort/ort-wasm-simd.wasm
+          test -f web/assets/images/favicon.svg
+          python3 - <<'PY'
+          import json, pathlib
+          for d in ("cm", "cmrt"):
+              mf = json.loads(pathlib.Path(f"web/assets/models/{d}/manifest.json").read_text())
+              assert "file" in mf and "inputs" in mf and "outputs" in mf and "params" in mf
+              onnx = pathlib.Path(f"web/assets/models/{d}") / mf["file"]
+              assert onnx.is_file(), f"missing {onnx}"
+              assert onnx.stat().st_size > 1000, f"{onnx} looks empty"
+          print("web smoke check ok")
+          PY
+
       # 2. Configure AWS credentials from GitHub Secrets.
       #    You must add these three secrets in your GitHub repo:
       #    Settings → Secrets and variables → Actions → New repository secret
