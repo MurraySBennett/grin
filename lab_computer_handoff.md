@@ -1,5 +1,12 @@
 # Handoff: dynamic-GRT RT model, validation gates 4-8
 
+> **SUPERSEDED — historical record of a 2026-08-14 handoff, not current status.**
+> Work has moved past it: the gate-2 high-n rerun this document queued as "first
+> thing to do" has been run, gate 4 has been completed analytically, and the
+> vectorised generator has been built and tested. For where the RT extension
+> actually stands, read **`docs/dynamic_grt_rt_design.md` §0**, which is kept
+> current against the gate artifacts. Do not plan from the task list below.
+
 Paste this whole message into the new Claude Code session on the lab computer
 (same repo, `OneDrive - The Ohio State University\projects\grin` -- should already
 be synced via OneDrive, so no files need copying, just context).

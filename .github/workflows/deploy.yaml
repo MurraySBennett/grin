@@ -25,7 +25,15 @@ jobs:
         uses: actions/checkout@v4
 
       # 1b. Smoke-check web/ artifacts BEFORE uploading. Catches the silent
-      #     "model missing from the commit" failure mode early.
+      #     "model missing from the commit" failure mode early -- and, since the
+      #     .onnx files ship with a 1-year immutable cache header (step 3b), the
+      #     rather worse "shipped the wrong bytes" one, which is unrecoverable
+      #     for up to a year in a visitor's browser.
+      #
+      #     The .onnx filenames are deliberately NOT hardcoded here: they carry a
+      #     version (npe_model.v1.0.0.onnx) so that an immutable cache can never
+      #     serve stale weights, which means the manifest is the only thing that
+      #     knows the current name. scripts/export_onnx.py --install writes both.
       - name: Smoke-check web/ artifacts
         run: |
           set -euo pipefail
@@ -38,20 +46,124 @@ jobs:
           test -f web/assets/js/grin-model.js
           test -f web/assets/js/pages/analyse.js
           test -f web/assets/models/cm/manifest.json
-          test -f web/assets/models/cm/npe_model.onnx
           test -f web/assets/models/cmrt/manifest.json
-          test -f web/assets/models/cmrt/npe_rt_model.onnx
           test -f web/assets/vendor/ort/ort.min.js
           test -f web/assets/vendor/ort/ort-wasm-simd.wasm
           test -f web/assets/images/favicon.svg
           python3 - <<'PY'
-          import json, pathlib
+          import hashlib, json, pathlib, sys
+
+          failures = []
+
+          def sha256(path):
+              h = hashlib.sha256()
+              with open(path, "rb") as fh:
+                  for block in iter(lambda: fh.read(1 << 20), b""):
+                      h.update(block)
+              return h.hexdigest()
+
           for d in ("cm", "cmrt"):
-              mf = json.loads(pathlib.Path(f"web/assets/models/{d}/manifest.json").read_text())
-              assert "file" in mf and "inputs" in mf and "outputs" in mf and "params" in mf
-              onnx = pathlib.Path(f"web/assets/models/{d}") / mf["file"]
-              assert onnx.is_file(), f"missing {onnx}"
-              assert onnx.stat().st_size > 1000, f"{onnx} looks empty"
+              base = pathlib.Path("web/assets/models") / d
+              mf = json.loads((base / "manifest.json").read_text())
+
+              for k in ("id", "file", "version", "inputs", "outputs", "params", "training"):
+                  if k not in mf:
+                      failures.append(f"{d}: manifest is missing required key {k!r}")
+              if "file" not in mf:
+                  continue
+
+              onnx = base / mf["file"]
+              if not onnx.is_file():
+                  failures.append(f"{d}: manifest names {mf['file']!r} but that file is not in the commit")
+                  continue
+              if onnx.stat().st_size <= 1000:
+                  failures.append(f"{d}: {onnx} looks empty ({onnx.stat().st_size} bytes)")
+
+              # Integrity. The hash is written by scripts/export_onnx.py --install;
+              # a mismatch means the manifest and the weights came from different
+              # exports, which is precisely the state that must never reach a cache
+              # header of max-age=31536000.
+              declared = str(mf.get("artifact_sha256", "")).lower()
+              if not declared:
+                  failures.append(f"{d}: manifest has no artifact_sha256")
+              else:
+                  actual = sha256(onnx)
+                  if actual != declared:
+                      failures.append(
+                          f"{d}: sha256 mismatch for {mf['file']}\n"
+                          f"      manifest declares {declared}\n"
+                          f"      file on disk is   {actual}\n"
+                          f"      Re-run: python scripts/export_onnx.py"
+                          f"{' --rt' if d == 'cmrt' else ''} --install --version <ver>"
+                      )
+
+              # Placeholder provenance must not ship. These are the exact sentinel
+              # values the pre-release manifests carried.
+              status = str(mf.get("training", {}).get("provenance_status", ""))
+              if status in ("", "unverified_legacy_checkpoint") or "legacy" in status:
+                  failures.append(
+                      f"{d}: provenance_status is {status!r} -- this is a placeholder "
+                      f"checkpoint, not a release. Export a real one before deploying."
+                  )
+              if str(mf.get("version", "")).startswith("0.0.0-preview"):
+                  failures.append(f"{d}: version is still the placeholder {mf['version']!r}")
+
+              # Versioned filename: a hard requirement given step 3b's cache header.
+              if mf["file"] in ("npe_model.onnx", "npe_rt_model.onnx"):
+                  failures.append(
+                      f"{d}: {mf['file']!r} is unversioned. Step 3b ships .onnx with "
+                      f"max-age=31536000, immutable, so overwriting a fixed filename "
+                      f"leaves returning visitors on the old weights for up to a year."
+                  )
+
+              if status == "preview":
+                  print(f"  note: {d} is shipping as a PREVIEW ({mf.get('version')}) -- allowed, but not a release.")
+
+          # Cross-check against the run manifest, when the release recorded one:
+          # proves the shipped weights are the ones the pipeline run produced,
+          # not a stray file that happened to be in the tree.
+          #
+          # Text artifacts are compared by CONTENT, not raw bytes. A manifest
+          # written on a Windows machine records CRLF hashes; this runner checks
+          # out LF. Comparing raw bytes there fails every tracked .json while
+          # nothing is actually wrong -- and a check that cries wolf is a check
+          # that gets ignored. Weights (.onnx) are always compared byte-exact.
+          TEXT_EXTS = {".json", ".md", ".csv", ".txt", ".yaml", ".yml"}
+
+          def content_matches(path, expected):
+              data = path.read_bytes()
+              if path.suffix.lower() not in TEXT_EXTS:
+                  return hashlib.sha256(data).hexdigest() == expected
+              lf = data.replace(b"\r\n", b"\n")
+              for cand in (data, lf, lf.replace(b"\n", b"\r\n")):
+                  if hashlib.sha256(cand).hexdigest() == expected:
+                      return True
+              return False
+
+          rm = pathlib.Path("results/run_manifest.json")
+          if rm.is_file():
+              run = json.loads(rm.read_text())
+              tier1 = [a for a in run.get("artifacts", []) if a.get("tier") == 1]
+              checked = 0
+              for a in tier1:
+                  path = pathlib.Path(a["path"])
+                  if not path.is_file() or "sha256" not in a:
+                      continue
+                  if not content_matches(path, a["sha256"]):
+                      failures.append(
+                          f"{a['path']} does not match results/run_manifest.json "
+                          f"(run {run.get('run_id')})"
+                      )
+                  checked += 1
+              print(f"  cross-checked {checked} tier-1 artifact(s) against run {run.get('run_id')}")
+          else:
+              print("  note: no results/run_manifest.json -- skipping run cross-check.")
+
+          if failures:
+              print("\nweb smoke check FAILED:")
+              for f in failures:
+                  print("  - " + f)
+              sys.exit(1)
           print("web smoke check ok")
           PY
 
