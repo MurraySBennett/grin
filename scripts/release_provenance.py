@@ -99,9 +99,37 @@ def classify(relpath: str) -> tuple[int, bool]:
 
 # --------------------------------------------------------------------------- #
 # Hashing
+#
+# Text artifacts are hashed on EOL-NORMALISED content; binaries are hashed raw.
+#
+# This is not fastidiousness. The lab machine writes CRLF and a Linux checkout
+# with core.autocrlf=input has LF, so hashing raw working-tree bytes makes every
+# tracked .json and .csv "mismatch" across the two machines while being byte-for-
+# byte identical in git. That turns the integrity check into noise, which is worse
+# than not having one -- a check that cries wolf gets ignored on the day it is
+# right. Normalising makes the hash a statement about content, which is what
+# anyone reading it assumes it already was.
+#
+# Binaries (.onnx, .pt, .npz) are never normalised: a stray CRLF substitution in
+# a weights file would be corruption, and must show up as one.
 # --------------------------------------------------------------------------- #
-def sha256_file(path: str, _chunk: int = 1 << 20) -> str:
-    """Streaming sha256, lowercase hex. Handles multi-GB checkpoints."""
+TEXT_EXTS = {".json", ".md", ".csv", ".txt", ".tex", ".yaml", ".yml", ".py", ".js", ".r"}
+
+
+def is_text_artifact(path: str) -> bool:
+    return os.path.splitext(path)[1].lower() in TEXT_EXTS
+
+
+def sha256_file(path: str, _chunk: int = 1 << 20, raw: bool = False) -> str:
+    """sha256, lowercase hex. Streams, so multi-GB checkpoints are fine.
+
+    raw=True forces byte-exact hashing even for text -- used to diagnose whether a
+    mismatch is a line-ending difference or a real content change.
+    """
+    if not raw and is_text_artifact(path):
+        with open(path, "rb") as fh:
+            data = fh.read()
+        return hashlib.sha256(data.replace(b"\r\n", b"\n")).hexdigest()
     h = hashlib.sha256()
     with open(path, "rb") as fh:
         for block in iter(lambda: fh.read(_chunk), b""):
@@ -276,8 +304,10 @@ def build_run_manifest(
 
 
 def write_json(path: str, obj: dict) -> None:
+    # newline="\n": Python's text mode writes CRLF on Windows, which would make
+    # this file's own bytes differ by platform. Pin it at the source.
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as fh:
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
         json.dump(obj, fh, indent=2, sort_keys=False)
         fh.write("\n")
 
@@ -287,15 +317,34 @@ def load_json(path: str) -> dict:
         return json.load(fh)
 
 
+def _matches_any_eol(path: str, expected: str) -> bool:
+    """True if the file's content matches `expected` under SOME line-ending
+    convention. Old manifests recorded raw working-tree bytes, so the recorded
+    hash may be of CRLF content (written on Windows) while this checkout is LF, or
+    the reverse. Both directions have to be tried -- checking only one is how the
+    first version of this reported 28 identical files as corrupt.
+    """
+    with open(path, "rb") as fh:
+        raw = fh.read()
+    lf = raw.replace(b"\r\n", b"\n")
+    for candidate in (raw, lf, lf.replace(b"\n", b"\r\n")):
+        if hashlib.sha256(candidate).hexdigest() == expected:
+            return True
+    return False
+
+
 def verify_against_manifest(
     manifest: dict, tiers: tuple[int, ...] = (1, 2), root: str = PROJECT_ROOT
-) -> list[str]:
-    """Re-hash the named tiers and return a list of human-readable problems.
+) -> tuple[list[str], list[str]]:
+    """Re-hash the named tiers. Returns (problems, eol_only).
 
-    Empty list == every artifact in those tiers is byte-identical to what the run
-    recorded. This is the check that makes the whole scheme worth anything.
+    `problems` empty == every artifact in those tiers has the content the run
+    recorded. `eol_only` lists text files whose content matches but whose bytes
+    differ by line-ending convention; those are reported, not failed, because
+    treating them as corruption is what makes an integrity check get ignored.
     """
     problems: list[str] = []
+    eol_only: list[str] = []
     for entry in manifest.get("artifacts", []):
         if entry["tier"] not in tiers:
             continue
@@ -306,13 +355,20 @@ def verify_against_manifest(
         if "sha256" not in entry:
             continue
         actual = sha256_file(abspath)
-        if actual != entry["sha256"]:
-            problems.append(
-                f"MISMATCH  {entry['path']}\n"
-                f"            expected {entry['sha256']}\n"
-                f"            actual   {actual}"
-            )
-    return problems
+        if actual == entry["sha256"]:
+            continue
+        # Distinguish "different content" from "same content, different newlines".
+        # Manifests written before hashing was normalised recorded raw bytes, so a
+        # cross-platform verify of an old manifest lands here for every text file.
+        if is_text_artifact(entry["path"]) and _matches_any_eol(abspath, entry["sha256"]):
+            eol_only.append(entry["path"])
+            continue
+        problems.append(
+            f"MISMATCH  {entry['path']}\n"
+            f"            expected {entry['sha256']}\n"
+            f"            actual   {actual}"
+        )
+    return problems, eol_only
 
 
 if __name__ == "__main__":
@@ -325,13 +381,22 @@ if __name__ == "__main__":
     args = ap.parse_args()
 
     if args.verify:
-        probs = verify_against_manifest(load_json(args.verify))
+        probs, eol = verify_against_manifest(load_json(args.verify))
         if probs:
             print(f"FAIL — {len(probs)} problem(s):")
             for p in probs:
                 print("  " + p)
             raise SystemExit(1)
-        print("OK — every tier 1+2 artifact matches the run manifest.")
+        if eol:
+            print(f"OK (with a note) — every tier 1+2 artifact has the recorded CONTENT.")
+            print(f"\n  {len(eol)} text file(s) differ only in line endings from what the")
+            print("  manifest recorded. That manifest was written on a machine with a")
+            print("  different newline convention, before hashing was EOL-normalised.")
+            print("  Nothing is corrupt. To clear the note, re-run")
+            print("  scripts/release_bundle.py on the machine that holds the run.")
+            print(f"\n  e.g. {', '.join(eol[:3])}")
+        else:
+            print("OK — every tier 1+2 artifact matches the run manifest.")
     else:
         arts = scan_artifacts(hash_tier3=not args.fast)
         for t in (1, 2, 3):

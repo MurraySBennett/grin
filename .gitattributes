@@ -1,0 +1,30 @@
+# Line endings.
+#
+# Added after a concrete failure: the lab GPU machine writes CRLF, a Linux
+# checkout with core.autocrlf=input has LF, and results/run_manifest.json records
+# the sha256 of every artifact. 28 tracked JSON/CSV files that were byte-identical
+# in git therefore hashed differently on the two machines and were reported as
+# integrity failures. The hashing side now normalises text before hashing, but the
+# root cause is that the two working trees genuinely differed -- this file fixes
+# that, so the two agree in the first place.
+* text=auto eol=lf
+
+# Binary: never touch these. A newline substitution inside model weights or a
+# dataset is corruption, and must be visible as corruption rather than silently
+# "normalised".
+*.onnx  binary
+*.pt    binary
+*.npz   binary
+*.npy   binary
+*.wasm  binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.pdf   binary
+*.zip   binary
+*.gz    binary
+*.tar   binary
+*.woff  binary
+*.woff2 binary
+*.ico   binary

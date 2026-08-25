@@ -122,6 +122,24 @@ jobs:
           # Cross-check against the run manifest, when the release recorded one:
           # proves the shipped weights are the ones the pipeline run produced,
           # not a stray file that happened to be in the tree.
+          #
+          # Text artifacts are compared by CONTENT, not raw bytes. A manifest
+          # written on a Windows machine records CRLF hashes; this runner checks
+          # out LF. Comparing raw bytes there fails every tracked .json while
+          # nothing is actually wrong -- and a check that cries wolf is a check
+          # that gets ignored. Weights (.onnx) are always compared byte-exact.
+          TEXT_EXTS = {".json", ".md", ".csv", ".txt", ".yaml", ".yml"}
+
+          def content_matches(path, expected):
+              data = path.read_bytes()
+              if path.suffix.lower() not in TEXT_EXTS:
+                  return hashlib.sha256(data).hexdigest() == expected
+              lf = data.replace(b"\r\n", b"\n")
+              for cand in (data, lf, lf.replace(b"\n", b"\r\n")):
+                  if hashlib.sha256(cand).hexdigest() == expected:
+                      return True
+              return False
+
           rm = pathlib.Path("results/run_manifest.json")
           if rm.is_file():
               run = json.loads(rm.read_text())
@@ -131,7 +149,7 @@ jobs:
                   path = pathlib.Path(a["path"])
                   if not path.is_file() or "sha256" not in a:
                       continue
-                  if sha256(path) != a["sha256"]:
+                  if not content_matches(path, a["sha256"]):
                       failures.append(
                           f"{a['path']} does not match results/run_manifest.json "
                           f"(run {run.get('run_id')})"
