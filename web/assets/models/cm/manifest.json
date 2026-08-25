@@ -1,10 +1,10 @@
 {
   "id": "cm",
-  "label": "GRIN — counts only",
+  "label": "GRIN \u2014 counts only",
   "description": "Infers the 12 identified GRT parameters plus the PI/RHO1/free and separability constructs from a 4x4 confusion matrix.",
-  "file": "npe_model.onnx",
-  "version": "0.0.0-preview-legacy",
-  "artifact_sha256": "B03A032A0733D889A6BFA2B854D11FAC2278C041F07D5325CB9729D00701D718",
+  "file": "npe_model.v1.0.0.onnx",
+  "version": "1.0.0",
+  "artifact_sha256": "d9ce8f1f5632b8aef5b47c5f37b01f75002384eb7389815280c2d2aa731da4b2",
   "exported_by": "scripts/export_onnx.py",
   "inputs": [
     {
@@ -12,13 +12,36 @@
       "dim": 16,
       "note": "row-major 4x4, rows=stimuli, cols=responses, canonical order"
     },
-    { "name": "trials", "dim": 4, "note": "row sums" }
+    {
+      "name": "trials",
+      "dim": 4,
+      "note": "row sums"
+    }
   ],
   "outputs": {
-    "mean": { "dim": 12, "note": "posterior mean, parameter space" },
-    "std": { "dim": 12, "note": "posterior marginal SD, parameter space" },
-    "p_corr": { "dim": 3, "names": ["pi", "rho1", "free"] },
-    "p_sep": { "dim": 2, "names": ["A", "B"] }
+    "mean": {
+      "dim": 12,
+      "note": "posterior mean, parameter space"
+    },
+    "std": {
+      "dim": 12,
+      "note": "posterior marginal SD, parameter space"
+    },
+    "p_corr": {
+      "dim": 3,
+      "names": [
+        "pi",
+        "rho1",
+        "free"
+      ]
+    },
+    "p_sep": {
+      "dim": 2,
+      "names": [
+        "A",
+        "B"
+      ]
+    }
   },
   "params": {
     "names": [
@@ -35,11 +58,21 @@
       "rho_2",
       "rho_3"
     ],
-    "stimulus_order": ["A1B1", "A1B2", "A2B1", "A2B2"]
+    "stimulus_order": [
+      "A1B1",
+      "A1B2",
+      "A2B1",
+      "A2B2"
+    ]
   },
   "training": {
-    "provenance_status": "unverified_legacy_checkpoint",
-    "intended_release_trial_range": [1, 1000],
-    "note": "Replace this .onnx and update version/artifact_sha256/training when installing the release checkpoint. Prefer a versioned filename (e.g. npe_model.v1.onnx) so CloudFront's long immutable cache cannot serve stale weights."
-  }
+    "provenance_status": "release",
+    "note": "Release checkpoint. The filename carries the version, so CloudFront's immutable cache can never serve these weights in place of a later release; artifact_sha256 is computed by scripts/export_onnx.py --install and verified in .github/workflows/deploy.yaml before the file is allowed to ship.",
+    "trained_trial_range": [
+      1,
+      1000
+    ]
+  },
+  "exported_utc": "2026-08-25T18:23:30Z",
+  "source_commit": "b043d17dcc46738543b1ca8bdbb4ef5d39cf2166"
 }
