@@ -31,6 +31,10 @@ venv/
 results/figures/*
 results/models/*
 results/mle_fits/*
+# ...except the fit tables themselves. results/validation/SUMMARY.md names
+# results/mle_fits/baseline_fits.csv as a source of manuscript headline numbers,
+# so it is manuscript evidence (tier 2), not bulk -- it was being ignored.
+!results/mle_fits/*.csv
 results/training_history/*
 results/_archive/**
 !results/_archive/**/
@@ -102,14 +106,30 @@ tracked-files.txt
 ignored-status.txt
 www
 
-# Private by nature of what they contain -- confirmed
-articles/
+# Private by nature of what they contain -- confirmed.
+# NOTE the leading slash on each: these are ROOT-anchored on purpose. A bare
+# `manuscript/` matches a directory of that name at any depth, which silently
+# swallowed results/manuscript/ -- the tracked home for final paper figures and
+# their backing CSVs. Anchoring keeps the private top-level dirs private without
+# capturing same-named directories elsewhere in the tree.
+/articles/
 # third-party copyrighted PDFs; repo is public
-grant/
+/grant/
 # funding/grant proposal materials; stays local, related to the project but
 # never pushed
-manuscript/
+/manuscript/
 # in-progress paper; goes to OSF at preprint time, not tracked here for now
+
+# results/manuscript/ IS tracked (no rule ignores it): the small, final,
+# paper-bound figures plus the CSVs they are drawn from. Distinct from
+# results/figures/, which is bulk exploratory output and stays ignored. Keeping
+# the numbers behind each figure in git is what lets the manuscript be rebuilt on
+# the laptop without the GPU box, and what answers "where does this number come
+# from" with a git log rather than a filesystem.
+#
+# results/run_manifest.json is likewise tracked -- one file per release run
+# recording the commit, machine, config, and sha256 of every artifact, including
+# the untracked bulk. See scripts/provenance.py.
 
 # Working notes, not reference documentation -- confirmed 2026-08-12
 docs/DESIGN_RECORD.md
