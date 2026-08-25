@@ -10,7 +10,9 @@ model-class inference, fast enough to run inside the trial loop for adaptive tes
 - **The maths (parameterisation, constraints, prior):** `docs/GRT_model_spec.md`
 - **What each validation check establishes:** `validation/README_validation.md`
 - **Getting data from PsychoPy / jsPsych / an online platform into GRIN:** `docs/data_collection.md`
+- **How the stages fit together, and what each one writes:** `docs/PIPELINE.md`
 - **Cutting a release (models to the site, numbers to the manuscript):** `docs/RELEASE.md`
+- **Status of the response-time extension:** `docs/dynamic_grt_rt_design.md` §0
 
 Everything runs **from the project root**. Paths in `src/config.py` are absolute, so outputs
 land in `data/` and `results/` regardless of where you invoke from.
@@ -72,6 +74,11 @@ Train whichever you need, or both and dispatch on what the participant supplies.
 Each block is independent given its inputs. The **counts pipeline (2.1–2.2)** is the core;
 everything else builds on the trained model it produces.
 
+Regenerating any stage invalidates everything downstream of it, so a partial rerun is rarely
+partial in practice. `docs/PIPELINE.md` draws the dependency graph, says which tier each
+stage's output belongs to (git, or archive-only), and explains the two provenance records
+that chain through it. To ship what a run produced, follow `docs/RELEASE.md`.
+
 ### 2.1 — Generate data and train the counts model
 
 ```bash
@@ -89,16 +96,28 @@ python scripts/evaluate.py                    # recovery, calibration, model-ID,
 python scripts/make_figures.py                # -> results/figures/  (8 core figures)
 ```
 
-### 2.3 — (Optional) RT pipeline
+### 2.3 — (Optional) RT pipeline — **superseded, reproduction only**
+
+> **This pipeline trains the retired ballistic RT model.** It is kept so the earlier
+> developmental analysis stays reproducible, and `train_rt.py` requires an explicit
+> `--allow-legacy-ballistic` flag to prevent an expensive accidental retrain. Its
+> outputs — including the 84.6% five-way architecture-recovery result — must not be
+> used as evidence for the replacement model.
+>
+> The replacement (`src/data/rt_dynamic_grt.py`, a genuine stochastic-evidence model)
+> has passed validation gates 1, 3 and 4; gate 2 misses its threshold in one condition
+> and gates 5–8 have not been run, so **no dynamic-GRT network has been trained yet**
+> and there is no training script for it. Full status, with the evidence and the open
+> decisions: `docs/dynamic_grt_rt_design.md` §0.
 
 Only if your data include response times. Same prior, same trial range — it additionally
 simulates the RTs those trials produced.
 
 ```bash
-python scripts/generate_data.py --rt          # -> data/simulated/grt_rt_dataset.npz
-python scripts/train_rt.py                     # -> results/models/npe_rt_model.pt
-python scripts/evaluate_rt.py                  # recovery, architecture, neglect, LBA
-python scripts/make_figures_rt.py             # -> results/figures/rt/  + results/rt_metrics.json
+python scripts/generate_data.py --rt                    # -> data/simulated/grt_rt_dataset.npz
+python scripts/train_rt.py --allow-legacy-ballistic     # -> results/models/npe_rt_model.pt
+python scripts/evaluate_rt.py                            # recovery, architecture, neglect, LBA
+python scripts/make_figures_rt.py                       # -> results/figures/rt/  + results/rt_metrics.json
 ```
 
 `make_figures_rt.py` writes a full parity suite (every counts figure has an `rt_` twin) plus
@@ -188,13 +207,28 @@ need to defend the accuracy comparison.
 
 ### 2.10 — Deploy the browser tools (static, no backend)
 
+Export, install into `web/`, and stamp the site manifest in one step:
+
 ```bash
-python scripts/export_onnx.py                  # -> results/models/npe_model.onnx
-python scripts/export_onnx.py --rt             # -> results/models/npe_rt_model.onnx
+python scripts/export_onnx.py       --install --version 1.0.0   # -> web/assets/models/cm/
+python scripts/export_onnx.py --rt  --install --version 1.0.0   # -> web/assets/models/cmrt/
 ```
 
-Copy `web/grt_explorer.html`, `web/analyze.html`, and the `.onnx` to any static host.
-Inference runs in the visitor's browser; nothing is uploaded.
+`--install` writes a **versioned** filename (`npe_model.v1.0.0.onnx`) and the artifact's
+real sha256 into `manifest.json`. Both matter: the deploy workflow serves `.onnx` with a
+one-year immutable cache header, so overwriting a fixed filename would leave returning
+visitors on the old weights indefinitely, and the hash is what CI checks before uploading.
+Without `--install` the script just writes to `results/models/` as before.
+
+Pushing `main` deploys `web/` to S3 and invalidates CloudFront
+(`.github/workflows/deploy.yaml`). Confirm the CDN actually serves the new weights:
+
+```bash
+python scripts/verify_deploy.py                # hashes what the live site returns
+```
+
+The site is static — inference runs in the visitor's browser and nothing is uploaded — so
+`web/` can equally be copied to any static host. Full procedure: `docs/RELEASE.md`.
 
 ---
 
@@ -223,15 +257,24 @@ sess.uncertainty()                         # stop when this crosses your thresho
 
 ## 4. What lands where
 
+Outputs are tiered by role, which decides whether they go in git (see `docs/RELEASE.md`):
+**[1]** ships to the website, **[2]** backs a manuscript number, **[3]** bulk, archived
+once and never committed.
+
 ```
-data/simulated/     grt_dataset.npz, grt_rt_dataset.npz, test_set_for_R.csv
-results/models/     npe_model.pt, npe_rt_model.pt, *.onnx
-results/mle_fits/   baseline_fits.csv
-results/figures/    core suite
+data/simulated/     grt_dataset.npz, grt_rt_dataset.npz, test_set_for_R.csv    [3]
+results/models/     npe_model.pt, npe_rt_model.pt, *.onnx                      [3]
+results/mle_fits/   baseline_fits.csv                                          [2]  (*.csv only)
+results/figures/    core suite                                                 [3]
         /generation/  prior-coverage panels
         /recovery/    per-method comparison
         /rt/          RT suite
-results/rt_metrics.json   RT timing/accuracy (read by comparison + poster)
+results/manuscript/ final paper figures + the CSVs behind them                 [2]
+results/validation/ v01–v16.json, SUMMARY.md, sweeps/                          [2]
+results/*.json      rt_metrics, dynamic_grt_gates, ...                         [2]
+results/run_manifest.json   one record per release run: commit, machine,       [2]
+                            config, sha256 of every artifact incl. bulk
+web/assets/models/  cm/ and cmrt/: versioned .onnx + manifest.json             [1]
 ```
 
 ---

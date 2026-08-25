@@ -28,7 +28,7 @@ import urllib.error
 import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from provenance import PROJECT_ROOT, sha256_file  # noqa: E402
+from release_provenance import PROJECT_ROOT, sha256_file  # noqa: E402
 
 DEFAULT_SITE = "https://grin.murraysbennett.com"
 MODELS = ("cm", "cmrt")

@@ -135,7 +135,7 @@ keeping them small.
 
 ```bash
 git checkout release/v1.0.0 && git pull
-python scripts/provenance.py --verify results/run_manifest.json
+python scripts/release_provenance.py --verify results/run_manifest.json
 ```
 
 That verify re-hashes every tier-1 and tier-2 file and must print `OK`. If the
@@ -154,7 +154,7 @@ python scripts/release_unpack.py ~/Downloads/grin-release-<run_id>.tar.gz
 
 ```bash
 # laptop
-python scripts/provenance.py --verify results/run_manifest.json    # must be OK
+python scripts/release_provenance.py --verify results/run_manifest.json    # must be OK
 git checkout main && git merge --no-ff release/v1.0.0 && git push
 ```
 
@@ -187,7 +187,7 @@ prove the right bytes shipped; they do not prove the model is good.
 
 Work through this before submitting. Each line is checkable from the laptop.
 
-- [ ] `python scripts/provenance.py --verify results/run_manifest.json` prints OK.
+- [ ] `python scripts/release_provenance.py --verify results/run_manifest.json` prints OK.
 - [ ] `results/run_manifest.json` records a **clean** tree (`git.dirty` is `false`).
       A dirty release means the recorded commit is not the code that ran.
 - [ ] `results/validation/SUMMARY.md` has **no FAIL rows**. As of the last commit
@@ -204,25 +204,33 @@ Work through this before submitting. Each line is checkable from the laptop.
 - [ ] `CITATION.cff` version and `setup.py` version match the release (both were
       `0.1.0`).
 
-### Deciding the RT model's status
+### The RT model's status — decided
 
-`docs/dynamic_grt_rt_design.md` gates the RT work behind validation gates 4–8, and
-`lab_computer_handoff.md` records that the manuscript's RT framing was explicitly
-deferred until those passed — including that the legacy five-recipe LBA generator
-and its 84.6% five-way architecture-recovery result were being retired. The
-tracked `SUMMARY.md` still describes the **pre-pivot** RT checks (`v14` "5-way
-SFT", `v15`, `v16`).
+Export `cmrt` with **`--status preview`**, not `--status release`.
 
-Before finalising, settle which is true of this run:
+This is not a judgement call at the moment. `docs/dynamic_grt_rt_design.md` §0
+records the gate evidence: gates 1, 3 and 4 are satisfied, gate 2 misses its
+stated threshold in the near-zero-drift condition (confirmed at n = 2,000,000, so
+it is a real miss rather than Monte Carlo noise), and **gates 5–8 have not been
+run at all**. No dynamic-GRT network has ever been trained — there is no training
+script for it yet.
 
-- **Gates 4–8 passed and the RT model was retrained on the dynamic-GRT
-  generator** → export `cmrt` with `--status release`, and update the manuscript's
-  RT section off the new numbers. The `v14`–`v16` rows must describe the dynamic
-  model, not the retired one.
-- **Gates 4–8 did not all pass, or the RT retrain did not happen** → export `cmrt`
-  with `--status preview`, keep the site's RT model labelled experimental (CI
-  allows `preview` and prints a note), and keep the RT section out of the
-  submission as the handoff instructed.
+So the `cmrt` weights on the site are, and will remain until that work is done,
+the **retired ballistic model**. §6 of the design doc forbids using it or its
+84.6% five-way architecture result as evidence for the replacement, and the
+standing instruction is that the manuscript's RT section stays out of the
+submission until the gates pass. Nothing found so far changes that.
 
-Shipping a `cmrt` marked `release` whose numbers still come from the retired
-generator is the one failure mode here that a hash check cannot catch.
+Concretely, for this release:
+
+- `python scripts/export_onnx.py --rt --install --version 1.0.0 --status preview`
+  (CI permits `preview` and prints a note; it refuses the legacy placeholders).
+- Keep the site's RT model labelled experimental.
+- Keep the RT section out of the submission.
+- Do not cite `SUMMARY.md` rows `v14`–`v16` as evidence for the replacement —
+  `v14` is literally "architecture recovery (5-way SFT)", a regression check on
+  the retired five-way model.
+
+Shipping `cmrt` marked `release` while its numbers still come from the retired
+generator is the one failure mode here that no hash check can catch, which is why
+this is written down rather than left to be re-derived.

@@ -1,12 +1,123 @@
 # Dynamic GRT response-time model: design record
 
-Status: **accepted direction; reference implementation under validation**
+Status: **accepted direction; reference implementation validated to gate 4;
+gates 5-8 not started; no network trained**
 
 This document replaces the LBA-inspired simulator as the scientific design for
 the response-time extension. It does not change the count-only GRIN model. The
 existing `rt_lba_generator.py`, checkpoint, figures, and reported recovery
 numbers are retained only to reproduce the earlier developmental analysis until
 the replacement has passed the gates below.
+
+## 0. Where this actually stands
+
+*Last verified 2026-08-25 by re-running the tests and re-reading the gate
+artifacts, not from memory. Update this section whenever a gate moves.*
+
+**Nothing RT-related in this repository is release-ready.** The `cmrt` model on
+the website and the RT numbers in the manuscript draft both come from the retired
+ballistic generator. Section 6 forbids using either as evidence for the
+replacement.
+
+### The two implementations
+
+| | retired | replacement |
+|---|---|---|
+| generator | `src/data/rt_lba_generator.py` | `src/data/rt_dynamic_grt.py` (scalar reference)<br>`src/data/rt_dynamic_grt_vectorized.py` (fast) |
+| training | `scripts/train_rt.py` (requires `--allow-legacy-ballistic`) | **none written yet** |
+| architectures | 5-way: serial/parallel x exhaustive/self-terminating, + coactive | 2-way: serial-exhaustive, parallel-exhaustive |
+| status | superseded 2026-08-14 | under validation |
+
+The retirement reason, recorded at the time: self-terminating processing's "guess
+the unprocessed dimension" step was a dimension-neglect mixture bolted onto an
+identification task rather than real SFT self-termination, and coactive was two
+summed rates rather than a derived joint decision model. The 84.6% five-way
+architecture-recovery figure and the claim that "architecture has no signature in
+response proportions" came from that generator; the latter was flagged as false by
+external review. Self-terminating and coactive are dropped from version 1 of the
+replacement rather than patched.
+
+### Gate status
+
+| gate | what it demands | status | evidence |
+|---|---|---|---|
+| 1 | reference correctness | **PASS** | `tests/test_rt_dynamic_grt.py` + `..._vectorized.py`, 16/16 passing |
+| 2 | discretisation convergence | **FAILS AS SPECIFIED** (1 of 4 conditions) | `results/dynamic_grt_gates.json`, `results/dynamic_grt_gate2_nearzero_highn.json` |
+| 3 | prior-predictive plausibility | **PASS**, zero flags | `results/dynamic_grt_gates.json` |
+| 4 | static-dynamic bridge | **DONE** (quantified, as the gate asks) | `results/dynamic_grt_gate4_bridge.json` |
+| 5 | identifiability | **not started** | — |
+| 6 | architecture evidence | **not started** | — |
+| 7 | misspecification sensitivity | **not started** | — |
+| 8 | empirical check | **not started** | — |
+
+**Gate 1.** 16/16, including
+`test_serial_and_parallel_share_responses_but_combine_time_differently`, which
+directly proves the by-construction response-equivalence claim that gate 6 later
+depends on, and
+`test_vectorized_matches_scalar_response_and_rt_distribution`, which ties the fast
+generator to the scalar reference. The vectorised generator exists and is verified
+— that was the design doc's "only build this once gates 1-4 are solid" step, and
+it has been done.
+
+**Gate 2 — the one open question.** Three of four conditions pass cleanly. The
+near-zero-drift condition does not, and the high-n rerun that was queued to settle
+whether this was Monte Carlo noise **has been run and settled it against the
+threshold**: at n = 2,000,000 (vs the original 8,000), response agreement is
+0.99419 with a 95% CI that `ci_confirms_below_threshold: true` — it is genuinely
+below the 0.995 line, not noise around it.
+
+But the hitting-time criteria pass comfortably in the same run: median difference
+0.64 ms against a 10 ms limit, p95 37 ms against a 50 ms limit. So the *timing*
+is converged and only the *side of the boundary* disagrees, on ~0.6% of trials, in
+the one condition where drift is exactly zero and the crossing is close to a coin
+flip by construction. That is a plausible property of the process rather than a
+defect in the integrator.
+
+This is a threshold-choice decision, and it is not mine to make. Either:
+
+- justify relaxing the response-agreement threshold for the near-zero-drift
+  condition, citing the converged hitting-time distribution as the substantive
+  evidence, and record the justification here; **or**
+- reduce `dt` further and re-run to show agreement climbing toward 0.995, which
+  tests whether the disagreement really is irreducible.
+
+Until one of those happens, gate 2 is failed as written and the design doc's own
+rule ("must not be trained until all of the following pass") blocks training.
+
+**Gate 4.** Done analytically rather than by simulation — 2D Gauss-Hermite
+quadrature of the two-barrier first-passage probability, cross-checked against
+adaptive quadrature to 4.9e-6 and spot-checked against the simulator to 0.013.
+Over a 1,715-point `(z, rho, boundary)` grid, the dynamic-vs-static total-variation
+distance has median 0.045 and max 0.273. The discrepancy is quantified, which is
+what the gate asks for; whether a median TV of 0.045 is acceptable for the
+manuscript's interpretation is a separate scientific judgement that has not been
+recorded anywhere.
+
+### What has to happen next, in order
+
+1. Resolve gate 2 (relax with justification, or reduce `dt`).
+2. Gate 5, identifiability: recovery pilot for `z`, `rho`, `a`, `g`, `t0`,
+   stratified as section 5 specifies.
+3. Gate 6, architecture evidence: serial-vs-parallel calibration and confusion.
+   Counts alone **must** be at chance; if a trained network beats chance on
+   architecture from counts alone, something is leaking and must be found first.
+4. Gate 7, misspecification: evaluate against the legacy ballistic generator or a
+   conventional LBA. High confidence under the wrong process is a failure.
+5. Gate 8, empirical: check `data/real/` for trial-level 2x2 identification RT
+   data. Without this the extension stays a simulation proof of concept.
+6. Only then: write a training script for the dynamic generator, train, evaluate,
+   regenerate figures, and revisit the manuscript-scope question.
+
+### Consequences for the current release
+
+- Export `cmrt` with `--status preview`, not `--status release`. The deploy gate
+  permits `preview` and prints a note; it refuses the legacy placeholder values.
+- Keep the RT section out of the submission, per section 6. That was the standing
+  instruction and no gate result has changed it.
+- `results/validation/SUMMARY.md` rows `v14`-`v16` describe the **retired**
+  five-way model (`v14` is literally "architecture recovery (5-way SFT)"). They
+  are regression checks on superseded code, not evidence for the replacement, and
+  should not be cited as if they were.
 
 ## 1. Scientific target
 

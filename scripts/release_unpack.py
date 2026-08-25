@@ -26,7 +26,7 @@ import tarfile
 import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from provenance import PROJECT_ROOT, load_json, sha256_file  # noqa: E402
+from release_provenance import PROJECT_ROOT, load_json, sha256_file  # noqa: E402
 
 MANIFEST_ARCNAME = "results/run_manifest.json"
 
@@ -156,7 +156,7 @@ def main() -> int:
 
         print("\nNext:")
         print("    git status")
-        print("    python scripts/provenance.py --verify results/run_manifest.json")
+        print("    python scripts/release_provenance.py --verify results/run_manifest.json")
         print("    git add -A && git commit -m 'release: install run <run_id>' && git push")
         return 0
     finally:

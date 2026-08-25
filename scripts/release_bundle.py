@@ -37,7 +37,7 @@ import sys
 import tarfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from provenance import (  # noqa: E402
+from release_provenance import (  # noqa: E402
     PROJECT_ROOT,
     RUN_MANIFEST_PATH,
     build_run_manifest,
@@ -101,7 +101,7 @@ def main() -> int:
             print(f"      {p}")
         if len(unclassified) > 10:
             print(f"      ... and {len(unclassified) - 10} more")
-        print("    Add a rule to TIER_RULES in scripts/provenance.py if any of these")
+        print("    Add a rule to TIER_RULES in scripts/release_provenance.py if any of these")
         print("    back a manuscript number or ship to the site.")
 
     if git["dirty"]:

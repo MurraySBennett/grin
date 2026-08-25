@@ -1,5 +1,14 @@
 """
-provenance.py — shared run-provenance helpers.
+release_provenance.py — RELEASE-time artifact provenance.
+
+Not to be confused with src/provenance.py, which is TRAIN-time checkpoint
+provenance: that module records what produced one .pt file (dataset hash, prior,
+architecture, optimiser settings) and embeds it inside the checkpoint. This one
+records what a whole pipeline RUN produced across the output tree, and is what
+scripts/export_onnx.py, release_bundle.py and the deploy gate use. The two are
+complementary and chain: export_onnx.py reads the checkpoint manifest written by
+src/provenance.py and carries it into the site manifest, so a shipped .onnx can be
+traced back to the dataset that trained it.
 
 The problem this exists to solve: GRIN's pipeline produces artifacts at wildly
 different sizes and lifetimes (a 300 KB .onnx that ships to the website, a 12 KB

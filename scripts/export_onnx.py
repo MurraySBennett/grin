@@ -44,7 +44,7 @@ from src.api import load_model
 from src.models.network import featurize
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from provenance import PROJECT_ROOT, git_state, sha256_file, utc_now  # noqa: E402
+from release_provenance import PROJECT_ROOT, git_state, sha256_file, utc_now  # noqa: E402
 
 WEB_MODELS_DIR = os.path.join(PROJECT_ROOT, "web", "assets", "models")
 
@@ -127,7 +127,8 @@ RELEASE_NOTE = (
 )
 
 
-def install_to_web(rt, exported_path, version, status="release", note=None, prune=True):
+def install_to_web(rt, exported_path, version, status="release", note=None, prune=True,
+                   checkpoint_path=None):
     """Copy an exported .onnx into web/assets/models/<id>/ under a versioned name
     and rewrite that model's manifest.json so it describes the file that is
     actually there.
@@ -159,6 +160,35 @@ def install_to_web(rt, exported_path, version, status="release", note=None, prun
 
     training = mf.setdefault("training", {})
     training["provenance_status"] = status
+
+    # Chain the TRAIN-time manifest through to the site. src/provenance.py embeds
+    # one in every checkpoint (dataset hash, prior, architecture, optimiser) and
+    # its docstring asks the exporters to carry it forward rather than silently
+    # drop it -- without that, a shipped .onnx cannot be traced back to the
+    # dataset that trained it, which is the exact ambiguity that module was
+    # written to end.
+    if checkpoint_path and os.path.isfile(checkpoint_path):
+        training["checkpoint_file"] = os.path.relpath(checkpoint_path, PROJECT_ROOT).replace(os.sep, "/")
+        training["checkpoint_sha256"] = sha256_file(checkpoint_path)
+        try:
+            import torch as _t
+            ckpt = _t.load(checkpoint_path, map_location="cpu", weights_only=False)
+            prov = ckpt.get("provenance") if isinstance(ckpt, dict) else None
+            if prov:
+                training["checkpoint_provenance"] = prov
+                training.pop("checkpoint_provenance_missing", None)
+            else:
+                training["checkpoint_provenance_missing"] = (
+                    "this checkpoint carries no provenance manifest -- it predates "
+                    "src/provenance.py or was saved by a script that does not call "
+                    "build_manifest(); its training dataset cannot be verified"
+                )
+                print("  ! checkpoint has no embedded provenance manifest")
+        except Exception as exc:
+            training["checkpoint_provenance_missing"] = f"unreadable ({type(exc).__name__}: {exc})"
+            print(f"  ! could not read checkpoint provenance: {type(exc).__name__}: {exc}")
+    elif checkpoint_path:
+        print(f"  ! checkpoint not found at {checkpoint_path}; manifest will not carry train-time provenance")
     training["note"] = note or (RELEASE_NOTE if status == "release" else training.get("note", ""))
     # Promote the "intended" ranges to what the run actually trained on. Leaving a
     # field named `intended_release_*` on a shipped release is how a placeholder
@@ -196,6 +226,7 @@ def main(rt=False, version=None, install=False, status="release", note=None, pru
         raise SystemExit("--install requires --version (e.g. --version 1.0.0)")
 
     if rt:
+        from src.config import RT_MODEL_FILE
         from src.inference.predict_rt import load_rt_model
         m = load_rt_model(device="cpu")
         w = RTOnnxWrapper(m, m._lba_mu.cpu(), m._lba_sd.cpu()).eval()
@@ -208,6 +239,7 @@ def main(rt=False, version=None, install=False, status="release", note=None, pru
                           dynamic_axes={k: {0: "batch"} for k in
                                         ["counts", "rtq", "trials"] + names},
                           opset_version=17, dynamo=False)
+        ckpt_path = RT_MODEL_FILE
         print(f"exported RT model -> {out}")
     else:
         wrapper = OnnxWrapper(load_model(MODEL_FILE, device="cpu")).eval()
@@ -219,10 +251,12 @@ def main(rt=False, version=None, install=False, status="release", note=None, pru
             dynamic_axes={k: {0: "batch"} for k in
                           ("counts", "trials", "mean", "std", "p_corr", "p_sep")},
             opset_version=17, dynamo=False)
+        ckpt_path = MODEL_FILE
         print(f"exported -> {out}  (with comparison heads: {wrapper.has_cmp})")
 
     if install:
-        install_to_web(rt, out, version, status=status, note=note, prune=prune)
+        install_to_web(rt, out, version, status=status, note=note, prune=prune,
+                       checkpoint_path=ckpt_path)
 
 
 if __name__ == "__main__":
