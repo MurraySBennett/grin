@@ -371,6 +371,51 @@ def verify_against_manifest(
     return problems, eol_only
 
 
+def amend_manifest(path: str, tiers: tuple[int, ...], reason: str) -> dict:
+    """Re-scan the named tiers of an EXISTING run manifest and record the change.
+
+    Why this exists rather than "just rebuild the manifest": rebuilding requires
+    the bulk artifacts to be present, and they live only on the machine that did
+    the compute. Rebuilding on a laptop would silently replace a record of 1.5 GB
+    of tier-3 output with a record of nothing -- destroying exactly the thing the
+    manifest is for.
+
+    So amendments are surgical and, crucially, LOGGED. An `amendments` list records
+    what changed, when, on which machine and why. A provenance record that can be
+    edited without trace is not a provenance record; one that cannot be edited at
+    all just gets abandoned the first time reality moves.
+    """
+    manifest = load_json(path)
+    before = {a["path"]: a.get("sha256") for a in manifest.get("artifacts", []) if a["tier"] in tiers}
+
+    kept = [a for a in manifest.get("artifacts", []) if a["tier"] not in tiers]
+    rescanned = [a for a in scan_artifacts(hash_tier3=False) if a["tier"] in tiers]
+
+    after = {a["path"]: a.get("sha256") for a in rescanned}
+    added = sorted(set(after) - set(before))
+    removed = sorted(set(before) - set(after))
+    changed = sorted(k for k in set(before) & set(after) if before[k] != after[k])
+
+    manifest["artifacts"] = sorted(kept + rescanned, key=lambda e: (e["tier"], e["path"]))
+    for t in (1, 2, 3):
+        items = [a for a in manifest["artifacts"] if a["tier"] == t]
+        manifest.setdefault("totals", {})[str(t)] = {
+            "count": len(items), "bytes": sum(a["bytes"] for a in items)
+        }
+    manifest.setdefault("amendments", []).append({
+        "utc": utc_now(),
+        "reason": reason,
+        "tiers": list(tiers),
+        "machine": socket.gethostname(),
+        "git_commit": git_state()["commit"],
+        "added": added,
+        "removed": removed,
+        "changed": changed,
+    })
+    write_json(path, manifest)
+    return {"added": added, "removed": removed, "changed": changed}
+
+
 if __name__ == "__main__":
     import argparse
 
@@ -378,7 +423,25 @@ if __name__ == "__main__":
     ap.add_argument("--scan", action="store_true", help="list artifacts by tier")
     ap.add_argument("--fast", action="store_true", help="skip hashing tier 3")
     ap.add_argument("--verify", metavar="MANIFEST", help="verify tiers 1+2 against a run manifest")
+    ap.add_argument("--amend", metavar="MANIFEST",
+                    help="re-scan tiers of an existing run manifest and log the amendment")
+    ap.add_argument("--tier", type=int, action="append", default=None,
+                    help="tier(s) to amend; repeatable (default: 1)")
+    ap.add_argument("--reason", default="", help="why the amendment was needed (required)")
     args = ap.parse_args()
+
+    if args.amend:
+        if not args.reason:
+            raise SystemExit("--amend requires --reason: an unexplained edit to a "
+                             "provenance record is worse than no record")
+        delta = amend_manifest(args.amend, tuple(args.tier or [1]), args.reason)
+        for kind in ("added", "removed", "changed"):
+            for item in delta[kind]:
+                print(f"  {kind:8} {item}")
+        if not any(delta.values()):
+            print("  nothing changed")
+        print(f"\namended {args.amend} (logged under \"amendments\")")
+        raise SystemExit(0)
 
     if args.verify:
         probs, eol = verify_against_manifest(load_json(args.verify))

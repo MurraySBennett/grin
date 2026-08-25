@@ -221,9 +221,28 @@ def install_to_web(rt, exported_path, version, status="release", note=None, prun
     return dest
 
 
-def main(rt=False, version=None, install=False, status="release", note=None, prune=True):
-    if install and not version:
-        raise SystemExit("--install requires --version (e.g. --version 1.0.0)")
+def main(rt=False, version=None, install=False, status="release", note=None, prune=True,
+         stamp_existing=False):
+    if (install or stamp_existing) and not version:
+        raise SystemExit("--install/--stamp-existing requires --version (e.g. --version 1.0.0)")
+
+    # --stamp-existing: version and hash the .onnx that is ALREADY in web/, without
+    # re-exporting. For weights that are staying exactly as they are but whose
+    # manifest is wrong -- e.g. a superseded model that must keep working on the
+    # site while being labelled honestly. No checkpoint and no GPU needed, so it
+    # runs on a laptop. It deliberately cannot change the weights: the bytes are
+    # copied, not regenerated, so "stamped" never silently means "retrained".
+    if stamp_existing:
+        model_id, _, _ = EXPORT_SPECS[bool(rt)]
+        dest_dir = os.path.join(WEB_MODELS_DIR, model_id)
+        with open(os.path.join(dest_dir, "manifest.json"), encoding="utf-8") as fh:
+            current = json.load(fh)
+        src = os.path.join(dest_dir, current["file"])
+        if not os.path.isfile(src):
+            raise SystemExit(f"manifest names {current['file']!r} but it is not on disk")
+        print(f"stamping existing weights: {os.path.relpath(src, PROJECT_ROOT)}")
+        install_to_web(rt, src, version, status=status, note=note, prune=prune)
+        return
 
     if rt:
         from src.config import RT_MODEL_FILE
@@ -271,8 +290,11 @@ if __name__ == "__main__":
                     choices=["release", "preview", "unverified_legacy_checkpoint"],
                     help="manifest training.provenance_status (default: release)")
     ap.add_argument("--note", help="override the manifest training.note")
+    ap.add_argument("--stamp-existing", action="store_true",
+                    help="version+hash the .onnx already in web/ instead of re-exporting "
+                         "(no checkpoint or GPU needed; cannot change the weights)")
     ap.add_argument("--no-prune", action="store_true",
                     help="keep superseded .onnx files in the site directory")
     a = ap.parse_args()
     main(rt=a.rt, version=a.version, install=a.install, status=a.status,
-         note=a.note, prune=not a.no_prune)
+         note=a.note, prune=not a.no_prune, stamp_existing=a.stamp_existing)

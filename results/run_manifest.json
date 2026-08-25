@@ -61,7 +61,7 @@
   "totals": {
     "1": {
       "count": 4,
-      "bytes": 1023324
+      "bytes": 1024163
     },
     "2": {
       "count": 27,
@@ -76,29 +76,29 @@
     {
       "path": "web/assets/models/cm/manifest.json",
       "tier": 1,
-      "bytes": 1902,
-      "mtime_utc": "2026-08-25T18:23:30Z",
-      "sha256": "1d38095cdbe9eec6c634ec7611ea7733354ef972696b514d2ceef787400f1d47"
+      "bytes": 1824,
+      "mtime_utc": "2026-08-25T19:05:54Z",
+      "sha256": "fe5b68f8189982677b5d4e6658df4279ac452572f592158e8a850db4cf18350b"
     },
     {
       "path": "web/assets/models/cm/npe_model.v1.0.0.onnx",
       "tier": 1,
       "bytes": 305871,
-      "mtime_utc": "2026-08-25T18:23:30Z",
+      "mtime_utc": "2026-08-25T19:05:54Z",
       "sha256": "d9ce8f1f5632b8aef5b47c5f37b01f75002384eb7389815280c2d2aa731da4b2"
     },
     {
       "path": "web/assets/models/cmrt/manifest.json",
       "tier": 1,
-      "bytes": 1993,
-      "mtime_utc": "2026-08-25T17:00:23Z",
-      "sha256": "bb79027bc639d119adfb9d4f5a3cf91f7ae482fca78019b1fb225d4fd758962c"
+      "bytes": 2910,
+      "mtime_utc": "2026-08-25T19:32:54Z",
+      "sha256": "2f35a93d7f53a8ffbedd94138bc95215a29c6501e9f583fcf8f5a9ea62e86a55"
     },
     {
-      "path": "web/assets/models/cmrt/npe_rt_model.onnx",
+      "path": "web/assets/models/cmrt/npe_rt_model.v0.1.0-ballistic.onnx",
       "tier": 1,
       "bytes": 713558,
-      "mtime_utc": "2026-08-20T13:18:22Z",
+      "mtime_utc": "2026-08-25T19:32:41Z",
       "sha256": "db2be0068e43b4ca48ad6bc348a00cf272f754802849e5f3a62b7472165aa5b4"
     },
     {
@@ -529,5 +529,26 @@
       "sha256": "8799bedd72fbc8fd2577eb7ef299fa468c241f935e095bd2ca21c2327a8ba76f"
     }
   ],
-  "release_version": "1.0.0"
+  "release_version": "1.0.0",
+  "amendments": [
+    {
+      "utc": "2026-08-25T19:33:41Z",
+      "reason": "cmrt re-stamped on the laptop as version 0.1.0-ballistic / status preview: the lab run exported cm but left cmrt on the legacy placeholder manifest, which the deploy gate refuses. The WEIGHTS are unchanged (sha256 db2be006... identical before and after); only the filename, version, provenance_status, description and note changed. Tier 3 entries are left untouched -- the bulk lives on the lab machine and rebuilding here would erase the record of it.",
+      "tiers": [
+        1
+      ],
+      "machine": "ASCPSY-NC285749",
+      "git_commit": "86e4115e5f143a0942198d11e1af6415e4728d2a",
+      "added": [
+        "web/assets/models/cmrt/npe_rt_model.v0.1.0-ballistic.onnx"
+      ],
+      "removed": [
+        "web/assets/models/cmrt/npe_rt_model.onnx"
+      ],
+      "changed": [
+        "web/assets/models/cm/manifest.json",
+        "web/assets/models/cmrt/manifest.json"
+      ]
+    }
+  ]
 }

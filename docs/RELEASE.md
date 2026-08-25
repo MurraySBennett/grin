@@ -148,6 +148,43 @@ python scripts/release_unpack.py ~/Downloads/grin-release-<run_id>.tar.gz --dry-
 python scripts/release_unpack.py ~/Downloads/grin-release-<run_id>.tar.gz
 ```
 
+### When weights stay but the manifest is wrong
+
+`--stamp-existing` versions and hashes the `.onnx` already in `web/` without
+re-exporting — no checkpoint, no GPU, runs on a laptop. Use it for weights that
+are staying exactly as they are but whose manifest is not honest about them:
+
+```bash
+python scripts/export_onnx.py --rt --stamp-existing \
+    --version 0.1.0-ballistic --status preview --note "..."
+```
+
+It copies bytes rather than regenerating them, so "stamped" can never quietly
+mean "retrained". Confirm that by comparing the sha256 before and after.
+
+### When an artifact changes after the run manifest was built
+
+Do **not** rebuild the manifest anywhere but the machine that holds the run:
+rebuilding needs the bulk present, and doing it on a laptop replaces a record of
+gigabytes of tier-3 output with a record of nothing. Amend instead — surgical,
+and logged under `amendments` so the edit is visible:
+
+```bash
+python scripts/release_provenance.py --amend results/run_manifest.json --tier 1 \
+    --reason "why this was necessary"
+```
+
+`--reason` is required. A provenance record that can be edited without trace is
+not a provenance record.
+
+### A note that is not an error
+
+`--verify` may report that text files "differ only in line endings". That means
+the content matches and nothing is corrupt — the manifest was written on a
+machine with a different newline convention. It clears when the bundle is next
+built on that machine. Weights are always compared byte-exact and never get this
+treatment.
+
 ---
 
 ## Shipping the website
