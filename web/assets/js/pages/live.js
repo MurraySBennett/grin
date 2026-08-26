@@ -261,7 +261,11 @@ function paintDiagnostics(prefix, fitted) {
   // The fade trail is the honest picture of convergence: every earlier fit stays on
   // the canvas, dimmed, so the reader sees the estimate settling rather than a single
   // confident-looking ellipse set.
-  Plot.renderFadeTrail(canvas, thinned(checkpoints), { showMarginals: false });
+  // Solid + thick = the current fit; dashed + thin = where it has been. The floor is
+  // lifted off the default 0.08 because the dashing now carries the distinction, so the
+  // history can stay visible instead of nearly disappearing.
+  Plot.renderFadeTrail(canvas, thinned(checkpoints), { showMarginals: false },
+                       { minAlpha: 0.18, maxAlpha: 1.0, curve: "exp" });
   const pct = (x) => `${Math.round(100 * x)}%`;
   const set = SETS[cfg().set];
   const el = $(`${prefix}-constructs`);

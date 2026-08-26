@@ -452,8 +452,8 @@ function drawEllipse(g, cx, cy, sc, zx, zy, rho, color, dashed, extra = {}) {
   const c45 = Math.SQRT1_2;
 
   g.strokeStyle = color;
-  g.lineWidth = dashed ? 1.5 : 2.1;
-  g.setLineDash(dashed ? [5, 4] : []);
+  g.lineWidth = extra.lineWidth ?? (dashed ? 1.5 : 2.1);
+  g.setLineDash(extra.dash ?? (dashed ? [5, 4] : []));
   g.beginPath();
   for (let t = 0; t <= 2 * Math.PI + 0.02; t += 0.08) {
     const ex = ax * Math.cos(t);
@@ -750,6 +750,15 @@ function hexRGB(h) {
  *   showMarginals, title, legend) passed to the renderSpace call that drew
  *   the chrome, or the layer will land in the wrong place.
  */
+/**
+ * One layer of the trail.
+ *
+ * `opts.dashed` / `opts.lineWidth` exist so a caller can distinguish the CURRENT fit
+ * from the ones behind it. Opacity alone is a weak cue once there are more than a few
+ * layers -- several faded ellipses overlapping read as one darker shape, and the eye
+ * cannot tell which is the live estimate. Dashing the history and drawing the newest
+ * solid and thicker makes it unambiguous without adding a colour to the scheme.
+ */
 export function drawFadeLayer(canvas, stimuli, alpha, opts = {}) {
   const T = theme(opts.theme);
   const { titleH, sc, cx, cy } = spaceGeometry(opts);
@@ -761,7 +770,10 @@ export function drawFadeLayer(canvas, stimuli, alpha, opts = {}) {
   g.translate(0, titleH);
   g.globalAlpha = Math.max(0, Math.min(1, alpha));
   stimuli.forEach((s, i) =>
-    drawEllipse(g, cx, cy, sc, s.zx, s.zy, s.rho, T.stim[i], false),
+    drawEllipse(g, cx, cy, sc, s.zx, s.zy, s.rho, T.stim[i], !!opts.dashed, {
+      lineWidth: opts.lineWidth,
+      dash: opts.dash,
+    }),
   );
   g.globalAlpha = 1;
   g.restore();
@@ -801,14 +813,16 @@ function fadeAlpha(
  */
 export function renderFadeTrail(canvas, checkpoints, opts = {}, fade = {}) {
   renderSpace(canvas, { ...opts, stimuli: [], predicted: null });
-  checkpoints.forEach((c, i) =>
-    drawFadeLayer(
-      canvas,
-      c.stimuli,
-      fadeAlpha(i, checkpoints.length, fade),
-      opts,
-    ),
-  );
+  const last = checkpoints.length - 1;
+  checkpoints.forEach((c, i) => {
+    const current = i === last;
+    drawFadeLayer(canvas, c.stimuli, fadeAlpha(i, checkpoints.length, fade), {
+      ...opts,
+      // history: dashed and thin. current: solid, thicker, full weight.
+      dashed: !current,
+      lineWidth: current ? 2.6 : 1.2,
+    });
+  });
 }
 
 /**
@@ -840,7 +854,11 @@ export async function animateFadeTrail(
   const n = checkpoints.length;
   for (let i = 0; i < n; i++) {
     if (signal?.aborted) return;
-    drawFadeLayer(canvas, checkpoints[i].stimuli, fadeAlpha(i, n, fade), opts);
+    drawFadeLayer(canvas, checkpoints[i].stimuli, fadeAlpha(i, n, fade), {
+      ...opts,
+      dashed: i !== n - 1,
+      lineWidth: i === n - 1 ? 2.6 : 1.2,
+    });
     onProgress?.(i + 1, n, checkpoints[i]);
     // always yield at least one frame, even at delayMs=0 -- this is what
     // keeps a long trail from reading as a browser freeze: the event loop
