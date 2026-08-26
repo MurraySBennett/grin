@@ -45,4 +45,4 @@ Source = "https://github.com/MurraySBennett/grin"
 include = ["grintools*"]
 
 [tool.setuptools.package-data]
-grintools = ["models/*.onnx", "data/*.csv", "py.typed"]
+grintools = ["models/*.onnx", "models/*.json", "data/*.csv", "py.typed"]

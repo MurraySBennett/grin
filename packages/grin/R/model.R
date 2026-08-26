@@ -107,7 +107,41 @@ print.grin_model <- function(x, ...) {
 #' out$constructs$p_PI
 #' }
 #' @export
-grin_infer <- function(counts, trials = NULL, model = NULL, evidence_tol = 0.5) {
+#' Per-family posterior scale factors, fitted on held-out simulations by
+#' scripts/fit_recalibration.py and validated on a further held-out set. Applied only
+#' when the caller passes calibrated = TRUE. See the package documentation for why this
+#' is opt-in: the correction is estimated under the training prior and may not transfer
+#' to observers far outside it, and a rescaled interval is a calibrated interval derived
+#' from the posterior rather than the posterior itself.
+.grin_recalibration <- local({
+  cache <- NULL
+  function() {
+    if (!is.null(cache)) return(cache)
+    f <- system.file("extdata", "recalibration.json", package = "grin")
+    cache <<- if (nzchar(f) && requireNamespace("jsonlite", quietly = TRUE)) {
+      jsonlite::fromJSON(f)
+    } else NULL
+    cache
+  }
+})
+
+.grin_scales <- function(calibrated) {
+  s <- rep(1, 12)
+  if (isTRUE(calibrated)) {
+    spec <- .grin_recalibration()
+    if (is.null(spec)) {
+      warning("no recalibration data shipped with this build; returning raw intervals",
+              call. = FALSE)
+    } else {
+      s[1:8] <- spec$global_scale$z
+      s[9:12] <- spec$global_scale$rho
+    }
+  }
+  s
+}
+
+grin_infer <- function(counts, trials = NULL, model = NULL, evidence_tol = 0.5,
+                       calibrated = FALSE) {
   if (!requireNamespace("torch", quietly = TRUE)) {
     stop("the 'torch' package is required for inference. Install it with:\n",
         "  install.packages('torch'); torch::install_torch()", call. = FALSE)
@@ -132,8 +166,12 @@ grin_infer <- function(counts, trials = NULL, model = NULL, evidence_tol = 0.5) 
                      evidence_sep_A = abs(p_a - 0.5) > band,
                      evidence_sep_B = abs(p_b - 0.5) > band)
 
+  scale <- .grin_scales(calibrated)
+  std_c <- std * scale
   result <- structure(
-    list(params = mean, std = std, ci_low = mean - 1.645 * std, ci_high = mean + 1.645 * std,
+    list(params = mean, std = std_c, std_raw = std, scale = scale,
+        calibrated = isTRUE(calibrated),
+        ci_low = mean - 1.645 * std_c, ci_high = mean + 1.645 * std_c,
         names = PARAM_NAMES, model_class = .class_label(p_corr, p_a, p_b)),
     class = "grin_result")
 

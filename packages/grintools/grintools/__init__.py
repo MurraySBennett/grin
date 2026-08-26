@@ -36,13 +36,22 @@ def default_model_path():
     return str(resources.files("grintools").joinpath("models", "npe_model.onnx"))
 
 
-def infer(counts, trials=None, model_path=None):
+def infer(counts, trials=None, model_path=None, calibrated=False):
     """Run GRIN on a canonical-order 4x4 (or length-16) count matrix.
 
     Returns (OnnxResult, constructs). `trials` defaults to row sums. Pass model_path
-    to use a specific .onnx; otherwise the bundled model is used and cached."""
+    to use a specific .onnx; otherwise the bundled model is used and cached.
+
+    calibrated: False (default) returns the network's own posterior, which is what
+    every result in the GRIN paper is based on. True additionally rescales the
+    interval widths by per-family factors fitted on held-out simulations, correcting
+    a known asymmetry -- the sensitivity intervals run wider than nominal and the
+    correlation intervals narrower. Point estimates are unchanged either way. The
+    correction is estimated under the training prior and may not transfer to observers
+    far outside it, which is why it is opt-in.
+    """
     path = model_path or default_model_path()
     grin = _SESSION_CACHE.get(path)
     if grin is None:
         grin = _SESSION_CACHE[path] = GrinOnnx(path)
-    return grin(counts, trials)
+    return grin(counts, trials, calibrated=calibrated)
