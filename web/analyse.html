@@ -44,6 +44,7 @@
     </header>
 
     <main class="container">
+      <div class="note" id="module-error" hidden></div>
       <div class="tool">
         <!-- ================================================================ -->
         <aside class="panel sticky">
@@ -441,6 +442,29 @@
     </main>
 
     <div id="footer-placeholder"></div>
+    <script>
+      // If a page module fails to load or throws, say so ON THE PAGE. Module errors
+      // otherwise appear only in the console, which makes "nothing happens" impossible
+      // to diagnose from a bug report. Registered before the modules so it cannot miss
+      // an early failure.
+      (function () {
+        function report(what) {
+          var el = document.getElementById("module-error");
+          if (!el) return;
+          el.hidden = false;
+          el.innerHTML =
+            '<strong>This page could not start.</strong> ' + what +
+            ' Try a hard refresh (Ctrl+Shift+R). If it persists, the browser console ' +
+            'names the specific file and reason.';
+        }
+        window.addEventListener("error", function (e) {
+          var t = e.target;
+          if (t && t.tagName === "SCRIPT" && t.type === "module") {
+            report("A script (" + (t.src || "inline") + ") did not load.");
+          }
+        }, true);
+      })();
+    </script>
     <script type="module" src="./assets/js/grin-shell.js"></script>
     <script type="module" src="./assets/js/pages/analyse.js"></script>
 </body>
