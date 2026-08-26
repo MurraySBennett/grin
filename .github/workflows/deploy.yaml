@@ -44,7 +44,8 @@ jobs:
           test -f web/components/footer.html
           test -f web/assets/js/grin-shell.js
           test -f web/assets/js/grin-model.js
-          test -f web/assets/js/pages/analyse.js
+          # matrix-fit.js, not analyse.js: see the note in that file and web/README.md
+          test -f web/assets/js/pages/matrix-fit.js
           test -f web/assets/models/cm/manifest.json
           # cmrt is deliberately NOT required: the response-time model was withdrawn
           # from the site (see docs/dynamic_grt_rt_design.md). Re-add it here when the

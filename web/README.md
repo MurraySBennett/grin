@@ -52,6 +52,12 @@ Validate checks recovery and calibration on simulated data where the truth is kn
 
 ## Inference wiring
 
+Page scripts avoid names matching `analy*`: content blockers treat such script
+requests as analytics and return `ERR_BLOCKED_BY_CLIENT`, which breaks the page for a
+large share of visitors with nothing in the server logs to show for it. The Analyse
+page's module is therefore `assets/js/pages/matrix-fit.js`, while the document stays
+`analyse.html`.
+
 Pages load the network with `loadModelCached("./assets/models/cm")`. If
 `assets/models/cm/recalibration.json` is present the Analyse page offers an
 off-by-default "calibrated intervals" toggle; if it is absent the toggle stays

@@ -1,3 +1,13 @@
+/**
+ * matrix-fit.js — the Analyse page.
+ *
+ * NOT named analyse.js. Content blockers match script requests containing "analy"
+ * against their analytics filter lists and return ERR_BLOCKED_BY_CLIENT, which leaves
+ * this page inert for anyone running uBlock Origin or similar -- with no server-side
+ * trace, since the request never leaves the browser. The document is still
+ * analyse.html: documents are not matched the same way, and the public URL should not
+ * change. Do not rename this file back.
+ */
 import * as IO from "../grt-io.js";
 import * as Fit from "../grt-fit.js";
 import * as Core from "../grt-core.js";

@@ -466,6 +466,11 @@
       })();
     </script>
     <script type="module" src="./assets/js/grin-shell.js"></script>
-    <script type="module" src="./assets/js/pages/analyse.js"></script>
+    <!-- NOT named analyse.js: content blockers match "analy*" script requests
+         against their analytics filter lists and return ERR_BLOCKED_BY_CLIENT,
+         which silently breaks this page for anyone running uBlock Origin or
+         similar. The document name is fine (documents are not matched the same
+         way) so the public URL is unchanged. See web/README.md. -->
+    <script type="module" src="./assets/js/pages/matrix-fit.js"></script>
 </body>
 </html>
