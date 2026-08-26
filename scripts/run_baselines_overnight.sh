@@ -15,6 +15,23 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# Progress and completion markers, so a backgrounded run can be checked at a glance
+# rather than by guessing whether the process is still alive.
+STATUS="results/mle_fits/.overnight_status"
+mkdir -p results/mle_fits
+note() { printf '%s  %s\n' "$(date '+%H:%M:%S')" "$*" | tee -a "$STATUS"; }
+: > "$STATUS"
+
+# Always leave a final line, whether we succeeded, failed, or were killed.
+finish() {
+  rc=$?
+  if [[ $rc -eq 0 ]]; then note "DONE — finished successfully"
+  else                   note "FAILED — exit code $rc"; fi
+  printf '\a'          # terminal bell, if the shell is still attached
+  exit $rc
+}
+trap finish EXIT
+
 export R_LIBS_USER="$HOME/R/library"
 STAMP=$(date +%Y%m%d-%H%M)
 
@@ -36,13 +53,16 @@ Rscript -e '.libPaths("'"$HOME"'/R/library"); cat(R.version.string, "\n");
 echo "=== seed ==="
 grep -m1 "BASELINE_SEED <-" scripts/R/fit_baselines.R
 
+note "fitting 594 matrices (this is the long step, ~4 h)"
 echo "=== fitting ==="
 time Rscript -e '.libPaths("'"$HOME"'/R/library"); source("scripts/R/fit_baselines.R")'
 
+note "seed stability, real matrices (~1.5 h)"
 echo "=== grtools seed stability (context for the convergence rate) ==="
 Rscript -e '.libPaths("'"$HOME"'/R/library"); source("scripts/R/grtools_seed_stability.R")' || true
 Rscript -e '.libPaths("'"$HOME"'/R/library"); source("scripts/R/grtools_seed_stability.R")' simulated || true
 
+note "refreshing figures and downstream analyses"
 echo "=== done; refreshing downstream artifacts ==="
 python_bin=".venv/bin/python"
 export PYTHONPATH="$PWD"
