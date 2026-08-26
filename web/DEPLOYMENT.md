@@ -234,7 +234,13 @@ Before pushing to `main`, confirm these are actually committed (not just
 present on your machine). The workflow's smoke-check step also verifies them:
 
 - [ ] `web/assets/models/cm/npe_model.onnx` (+ matching `manifest.json`)
-- [ ] `web/assets/models/cmrt/npe_rt_model.onnx` (+ matching `manifest.json`)
+- [ ] `web/assets/models/cm/recalibration.json` (optional; absent means the
+      "calibrated intervals" toggle stays hidden rather than erroring)
+
+The `cmrt` response-time model was withdrawn from the site: its weights come from a
+generator retired on 2026-08-14 (`docs/dynamic_grt_rt_design.md`) and the replacement
+is still in validation. The smoke-check no longer requires it. Re-add it to both the
+checklist and the workflow's manifest loop when the replacement ships.
 
 When you replace the release checkpoint, update the `.onnx` **and** the
 manifest `version` / `artifact_sha256` / `training` fields together. Prefer

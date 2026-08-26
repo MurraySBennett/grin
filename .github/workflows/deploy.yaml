@@ -46,7 +46,12 @@ jobs:
           test -f web/assets/js/grin-model.js
           test -f web/assets/js/pages/analyse.js
           test -f web/assets/models/cm/manifest.json
-          test -f web/assets/models/cmrt/manifest.json
+          # cmrt is deliberately NOT required: the response-time model was withdrawn
+          # from the site (see docs/dynamic_grt_rt_design.md). Re-add it here when the
+          # dynamic-GRT replacement passes its gates and is shipped again.
+          ! test -e web/assets/models/cmrt \
+            || echo "note: cmrt present; add it back to the manifest loop below"
+
           test -f web/assets/vendor/ort/ort.min.js
           test -f web/assets/vendor/ort/ort-wasm-simd.wasm
           test -f web/assets/images/favicon.svg
@@ -62,7 +67,7 @@ jobs:
                       h.update(block)
               return h.hexdigest()
 
-          for d in ("cm", "cmrt"):
+          for d in ("cm",):
               base = pathlib.Path("web/assets/models") / d
               mf = json.loads((base / "manifest.json").read_text())
 

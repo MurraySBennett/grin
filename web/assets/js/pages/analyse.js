@@ -31,9 +31,13 @@ function ensureFigureFonts() {
 // --------------------------------------------------------------------------- //
 let parsed = null; // result of IO.parseCSV
 let groups = null; // Map participant -> trials[]  (long format)
+// The response-time model is withdrawn from the site: its weights come from a
+// generator retired on 2026-08-14 (docs/dynamic_grt_rt_design.md), and the
+// replacement is still in validation. RT columns in an uploaded file are parsed and
+// then ignored rather than rejected, so an existing file still analyses on counts.
 let hasRT = false;
-let cmModel = null,
-  cmrtModel = null;
+let rtColumnsSeen = false;
+let cmModel = null;
 let currentLabels = {
   aName: "Dimension A",
   a1: "A1",
@@ -45,16 +49,19 @@ let currentLabels = {
 let currentParticipant = null; // whoever the figure/label controls currently act on
 const cache = new Map(); // participant id -> { agg, checks, grin, mleFull, mleSel, ms }
 
-async function getModel(rt) {
+async function getModel() {
   const status = (msg) => {
     const el = $("analysis-status") || $("batch-status") || $("file-status");
     if (el && msg) el.textContent = msg;
   };
-  if (rt) {
-    if (!cmrtModel) cmrtModel = await loadModelCached("./assets/models/cmrt", status);
-    return cmrtModel;
+  if (!cmModel) {
+    cmModel = await loadModelCached("./assets/models/cm", status);
+    // Reveal the toggle only if this build actually ships the scale factors, so the
+    // control can never promise something the model cannot do.
+    const row = $("calib-row");
+    if (row && cmModel.canCalibrate) row.hidden = false;
   }
-  if (!cmModel) cmModel = await loadModelCached("./assets/models/cm", status);
+  cmModel.setCalibrated(!!($("calib-toggle") && $("calib-toggle").checked));
   return cmModel;
 }
 
@@ -226,14 +233,21 @@ $("parse-paste").addEventListener("click", () => {
   if (!txt.trim()) return;
   loadParsed(IO.parseCSV(txt), "pasted text");
 });
+const calibToggle = $("calib-toggle");
+if (calibToggle) {
+  calibToggle.addEventListener("change", () => {
+    if (cmModel) cmModel.setCalibrated(calibToggle.checked);
+    // Re-run whichever view is currently showing; point estimates do not change,
+    // but every interval and error bar does.
+    if (typeof analyseAll === "function" && !$("results").hidden) analyseAll();
+  });
+}
+
 $("dl-template-cm").addEventListener("click", () =>
   downloadText(
     IO.templateCSV({ withRT: false }),
     "grin_template_counts.csv",
   ),
-);
-$("dl-template-rt").addEventListener("click", () =>
-  downloadText(IO.templateCSV({ withRT: true }), "grin_template_rt.csv"),
 );
 
 function downloadText(text, filename) {
@@ -263,7 +277,8 @@ function loadParsed(result, sourceName, citationHTML = null) {
     return;
   }
   parsed = result;
-  hasRT = !!result.hasRT;
+  rtColumnsSeen = !!result.hasRT;
+  hasRT = false;   // counts-only model; see the note at the top of this file
   if (result.levels)
     currentLabels = {
       aName: result.levels.Aname || "Dimension A",
@@ -279,7 +294,10 @@ function loadParsed(result, sourceName, citationHTML = null) {
       ? `${result.trials.length} trials`
       : "1 matrix";
   $("file-status").innerHTML =
-    `<span class="pill ok">Parsed ${escapeHTML(sourceName)}, ${nBadge}${hasRT ? ", with RT" : ""}</span>` +
+    `<span class="pill ok">Parsed ${escapeHTML(sourceName)}, ${nBadge}</span>` +
+    (rtColumnsSeen
+      ? `<span class="pill">response-time columns ignored \u2014 counts-only model</span>`
+      : "") +
     (result.warnings?.length
       ? `<br><span class="pill warn" style="margin-top:.4rem">${result.warnings.length} warning(s)</span>`
       : "");
@@ -369,7 +387,7 @@ async function analyseOne(id) {
   }
 
   const t0 = performance.now();
-  const m = await getModel(hasRT);
+  const m = await getModel();
   const grin = await m.predict(agg);
   const t1 = performance.now();
   const mleFull = Fit.fitClass(agg.counts, agg.trials, "ds");
@@ -977,7 +995,7 @@ async function analyseAll() {
       continue;
     }
 
-    const m = await getModel(hasRT);
+    const m = await getModel();
     const grin = await m.predict(agg);
     const mleFull = Fit.fitClass(agg.counts, agg.trials, "ds");
     const mleSel = Fit.fitAndSelect(agg.counts, agg.trials, "bic");

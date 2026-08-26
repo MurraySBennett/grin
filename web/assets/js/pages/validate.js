@@ -255,18 +255,29 @@
       T,
     );
 
-    const all90 = coverageAt(
-      [...batch.sensTrue, ...batch.corrTrue],
-      [...batch.sensRec, ...batch.corrRec],
-      [...batch.sensStd, ...batch.corrStd],
-      0.9,
-    );
+    // Report the two families SEPARATELY. Pooling them averages miscalibrations that
+    // run in opposite directions -- the sensitivity intervals are wider than nominal and
+    // the correlation intervals narrower -- so a single pooled number lands near 90% and
+    // describes neither family. This page used to headline that pooled number.
+    const sens90 = coverageAt(batch.sensTrue, batch.sensRec, batch.sensStd, 0.9);
+    const corr90 = coverageAt(batch.corrTrue, batch.corrRec, batch.corrStd, 0.9);
+    const pct = (x) => `${(100 * x).toFixed(0)}%`;
+    const verdict = (x) =>
+      x > 0.915 ? "wider than nominal" : x < 0.885 ? "narrower than nominal" : "on target";
     $("calib-headline").innerHTML = `
 <div class="note">
-  <h4>90% intervals contained the truth ${(100 * all90).toFixed(0)}% of the time</h4>
-  <p>Close to 90% is what a calibrated method looks like. This is measured live
-  on the batch above, so it will wobble a little run to run and shift as you change
-  the trial count.</p>
+  <h4>90% intervals: sensitivities ${pct(sens90)}, correlations ${pct(corr90)}</h4>
+  <p>The two families are calibrated differently, so they are reported separately.
+  Here the sensitivity intervals came out ${verdict(sens90)} and the correlation
+  intervals ${verdict(corr90)}. Averaging the two would give a number close to 90%
+  that describes neither.</p>
+  <p>Across large held-out sets the sensitivities cover about 94% and the correlations
+  about 84%, so a nominal 90% interval on a within-stimulus correlation behaves more
+  like an 84% one. The released packages ship an optional correction for this
+  (<code>calibrated = TRUE</code> in R, <code>calibrated=True</code> in Python); it is
+  off by default and does not change point estimates.</p>
+  <p class="cap">Measured live on the batch above, so it will wobble run to run and
+  shift as you change the trial count.</p>
 </div>`;
   }
 

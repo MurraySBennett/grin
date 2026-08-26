@@ -17,17 +17,12 @@ ES modules need an origin — opening the files over `file://` will not work.
     explore.html                     hub for interactive teaching / preview tools
     space-builder.html               teaching tier, counts only — build a space,
                                        run a virtual experiment, watch it recover
-    space-builder-time-attack.html   research preview, counts + response times ("+RT")
-                                       — processing architecture under a simplified
-                                       ballistic timing model
     independence.html                demonstrating the difficulty of identifying
                                        perceptual independence
     analyse.html                     bring your own data (upload CSV, paste, or type
                                        a matrix); GRIN beside a maximum-likelihood fit
     validate.html                    recovery + interval calibration, simulated live
                                        in-browser over many participants
-    dynamics.html                    research playground: drift tracking and an
-                                       illustrative, not yet validated stopping rule
     learn.html                       primer, glossary, FAQ, limitations, references
 
 Each page has a distinct role and tries not to duplicate another: Space Builder builds
@@ -52,13 +47,19 @@ Validate checks recovery and calibration on simulated data where the truth is kn
     components/footer.html      same
 
     assets/models/cm/           manifest.json + npe_model.onnx        (counts-only network)
-    assets/models/cmrt/         manifest.json + npe_rt_model.onnx     (counts + RT network)
     assets/vendor/ort/          pinned onnxruntime-web, non-threaded SIMD only
                                     (no COOP/COEP headers needed)
 
 ## Inference wiring
 
-Pages load a network with `loadModelCached("./assets/models/cm")` (or `.../cmrt`).
+Pages load the network with `loadModelCached("./assets/models/cm")`. If
+`assets/models/cm/recalibration.json` is present the Analyse page offers an
+off-by-default "calibrated intervals" toggle; if it is absent the toggle stays
+hidden and the raw posterior is used, which is the correct fallback.
+
+The `cmrt` response-time model was withdrawn pending validation of its
+replacement (`docs/dynamic_grt_rt_design.md`). An `rt` column in uploaded data
+is parsed and then ignored rather than rejected.
 The **manifest is the contract**: each `manifest.json` declares the network's input
 and output names, shapes, parameter order, and the prior it was trained under, so
 nothing about the layout is hardcoded in the JS. If a manifest and its `.onnx` fall

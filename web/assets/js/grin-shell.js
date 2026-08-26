@@ -96,9 +96,7 @@ function initNav() {
   const pageGroups = {
     explore: "explore",
     "space-builder": "explore",
-    "time-attack": "explore",
     independence: "explore",
-    dynamics: "explore",
     validate: "evidence",
   };
   const rawPage = document.body.dataset.page;

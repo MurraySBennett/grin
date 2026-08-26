@@ -119,15 +119,26 @@
             One row per <strong>trial</strong>: <code>stimulus</code>,
             <code>response</code> (as <code>A1B1</code>-style codes, your own
             labels like <code>Happy/Male</code>, or 0–3), optional
-            <code>participant</code>, optional <code>rt</code> in
-            <strong>seconds</strong>. Include <code>rt</code> to get
-            architecture and accumulator estimates; omit it for the faster
-            counts-only model.
+            <code>participant</code>. A <code>rt</code> column is accepted but
+            ignored: the response-time model is withdrawn pending validation of its
+            replacement, so inference here is counts-only.
           </p>
           <div class="row">
             <button class="ghost" id="dl-template-cm">Template (counts)</button>
-            <button class="ghost" id="dl-template-rt">Template (+RT)</button>
           </div>
+
+          <label class="row" id="calib-row" style="margin-top: 0.9rem" hidden>
+            <input type="checkbox" id="calib-toggle" />
+            <span
+              >Calibrated intervals
+              <span class="cap"
+                >Widens correlation intervals and narrows sensitivity intervals by
+                factors fitted on held-out simulations. Point estimates are
+                unchanged. Off by default; the paper's results use the raw
+                posterior.</span
+              ></span
+            >
+          </label>
 
           <div id="file-status" class="status" style="margin-top: 0.9rem"></div>
         </aside>

@@ -128,6 +128,17 @@ function assertSession(session, mf) {
 export async function loadModel(dir) {
   const mf = assertManifest(await (await fetch(`${dir}/manifest.json`)).json());
 
+  // Optional per-family posterior scale factors, mirroring the `calibrated` flag in
+  // the R and Python packages. Absent file is not an error: the model then behaves
+  // exactly as before and setCalibrated(true) is a no-op.
+  let recal = null;
+  try {
+    const r = await fetch(`${dir}/recalibration.json`);
+    if (r.ok) recal = await r.json();
+  } catch (_) {
+    /* offline or not shipped; raw intervals are the correct fallback */
+  }
+
   await loadOrtScript();
   if (typeof ort === "undefined")
     throw new Error(
@@ -146,7 +157,7 @@ export async function loadModel(dir) {
     executionProviders: ["wasm"],
   });
   assertSession(session, mf);
-  return new GrinModel(mf, session);
+  return new GrinModel(mf, session, recal);
 }
 
 /** A drop-in stand-in backed by MLE. Same interface, honestly labelled. */
@@ -158,11 +169,35 @@ export function createStub(mf) {
 // The model
 // --------------------------------------------------------------------------- //
 export class GrinModel {
-  constructor(manifest, session) {
+  constructor(manifest, session, recalibration = null) {
     this.manifest = manifest;
     this.session = session;
     this.backend = session ? "onnx" : "stub";
     this.needsRT = manifest.inputs.some((i) => i.name === "rtq");
+    this.recalibration = recalibration;
+    // OFF by default, matching the packages: the correction is estimated under the
+    // training prior, and a rescaled interval is a calibrated interval derived from
+    // the posterior rather than the posterior itself.
+    this.calibrated = false;
+  }
+
+  /** Can this build offer corrected intervals at all? */
+  get canCalibrate() {
+    return !!(this.recalibration && this.recalibration.global_scale);
+  }
+
+  setCalibrated(on) {
+    this.calibrated = !!on && this.canCalibrate;
+    return this.calibrated;
+  }
+
+  /** Per-parameter multiplier on the posterior SD; all ones when off. */
+  _scales(n) {
+    const s = new Array(n).fill(1);
+    if (!this.calibrated) return s;
+    const g = this.recalibration.global_scale;
+    for (let i = 0; i < n; i++) s[i] = i < 8 ? g.z : g.rho;
+    return s;
   }
 
   get paramNames() {
@@ -266,6 +301,15 @@ export class GrinModel {
     out.params = Object.fromEntries(
       mf.params.names.map((n, i) => [n, out.mean[i]]),
     );
+    // Raw widths are always available, so nothing is lost by asking for the
+    // correction -- the UI shows both.
+    out.paramsSDRaw = Object.fromEntries(
+      mf.params.names.map((n, i) => [n, out.std[i]]),
+    );
+    const sc = this._scales(out.std.length);
+    out.stdRaw = out.std.slice();
+    out.std = out.std.map((v, i) => v * sc[i]);
+    out.calibrated = this.calibrated;
     out.paramsSD = Object.fromEntries(
       mf.params.names.map((n, i) => [n, out.std[i]]),
     );
