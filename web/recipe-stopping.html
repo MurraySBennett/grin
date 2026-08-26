@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <script>
+      (function () {
+        try {
+          var s = localStorage.getItem("msb-dark-mode");
+          var dark =
+            s === "dark" ||
+            (s !== "light" &&
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) document.documentElement.classList.add("is-dark");
+        } catch (e) {}
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recipe: adaptive stopping - GRIN</title>
+    <meta
+      name="description"
+      content="Refit between trials and stop testing when the estimate reaches a stated precision, rather than at a trial count fixed in advance."
+    />
+    <link rel="canonical" href="https://grin.murraysbennett.com/recipe-stopping.html" />
+    <meta property="og:title" content="Recipe: adaptive stopping - GRIN" />
+    <meta property="og:description" content="Refit between trials and stop testing when the estimate reaches a stated precision, rather than at a trial count fixed in advance." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://grin.murraysbennett.com/recipe-stopping.html" />
+    <meta property="og:image" content="https://grin.murraysbennett.com/assets/images/og-card.svg" />
+    <link rel="icon" href="./assets/images/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./assets/css/grin.css" />
+  </head>
+  <body data-page="recipe-stopping">
+    <header class="site">
+      <h1>Stop when the estimate is precise enough</h1>
+      <p class="tagline">
+        Replace a guessed trial budget with a stated precision target.
+      </p>
+      <div id="nav-placeholder"></div>
+
+    <main class="container">
+      <div class="stack">
+        <section class="card">
+          <p>
+            A fixed trial budget has to be set in advance, and set for the least
+            precise participant you can imagine &mdash; so everyone else is
+            over-tested. If inference costs a fraction of a millisecond you can
+            instead refit between trials and stop each participant when their own
+            estimate is precise enough.
+          </p>
+          <p class="cap">
+            In simulation this saves about 74% of trials at a target of 0.35 on the
+            posterior SD, and the saving grows as the target tightens. Nobody is
+            measured less precisely; the saving comes entirely from the participants
+            who never needed the full budget.
+          </p>
+          <p>
+            You can try this without writing anything: the
+            <a href="./live.html">live task</a> runs exactly this loop in your browser.
+          </p>
+        </section>
+
+        <ol class="recipe-steps">
+          <li>
+            <h3 class="card-subhead">State the target</h3>
+            <p>
+              A target is a statement about precision, not about trial count. Either a
+              maximum posterior SD on some parameters, or a minimum confidence in a
+              construct.
+            </p>
+            <div class="codeblock" data-codeblock>
+<pre data-lang="Python"><code>import grintools as gt
+
+# stop when the correlations are known to within an SD of 0.35
+decision = gt.stop_on_precision(fit, sd_max=0.35, params=["rho"])
+decision.stop           # True / False
+print(decision.summary())
+#   stop = True  (combine='all')
+#       sd:rho_0         0.171 vs 0.350  [met]
+
+decision.checks         # one dict per target: value, threshold, met, reachable
+decision.blocked_by     # the checks that are not met yet
+</code></pre>
+<pre data-lang="R" hidden><code>library(grin)
+
+# stop when the correlations are known to within an SD of 0.35
+decision &lt;- grin_stop_on_precision(fit$result, sd_max = 0.35,
+                                   params = c("rho"))
+decision$stop          # TRUE / FALSE
+decision$checks        # one row per target: value, threshold, met, reachable
+decision$blocked_by    # the targets not met yet
+</code></pre>
+<pre data-lang="JavaScript" hidden><code>// In a browser task, the same rule is three lines: refit, average the
+// posterior SDs you care about, compare to your target.
+const out = await model.predict({ counts, trials });
+const rhoSD = out.std.slice(8, 12);
+const stop = rhoSD.reduce((a, b) => a + b, 0) / 4 &lt;= 0.35;
+</code></pre>
+            </div>
+          </li>
+
+          <li>
+            <h3 class="card-subhead">Put it in the trial loop</h3>
+            <p>
+              Accrue in blocks rather than single trials. The posterior barely moves
+              on one response, and every stimulus needs a few observations before the
+              fit means anything.
+            </p>
+            <div class="codeblock" data-codeblock>
+<pre data-lang="Python"><code>import numpy as np, grintools as gt
+
+counts = np.zeros((4, 4), dtype=int)
+BLOCK, MIN_TRIALS, MAX_TRIALS = 16, 40, 400
+
+for block in range(MAX_TRIALS // BLOCK):
+    for _ in range(BLOCK):
+        s = present_random_stimulus()      # your experiment
+        r = collect_response()             # your experiment
+        counts[s, r] += 1
+
+    n = counts.sum()
+    if n &lt; MIN_TRIALS:
+        continue                           # too early to ask
+
+    fit, con = gt.infer(counts)
+    if gt.stop_on_precision(fit, sd_max=0.35, params=["rho"]).stop:
+        print(f"target reached after {n} trials")
+        break
+</code></pre>
+<pre data-lang="R" hidden><code>library(grin)
+
+counts &lt;- matrix(0L, 4, 4)
+BLOCK &lt;- 16; MIN_TRIALS &lt;- 40; MAX_TRIALS &lt;- 400
+
+for (block in seq_len(MAX_TRIALS %/% BLOCK)) {
+  for (i in seq_len(BLOCK)) {
+    s &lt;- present_random_stimulus()   # your experiment
+    r &lt;- collect_response()          # your experiment
+    counts[s, r] &lt;- counts[s, r] + 1L
+  }
+
+  n &lt;- sum(counts)
+  if (n &lt; MIN_TRIALS) next
+
+  fit &lt;- grin_infer(counts)
+  d &lt;- grin_stop_on_precision(fit$result, sd_max = 0.35, params = c("rho"))
+  if (isTRUE(d$stop)) {
+    message("target reached after ", n, " trials")
+    break
+  }
+}
+</code></pre>
+<pre data-lang="JavaScript" hidden><code>import { loadModelCached } from "./assets/js/grin-model.js";
+
+const model = await loadModelCached("./assets/models/cm");
+const counts = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+const BLOCK = 16, MIN_TRIALS = 40, MAX_TRIALS = 400;
+let n = 0;
+
+while (n &lt; MAX_TRIALS) {
+  for (let i = 0; i &lt; BLOCK; i++) {
+    const s = presentRandomStimulus();     // your experiment
+    const r = await collectResponse();     // your experiment
+    counts[s][r] += 1;
+    n += 1;
+  }
+  if (n &lt; MIN_TRIALS) continue;
+
+  const trials = counts.map((row) => row.reduce((a, b) => a + b, 0));
+  const out = await model.predict({ counts, trials });
+  const rhoSD = out.std.slice(8, 12);
+  if (rhoSD.reduce((a, b) => a + b, 0) / 4 &lt;= 0.35) break;
+}
+</code></pre>
+            </div>
+          </li>
+
+          <li>
+            <h3 class="card-subhead">Always set a ceiling</h3>
+            <p>
+              Some participants will not reach any given target, because the design
+              does not contain the information &mdash; particularly for the
+              correlations, and particularly at high accuracy. Without a maximum you
+              are running an experiment with no defined end.
+            </p>
+            <p>
+              Report the ceiling and how many participants hit it. A saving computed
+              over a cohort where the slowest were quietly dropped is not a saving.
+            </p>
+          </li>
+        </ol>
+
+        <section class="card">
+          <h3 class="card-subhead">Two caveats worth knowing</h3>
+          <p>
+            <strong>Targets on correlations inherit a calibration issue.</strong> The
+            correlation intervals run narrower than nominal, so a target on
+            <code>rho</code> is met slightly sooner than it should be. Either pass
+            <code>calibrated=True</code> / <code>calibrated = TRUE</code>, or set the
+            target a little tighter than you actually want.
+          </p>
+          <p>
+            <strong>Stopping on a construct probability is different from stopping on
+            precision.</strong> A probability near one half can mean the data are
+            uninformative, and more trials will fix that &mdash; or that the true
+            answer sits near a boundary, and they will not. A precision target is the
+            safer default.
+          </p>
+        </section>
+
+        <section class="card">
+          <p>
+            Next: <a href="./recipe-calibrate.html">steer stimulus levels into the
+            informative range</a>, or go back to
+            <a href="./recipes.html">all recipes</a>.
+          </p>
+        </section>
+      </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+    <script type="module" src="./assets/js/grin-shell.js"></script>
+    <script type="module" src="./assets/js/recipes.js"></script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <script>
+      (function () {
+        try {
+          var s = localStorage.getItem("msb-dark-mode");
+          var dark =
+            s === "dark" ||
+            (s !== "light" &&
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) document.documentElement.classList.add("is-dark");
+        } catch (e) {}
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Live task - GRIN</title>
+    <meta
+      name="description"
+      content="Do a short identification task and watch the GRT model fit update between your trials, including the stopping rule the packages expose."
+    />
+    <link rel="canonical" href="https://grin.murraysbennett.com/live.html" />
+    <meta property="og:title" content="Live task - GRIN" />
+    <meta property="og:description" content="Do a short identification task and watch the GRT model fit update between your trials, including the stopping rule the packages expose." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://grin.murraysbennett.com/live.html" />
+    <meta property="og:image" content="https://grin.murraysbennett.com/assets/images/og-card.svg" />
+    <link rel="icon" href="./assets/images/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./assets/css/grin.css" />
+  </head>
+  <body data-page="live">
+    <header class="site">
+      <h1>Live task</h1>
+      <p class="tagline">
+        Do the task yourself. Watch the fit update after every response.
+      </p>
+      <div id="nav-placeholder"></div>
+
+    <main class="container">
+      <div class="stack">
+        <section class="card">
+          <p>
+            This is an ordinary 2&times;2 identification task: a rectangle appears,
+            varying in <strong>width</strong> (dimension A) and
+            <strong>height</strong> (dimension B), and you say which of the four it
+            was. Nothing is simulated except the stimulus &mdash; the responses are
+            yours, and the panel on the right is the same network the R and Python
+            packages ship, refitted after every trial.
+          </p>
+          <p class="cap">
+            That refitting is the point. Fitting a GRT model by numerical
+            optimisation takes seconds, so it can only happen once the session is
+            over. Here it takes a fraction of a millisecond, so the design can react
+            to it while you are still working.
+          </p>
+
+          <div class="row" style="gap: 1.4rem; flex-wrap: wrap; align-items: end">
+            <label>
+              Stopping target (mean posterior SD)
+              <input type="range" id="sd-target" min="0.15" max="0.60"
+                     step="0.01" value="0.35" />
+              <span class="num" id="sd-target-val">0.35</span>
+            </label>
+            <label>
+              Stimulus noise (px)
+              <input type="range" id="jitter" min="0" max="26" step="1" value="13" />
+              <span class="num" id="jitter-val">13</span>
+            </label>
+            <button class="button" id="start">Start</button>
+          </div>
+          <p class="cap">
+            Noise controls how hard the task is. Turn it down and you will sit near
+            ceiling, where the paper shows the within-stimulus correlations are least
+            identifiable; turn it up and the sensitivities become hard to pin down.
+            The accuracy readout tells you which side you are on.
+          </p>
+        </section>
+
+        <section id="task" hidden>
+          <div class="two-col" style="display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 1.2rem">
+            <div class="card">
+              <h3 class="card-subhead">The task</h3>
+              <canvas id="stim" height="260" style="width: 100%; height: 260px"></canvas>
+              <p id="prompt" style="text-align: center; font-weight: 600"></p>
+              <div class="choices" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem">
+                <button class="choice" id="resp-0">narrow / short <span class="cap">1</span></button>
+                <button class="choice" id="resp-1">narrow / tall <span class="cap">2</span></button>
+                <button class="choice" id="resp-2">wide / short <span class="cap">3</span></button>
+                <button class="choice" id="resp-3">wide / tall <span class="cap">4</span></button>
+              </div>
+              <p class="cap">Keys 1&ndash;4 work too. Trials so far:
+                <span class="num" id="n-trials">0</span></p>
+            </div>
+
+            <div class="card">
+              <h3 class="card-subhead">The fit, right now</h3>
+              <canvas id="space" style="width: 100%"></canvas>
+              <div id="constructs"></div>
+              <p id="accuracy" class="cap"></p>
+              <h3 class="card-subhead" style="margin-top: 1rem">
+                Posterior width over trials
+              </h3>
+              <canvas id="spark" height="54" style="width: 100%; height: 54px"></canvas>
+              <p class="cap" id="fit-status"></p>
+              <div class="note" id="stop-banner" hidden></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3 class="card-subhead">What you are looking at</h3>
+          <p>
+            The ellipses are the perceptual distributions the model infers for each of
+            the four stimuli, and the dashed lines are the decision bounds. Early on
+            they are all over the place, because four trials cannot pin down twelve
+            parameters. As trials accumulate they settle, and the posterior-width trace
+            below them falls.
+          </p>
+          <p>
+            When that trace crosses your target the task stops. That is the stopping
+            rule the packages expose as
+            <code>grin_stop_on_precision()</code> and
+            <code>gt.stop_on_precision()</code>, evaluated between trials rather than
+            after the session &mdash; see the
+            <a href="./recipes.html">recipes</a> for how to wire it into your own
+            experiment.
+          </p>
+          <p class="cap">
+            One honest caveat: the intervals shown here are the network's own, and the
+            paper reports that its correlation intervals run narrower than nominal.
+            The <a href="./validate.html">Evidence</a> page shows this directly, and
+            the packages ship an optional correction for it.
+          </p>
+        </section>
+      </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+    <script type="module" src="./assets/js/grin-shell.js"></script>
+    <script type="module" src="./assets/js/pages/live.js"></script>
+</body>
+</html>

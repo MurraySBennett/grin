@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <script>
+      (function () {
+        try {
+          var s = localStorage.getItem("msb-dark-mode");
+          var dark =
+            s === "dark" ||
+            (s !== "light" &&
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) document.documentElement.classList.add("is-dark");
+        } catch (e) {}
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recipe: stimulus calibration - GRIN</title>
+    <meta
+      name="description"
+      content="Use a start-up block to place an observer in the accuracy range where the parameter you care about is actually identifiable."
+    />
+    <link rel="canonical" href="https://grin.murraysbennett.com/recipe-calibrate.html" />
+    <meta property="og:title" content="Recipe: stimulus calibration - GRIN" />
+    <meta property="og:description" content="Use a start-up block to place an observer in the accuracy range where the parameter you care about is actually identifiable." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://grin.murraysbennett.com/recipe-calibrate.html" />
+    <meta property="og:image" content="https://grin.murraysbennett.com/assets/images/og-card.svg" />
+    <link rel="icon" href="./assets/images/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./assets/css/grin.css" />
+  </head>
+  <body data-page="recipe-calibrate">
+    <header class="site">
+      <h1>Steering stimulus levels</h1>
+      <p class="tagline">
+        Where you run the task decides what you can find out.
+      </p>
+      <div id="nav-placeholder"></div>
+    <main class="container">
+      <div class="stack">
+        <section class="card">
+          <p>
+            Accuracy is not a nuisance to be maximised. It determines which parameters
+            are identifiable at all, and the answer is different for the two things a
+            GRT study usually reports.
+          </p>
+          <table class="cm" style="margin-top: 0.8rem">
+            <thead>
+              <tr><th>Per-dimension accuracy</th><th>Overall (4AFC)</th>
+                  <th>Independence</th><th>Separability</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>60&ndash;65%</td><td>~39%</td><td><strong>83%</strong></td><td>58%</td></tr>
+              <tr><td>70&ndash;75%</td><td>~52%</td><td>80%</td><td>73%</td></tr>
+              <tr><td>75&ndash;80%</td><td>~60%</td><td>78%</td><td>79%</td></tr>
+              <tr><td>80&ndash;85%</td><td>~68%</td><td>75%</td><td><strong>82%</strong></td></tr>
+              <tr><td>95&ndash;100%</td><td>~94%</td><td>68%</td><td>74%</td></tr>
+            </tbody>
+          </table>
+          <p class="cap">
+            Classification accuracy for each construct, measured on 72,000 simulated
+            observers. Independence is best identified around 60&ndash;65% per
+            dimension; separability around 80&ndash;85%. At the accuracy that best
+            serves independence, separability is recovered barely above chance.
+          </p>
+          <p>
+            So there is no single right difficulty. If you need both, the crossing
+            point &mdash; about 75&ndash;80% per dimension, or 60% overall &mdash; is
+            the compromise, and it is where the familiar advice to run near 60% correct
+            comes from. Note which scale that number is on: 60% <em>overall</em> is
+            about 77% per dimension, and running at 60% <em>per dimension</em> would be
+            a poor design for separability.
+          </p>
+        </section>
+
+        <ol class="recipe-steps">
+          <li>
+            <h3 class="card-subhead">Decide what you are measuring</h3>
+            <p>
+              Pick the target before collecting anything: independence &rarr; aim low,
+              separability &rarr; aim high, both &rarr; aim at the crossing point. The
+              tolerance is tighter for small experiments: with 200+ trials per stimulus
+              the correlation error is nearly flat below 75% accuracy, but under 20
+              trials it climbs across the whole range.
+            </p>
+          </li>
+
+          <li>
+            <h3 class="card-subhead">Run a start-up block and measure where you landed</h3>
+            <p>
+              Accuracy read off the matrix, not from the fitted parameters &mdash; it is
+              the thing you can see during a pilot.
+            </p>
+            <div class="codeblock" data-codeblock>
+<pre data-lang="Python"><code>import numpy as np
+
+# Mean of the two marginal accuracies.
+# Canonical order is A1B1, A1B2, A2B1, A2B2 -- B varies fastest, so dimension A
+# is correct when stimulus and response share a half, and B when they share parity.
+def per_dimension_accuracy(counts):
+    c = np.asarray(counts, float)
+    n = c.sum()
+    a = sum(c[s, r] for s in range(4) for r in range(4) if s // 2 == r // 2)
+    b = sum(c[s, r] for s in range(4) for r in range(4) if s % 2 == r % 2)
+    return 0.5 * (a / n + b / n)
+
+acc = per_dimension_accuracy(startup_counts)
+print(f"landed at {acc:.0%} per dimension")
+</code></pre>
+<pre data-lang="R" hidden><code># Mean of the two marginal accuracies.
+# Canonical order is A1B1, A1B2, A2B1, A2B2 -- B varies fastest.
+per_dimension_accuracy &lt;- function(counts) {
+  n &lt;- sum(counts); a &lt;- 0; b &lt;- 0
+  for (s in 1:4) for (r in 1:4) {
+    if ((s - 1) %/% 2 == (r - 1) %/% 2) a &lt;- a + counts[s, r]
+    if ((s - 1) %%  2 == (r - 1) %%  2) b &lt;- b + counts[s, r]
+  }
+  0.5 * (a / n + b / n)
+}
+
+acc &lt;- per_dimension_accuracy(startup_counts)
+message(sprintf("landed at %.0f%% per dimension", 100 * acc))
+</code></pre>
+            </div>
+          </li>
+
+          <li>
+            <h3 class="card-subhead">Adjust the separation and repeat</h3>
+            <p>
+              A plain proportional step is enough. The point is not a clever algorithm;
+              it is that you now know which way to move and when to stop.
+            </p>
+            <div class="codeblock" data-codeblock>
+<pre data-lang="Python"><code>TARGET, TOL, GAIN = 0.77, 0.03, 0.6      # aim at the crossing point
+separation = initial_separation
+
+for block in range(6):
+    counts = run_block(separation, n_trials=48)
+    acc = per_dimension_accuracy(counts)
+
+    if abs(acc - TARGET) &lt;= TOL:
+        break
+    # too accurate -&gt; move the levels closer together, and vice versa
+    separation *= 1 - GAIN * (acc - TARGET) / TARGET
+</code></pre>
+<pre data-lang="R" hidden><code>TARGET &lt;- 0.77; TOL &lt;- 0.03; GAIN &lt;- 0.6   # aim at the crossing point
+separation &lt;- initial_separation
+
+for (block in 1:6) {
+  counts &lt;- run_block(separation, n_trials = 48)
+  acc &lt;- per_dimension_accuracy(counts)
+
+  if (abs(acc - TARGET) &lt;= TOL) break
+  # too accurate -&gt; move the levels closer together, and vice versa
+  separation &lt;- separation * (1 - GAIN * (acc - TARGET) / TARGET)
+}
+</code></pre>
+            </div>
+          </li>
+
+          <li>
+            <h3 class="card-subhead">Use blocks long enough to be worth acting on</h3>
+            <p>
+              Accuracy measured from a short block is noisy, and steering on noise is
+              worse than not steering. At 5&ndash;20 trials per stimulus the standard
+              deviation of an accuracy estimate is about 0.047 &mdash; roughly a third
+              of the width of the band you are aiming at. At 50&ndash;200 it falls to
+              0.015.
+            </p>
+            <p class="cap">
+              Blocks of 40&ndash;50 trials are a reasonable floor. Below that, expect
+              to chase sampling error rather than the participant.
+            </p>
+          </li>
+        </ol>
+
+        <section class="card">
+          <h3 class="card-subhead">What this does and does not do</h3>
+          <p>
+            It places the observer where the question is answerable, and it assumes
+            nothing about learning: the representation is taken as fixed, and only the
+            sampling location is being chosen. That is a weaker and safer assumption
+            than an adaptive training curriculum, which would additionally require the
+            representation to move predictably in response to practice.
+          </p>
+          <p>
+            What it cannot do is manufacture information. If a correlation is weak and
+            the trial budget is small, no placement recovers it &mdash; the model will
+            correctly report a wide interval, and that is the answer.
+          </p>
+        </section>
+
+        <section class="card">
+          <p>
+            Back to <a href="./recipes.html">all recipes</a>, or see the
+            <a href="./live.html">live task</a>, where the accuracy readout tells you
+            in real time which side of the band you are on.
+          </p>
+        </section>
+      </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+    <script type="module" src="./assets/js/grin-shell.js"></script>
+    <script type="module" src="./assets/js/recipes.js"></script>
+</body>
+</html>

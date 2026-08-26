@@ -97,7 +97,13 @@ function initNav() {
     explore: "explore",
     "space-builder": "explore",
     independence: "explore",
+    live: "explore",
     validate: "evidence",
+    // the recipes sit under Learn & use, so the parent lights up on each of them
+    recipes: "learn",
+    "recipe-posthoc": "learn",
+    "recipe-stopping": "learn",
+    "recipe-calibrate": "learn",
   };
   const rawPage = document.body.dataset.page;
   const page = pageGroups[rawPage] ?? rawPage;

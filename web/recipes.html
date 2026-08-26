@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <script>
+      (function () {
+        try {
+          var s = localStorage.getItem("msb-dark-mode");
+          var dark =
+            s === "dark" ||
+            (s !== "light" &&
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) document.documentElement.classList.add("is-dark");
+        } catch (e) {}
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recipes - GRIN</title>
+    <meta
+      name="description"
+      content="Worked walkthroughs for using GRIN: analysing data you already have, stopping a task when the estimate is precise enough, and steering stimulus levels into the informative range."
+    />
+    <link rel="canonical" href="https://grin.murraysbennett.com/recipes.html" />
+    <meta property="og:title" content="Recipes - GRIN" />
+    <meta property="og:description" content="Worked walkthroughs for using GRIN: analysing data you already have, stopping a task when the estimate is precise enough, and steering stimulus levels into the informative range." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://grin.murraysbennett.com/recipes.html" />
+    <meta property="og:image" content="https://grin.murraysbennett.com/assets/images/og-card.svg" />
+    <link rel="icon" href="./assets/images/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./assets/css/grin.css" />
+  </head>
+  <body data-page="recipes">
+    <header class="site">
+      <h1>Recipes</h1>
+      <p class="tagline">
+        Three things you might actually want to do, with the code to do them.
+      </p>
+      <div id="nav-placeholder"></div>
+
+    <main class="container">
+      <div class="stack">
+        <section class="card">
+          <p>
+            Each recipe is a complete walkthrough in Python and R &mdash; and, where
+            it makes sense, JavaScript for running in a browser task. They assume
+            nothing beyond a working install; see
+            <a href="./learn.html">Learn &amp; use</a> for that.
+          </p>
+        </section>
+
+        <div class="doors">
+          <a class="door" href="./recipe-posthoc.html">
+            <h3>Analyse data you already have</h3>
+            <p>
+              You ran an identification study and have a table of trials. Get a
+              perceptual space, construct probabilities and intervals out of it,
+              for one participant or a whole sample.
+            </p>
+            <p class="cap">Python &middot; R</p>
+          </a>
+
+          <a class="door" href="./recipe-stopping.html">
+            <h3>Stop when the estimate is precise enough</h3>
+            <p>
+              Rather than fixing a trial count in advance for the least precise
+              participant you can imagine, refit between trials and stop when a
+              stated precision target is met.
+            </p>
+            <p class="cap">Python &middot; R &middot; JavaScript</p>
+          </a>
+
+          <a class="door" href="./recipe-calibrate.html">
+            <h3>Steer stimulus levels into the informative range</h3>
+            <p>
+              Which accuracy you run at determines what you can identify, and the
+              answer differs for independence and separability. Use a start-up block
+              to land where your question is answerable.
+            </p>
+            <p class="cap">Python &middot; R</p>
+          </a>
+        </div>
+
+        <section class="card">
+          <h3 class="card-subhead">Prefer to see it than read it?</h3>
+          <p>
+            The <a href="./live.html">live task</a> runs the second recipe in your
+            browser: do a short identification task and watch the fit and the
+            stopping rule update after every response.
+          </p>
+        </section>
+      </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+    <script type="module" src="./assets/js/grin-shell.js"></script>
+    <script type="module" src="./assets/js/recipes.js"></script>
+</body>
+</html>

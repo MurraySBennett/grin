@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <script>
+      (function () {
+        try {
+          var s = localStorage.getItem("msb-dark-mode");
+          var dark =
+            s === "dark" ||
+            (s !== "light" &&
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) document.documentElement.classList.add("is-dark");
+        } catch (e) {}
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recipe: analysing existing data - GRIN</title>
+    <meta
+      name="description"
+      content="Turn a table of identification trials into a GRT perceptual space, construct probabilities and intervals, for one participant or a whole sample."
+    />
+    <link rel="canonical" href="https://grin.murraysbennett.com/recipe-posthoc.html" />
+    <meta property="og:title" content="Recipe: analysing existing data - GRIN" />
+    <meta property="og:description" content="Turn a table of identification trials into a GRT perceptual space, construct probabilities and intervals, for one participant or a whole sample." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://grin.murraysbennett.com/recipe-posthoc.html" />
+    <meta property="og:image" content="https://grin.murraysbennett.com/assets/images/og-card.svg" />
+    <link rel="icon" href="./assets/images/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./assets/css/grin.css" />
+  </head>
+  <body data-page="recipe-posthoc">
+    <header class="site">
+      <h1>Analysing data you already have</h1>
+      <p class="tagline">
+        From a trial-level CSV to a reportable fit.
+      </p>
+      <div id="nav-placeholder"></div>
+
+    <main class="container">
+      <div class="stack">
+        <section class="card">
+          <p>
+            You have an identification study: each row is a trial, with the stimulus
+            shown and the response given. This turns that into a fitted perceptual
+            space with intervals, and into the two construct probabilities a GRT
+            analysis usually reports.
+          </p>
+        </section>
+
+        <ol class="recipe-steps">
+          <li>
+            <h3 class="card-subhead">Get your data into a 4&times;4 matrix</h3>
+            <p>
+              Rows are stimuli, columns are responses, both in the canonical order
+              <code>A1B1, A1B2, A2B1, A2B2</code> &mdash; the second factor varies
+              fastest. Order carries meaning that a bare matrix cannot express, so
+              both packages refuse to guess: either pass it already ordered, or pass
+              labels and let them resolve it.
+            </p>
+            <div class="codeblock" data-codeblock>
+<pre data-lang="Python"><code>import pandas as pd, grintools as gt
+
+trials = pd.read_csv("my_experiment.csv")   # columns: stimulus, response
+ci = gt.to_confusion(
+    trials,
+    stim_labels=["a1b1", "a1b2", "a2b1", "a2b2"],
+    resp_labels=["a1b1", "a1b2", "a2b1", "a2b2"],
+    long=True,
+)
+cm = ci.counts          # 4x4, canonical order
+</code></pre>
+<pre data-lang="R" hidden><code>library(grin)
+
+trials &lt;- read.csv("my_experiment.csv")   # columns: stimulus, response
+ci &lt;- grin_to_confusion(
+  trials,
+  stim_labels = c("a1b1", "a1b2", "a2b1", "a2b2"),
+  resp_labels = c("a1b1", "a1b2", "a2b1", "a2b2")
+)
+cm &lt;- ci$counts        # 4x4, canonical order
+</code></pre>
+            </div>
+          </li>
+
+          <li>
+            <h3 class="card-subhead">Fit it</h3>
+            <p>
+              One call. On a laptop this is a fraction of a millisecond, so fitting a
+              hundred participants is not a thing you need to plan around.
+            </p>
+            <div class="codeblock" data-codeblock>
+<pre data-lang="Python"><code>fit, con = gt.infer(cm)
+
+print(fit.summary())
+print("P(perceptual independence) =", con["p_PI"])
+print("P(separability on A)       =", con["p_sep_A"])
+print("P(separability on B)       =", con["p_sep_B"])
+</code></pre>
+<pre data-lang="R" hidden><code>fit &lt;- grin_infer(cm)
+
+print(fit)
+fit$constructs$p_PI
+fit$constructs$p_sep_A
+fit$constructs$p_sep_B
+</code></pre>
+            </div>
+            <p class="cap">
+              Each construct also carries an <code>evidence</code> flag, true when the
+              probability is far enough from one half to be worth reporting as a
+              finding rather than as an open question.
+            </p>
+          </li>
+
+          <li>
+            <h3 class="card-subhead">Report it</h3>
+            <p>
+              The perceptual space with its decision bounds is the conventional way to
+              present a GRT result, and it comes straight off the fitted object.
+            </p>
+            <div class="codeblock" data-codeblock>
+<pre data-lang="Python"><code>from grintools.plot import (plot_space, plot_params,
+                            plot_constructs, plot_diagnostics)
+
+plot_space(fit)             # the perceptual space
+plot_params(fit)            # 12 parameters with credible intervals
+plot_constructs(fit, con)   # construct probabilities
+plot_diagnostics(fit, cm)   # predicted vs observed, all 16 cells
+</code></pre>
+<pre data-lang="R" hidden><code>res &lt;- fit$result
+con &lt;- fit$constructs
+
+grin_plot_space(res)             # the perceptual space
+grin_plot_params(res)            # 12 parameters with credible intervals
+grin_plot_constructs(res, con)   # construct probabilities
+grin_plot_diagnostics(res, cm)   # predicted vs observed, all 16 cells
+</code></pre>
+            </div>
+            <p>
+              Read <code>plot_diagnostics</code> carefully: a poor reconstruction is a
+              real warning, but a good one does not validate the GRT assumptions. The
+              unconstrained model can reproduce any pattern of response proportions,
+              so fitting well is not evidence that the model is right.
+            </p>
+          </li>
+
+          <li>
+            <h3 class="card-subhead">Do the whole sample</h3>
+            <div class="codeblock" data-codeblock>
+<pre data-lang="Python"><code>fits = {}
+for pid, sub in trials.groupby("participant"):
+    ci = gt.to_confusion(sub, long=True,
+                         stim_labels=["a1b1","a1b2","a2b1","a2b2"],
+                         resp_labels=["a1b1","a1b2","a2b1","a2b2"])
+    fits[pid] = gt.infer(ci.counts)
+
+import numpy as np
+p_pi = np.array([c["p_PI"] for _, c in fits.values()])
+print(f"{(p_pi &lt; 0.5).sum()} of {len(p_pi)} show evidence against independence")
+</code></pre>
+<pre data-lang="R" hidden><code>fits &lt;- lapply(split(trials, trials$participant), function(sub) {
+  ci &lt;- grin_to_confusion(sub,
+          stim_labels = c("a1b1","a1b2","a2b1","a2b2"),
+          resp_labels = c("a1b1","a1b2","a2b1","a2b2"))
+  grin_infer(ci$counts)
+})
+
+grin_tidy(fits)                       # one tidy row per parameter per person
+grin_plot_space_group(lapply(fits, `[[`, "result"))
+grin_plot_model_classes(lapply(fits, `[[`, "result"))
+</code></pre>
+            </div>
+          </li>
+
+          <li>
+            <h3 class="card-subhead">Know what the intervals mean</h3>
+            <p>
+              The interval on a marginal sensitivity means what it says. The interval
+              on a within-stimulus correlation is narrower than nominal &mdash; across
+              large held-out sets a 90% interval covers about 84% of the time. Both
+              packages ship an optional correction, off by default:
+            </p>
+            <div class="codeblock" data-codeblock>
+<pre data-lang="Python"><code>fit, con = gt.infer(cm, calibrated=True)
+fit.std          # corrected widths
+fit.std_raw      # what the network returned
+</code></pre>
+<pre data-lang="R" hidden><code>fit &lt;- grin_infer(cm, calibrated = TRUE)
+fit$result$std        # corrected widths
+fit$result$std_raw    # what the network returned
+</code></pre>
+            </div>
+            <p class="cap">
+              Point estimates, construct probabilities and model selection are
+              identical either way &mdash; only the stated uncertainty changes.
+            </p>
+          </li>
+        </ol>
+
+        <section class="card">
+          <p>
+            Next: <a href="./recipe-stopping.html">stop when the estimate is precise
+            enough</a>, or <a href="./recipe-calibrate.html">steer stimulus levels
+            into the informative range</a>.
+          </p>
+        </section>
+      </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+    <script type="module" src="./assets/js/grin-shell.js"></script>
+    <script type="module" src="./assets/js/recipes.js"></script>
+</body>
+</html>
