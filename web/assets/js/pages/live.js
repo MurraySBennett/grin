@@ -65,7 +65,7 @@ const SETS = {
 let model = null;
 let counts, trialLog, checkpoints, history;
 let stimIdx = null, phase = "idle", nTrials = 0, nTimeouts = 0;
-let blockN = 0, inBlock = 0, stimOnAt = 0;
+let blockN = 0, inBlock = 0, stimOnAt = 0, taskStartedAt = 0;
 let timers = [];
 
 const cfg = () => ({
@@ -81,7 +81,7 @@ const cfg = () => ({
 function reset() {
   counts = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
   trialLog = []; checkpoints = []; history = [];
-  nTrials = 0; nTimeouts = 0; blockN = 0; inBlock = 0;
+  nTrials = 0; nTimeouts = 0; blockN = 0; inBlock = 0; taskStartedAt = 0;
 }
 function clearTimers() { timers.forEach(clearTimeout); timers = []; }
 function after(ms, fn) { timers.push(setTimeout(fn, ms)); }
@@ -141,6 +141,7 @@ function renderStimulusGrid(container, size) {
 // --------------------------------------------------------------------------- //
 function runTrial() {
   const c = cfg();
+  if (!taskStartedAt) taskStartedAt = performance.now();
   if (nTrials >= c.maxTrials) return finish("reached the trial ceiling");
   phase = "fixation";
   const { g, W, H } = ctx($("stim"), 300);
@@ -333,8 +334,65 @@ function finish(why) {
       (nTimeouts ? `, plus ${nTimeouts} discarded for missing the deadline` : "") +
       `. Per-dimension accuracy ${Math.round(100 * acc)}%.</p>` +
       `<p class="cap">Every earlier fit is still on the plot, dimmed. The estimate
-       settling as trials accumulate is the thing a fixed trial budget cannot see.</p>`;
+       settling as trials accumulate is the thing a fixed trial budget cannot see.</p>` +
+      savingSummary();
   });
+}
+
+/**
+ * What stopping early actually bought.
+ *
+ * The per-trial cost is measured, not assumed: elapsed wall-clock divided by trials
+ * completed, so it already includes fixation, presentation, the response itself and
+ * the inter-trial gap. It EXCLUDES the block breaks that the remaining trials would
+ * also have needed, which makes the estimate conservative rather than flattering.
+ */
+function savingSummary() {
+  const c = cfg();
+  const saved = Math.max(0, c.maxTrials - nTrials);
+  if (saved === 0) return "";
+
+  const elapsedS = taskStartedAt ? (performance.now() - taskStartedAt) / 1000 : 0;
+  const perTrial = nTrials > 0 && elapsedS > 0 ? elapsedS / nTrials : null;
+  const pct = Math.round((100 * saved) / c.maxTrials);
+
+  const mins = (n) => {
+    const t = n * perTrial;
+    if (t < 90) return `${Math.round(t)} seconds`;
+    return `${(t / 60).toFixed(t < 600 ? 1 : 0)} minutes`;
+  };
+
+  let html = `<div class="note" style="margin-top: 1rem">
+    <h4 style="margin:0 0 .4rem">You stopped ${saved} trials early &mdash; ${pct}% of the budget you set</h4>
+    <p style="margin:0 0 .5rem">
+      You asked for up to ${c.maxTrials} trials and the posterior reached your precision
+      target after ${nTrials}.`;
+
+  if (perTrial) {
+    html += ` At the ${perTrial.toFixed(2)}&thinsp;s per trial you actually averaged,
+      that is about <strong>${mins(saved)}</strong> of testing not spent &mdash; and
+      that ignores the block breaks those trials would also have needed, so it is on
+      the low side.`;
+  }
+  html += `</p>`;
+
+  if (perTrial) {
+    // The saving scales with whatever fixed budget you would otherwise have committed
+    // to, which is the number that matters when planning a real study.
+    const rows = [400, 800].filter((n) => n > c.maxTrials).slice(0, 2);
+    if (rows.length) {
+      html += `<p style="margin:0 0 .5rem">Had you planned a longer session, the same
+        stopping point would have saved more: ` +
+        rows.map((n) => `<strong>${mins(n - nTrials)}</strong> against ${n} trials`).join(", ") +
+        `.</p>`;
+    }
+    html += `<p class="cap" style="margin:0">Across 20 participants at this rate, the
+      ${saved}-trial saving is roughly ${mins(saved * 20)} of testing time.</p>`;
+  }
+
+  html += `<p class="cap" style="margin:.5rem 0 0">One run by one person, so treat it as
+    an illustration rather than an estimate. The simulated figure in the paper is a 73.5% saving at a target of 0.35, over 396 observers.</p></div>`;
+  return html;
 }
 
 // --------------------------------------------------------------------------- //
