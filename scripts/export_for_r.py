@@ -27,13 +27,23 @@ from src.data.generator import GRTDataGenerator
 import src.grt_model as gm
 
 
-def main(n=2000, seed=999):
-    # Fixed bin edges in TRIALS PER STIMULUS (not quantiles): dense where GRIN's low-N
-    # advantage lives, coarse where the curve flattens and nothing new happens. The x-axis
-    # then carries real numbers instead of "low/mid/high", and the SAME edges are used for
-    # every method so a sparse baseline bin shows as a wide CI + low n, not a hidden gap.
-    TPS_EDGES = np.array([5, 10, 15, 20, 30, 50, 75, 100, 200, 500], dtype=float)
+# Fixed bin edges in TRIALS PER STIMULUS (not quantiles): dense where GRIN's low-N
+# advantage lives, coarse where the curve flattens and nothing new happens. The x-axis
+# then carries real numbers instead of "low/mid/high", and the SAME edges are used for
+# every method so a sparse baseline bin shows as a wide CI + low n, not a hidden gap.
+#
+# MODULE SCOPE, not a local in main(), so consumers import the edges rather than
+# restating them. scripts/compare_to_r.py previously carried its own 3-name list
+# ("low", "mid", "high") against the 9 bins written here; because it indexed
+# range(len(names)) it silently scored only bins 0-2 and labelled 15-20 trials per
+# stimulus as "high". One definition, imported, makes that drift unrepresentable.
+TPS_EDGES = np.array([5, 10, 15, 20, 30, 50, 75, 100, 200, 500], dtype=float)
+N_TRIAL_BINS = len(TPS_EDGES) - 1
+TRIAL_BIN_LABELS = [f"{int(TPS_EDGES[i])}-{int(TPS_EDGES[i + 1])}"
+                    for i in range(N_TRIAL_BINS)]
 
+
+def main(n=2000, seed=999):
     per_class = max(n // 12, 10)
     g = GRTDataGenerator(n_per_class=per_class * 3, trial_range=TRIAL_RANGE,
                          z_max=Z_MAX, r_max=R_MAX, seed=seed)
@@ -84,7 +94,7 @@ def main(n=2000, seed=999):
     pd.DataFrame(cols).to_csv(path, index=False)
     print(f"wrote {len(keep)} stratified matrices -> {path}")
     tb_counts = np.bincount(trial_bin[keep], minlength=n_tbin)
-    labels = [f"{int(TPS_EDGES[i])}-{int(TPS_EDGES[i+1])}" for i in range(n_tbin)]
+    labels = TRIAL_BIN_LABELS
     print("  trials/stim bins:  " + "  ".join(f"{l}:{c}" for l, c in zip(labels, tb_counts)))
     print(f"  rho bins: {np.bincount(rho_bin[keep])}")
 

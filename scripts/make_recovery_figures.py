@@ -44,6 +44,7 @@ import torch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from scripts.export_for_r import TRIAL_BIN_LABELS
 from src.config import (SIMULATED_DATA_DIR, MLE_FITS_DIR, FIGURES_DIR, MODEL_FILE,
                         Z_MAX, R_MAX)
 from src.api import load_model
@@ -57,7 +58,10 @@ CSV = os.path.join(SIMULATED_DATA_DIR, "test_set_for_R.csv")
 RFITS = os.path.join(MLE_FITS_DIR, "baseline_fits.csv")
 OUT = os.path.join(FIGURES_DIR, "recovery")
 
-TRIAL_BIN_NAMES = ("low", "mid", "high")
+# Imported, not restated: the export writes 9 trials/stimulus bins and a local
+# ("low", "mid", "high") here scored only the first three of them (see
+# export_for_r.TPS_EDGES for the full note).
+TRIAL_BIN_NAMES = TRIAL_BIN_LABELS
 RHO_BIN_NAMES = ("PI", "weak", "mod", "strong")
 
 

@@ -249,6 +249,12 @@ def scan_artifacts(roots: list[str] | None = None, hash_tier3: bool = True) -> l
             for name in filenames:
                 if name in SKIP_NAMES:
                     continue
+                # Never record the manifest inside itself. A fresh build never hits
+                # this because the manifest is written AFTER the scan, but an amend
+                # runs against a tree where it already exists -- and a self-entry can
+                # never verify, since writing the file changes the bytes just hashed.
+                if os.path.abspath(os.path.join(dirpath, name)) == RUN_MANIFEST_PATH:
+                    continue
                 abspath = os.path.join(dirpath, name)
                 if os.path.islink(abspath) and not os.path.exists(abspath):
                     continue
@@ -371,7 +377,8 @@ def verify_against_manifest(
     return problems, eol_only
 
 
-def amend_manifest(path: str, tiers: tuple[int, ...], reason: str) -> dict:
+def amend_manifest(path: str, tiers: tuple[int, ...], reason: str,
+                   hash_tier3: bool | None = None) -> dict:
     """Re-scan the named tiers of an EXISTING run manifest and record the change.
 
     Why this exists rather than "just rebuild the manifest": rebuilding requires
@@ -388,8 +395,23 @@ def amend_manifest(path: str, tiers: tuple[int, ...], reason: str) -> dict:
     manifest = load_json(path)
     before = {a["path"]: a.get("sha256") for a in manifest.get("artifacts", []) if a["tier"] in tiers}
 
+    # Hash tier 3 whenever tier 3 is actually being amended. The old unconditional
+    # hash_tier3=False meant `--amend --tier 3` REPLACED every tier-3 sha256 with
+    # nothing and then reported all 34 of them as "changed" -- destroying the bulk
+    # checksums this module exists to preserve, which is the very failure the
+    # docstring above warns about. Skipping the hash is only safe when tier 3 is
+    # being carried through untouched, and in that case it is not rescanned at all.
+    if hash_tier3 is None:
+        hash_tier3 = 3 in tiers
     kept = [a for a in manifest.get("artifacts", []) if a["tier"] not in tiers]
-    rescanned = [a for a in scan_artifacts(hash_tier3=False) if a["tier"] in tiers]
+    rescanned = [a for a in scan_artifacts(hash_tier3=hash_tier3) if a["tier"] in tiers]
+
+    missing_hash = [a["path"] for a in rescanned if not a.get("sha256")]
+    if missing_hash:
+        raise SystemExit(
+            f"refusing to amend: {len(missing_hash)} rescanned artifact(s) have no "
+            f"sha256, so writing them would erase the recorded checksum "
+            f"(first: {missing_hash[0]}). Re-run with hashing enabled.")
 
     after = {a["path"]: a.get("sha256") for a in rescanned}
     added = sorted(set(after) - set(before))
@@ -434,7 +456,8 @@ if __name__ == "__main__":
         if not args.reason:
             raise SystemExit("--amend requires --reason: an unexplained edit to a "
                              "provenance record is worse than no record")
-        delta = amend_manifest(args.amend, tuple(args.tier or [1]), args.reason)
+        delta = amend_manifest(args.amend, tuple(args.tier or [1]), args.reason,
+                               hash_tier3=None if not args.fast else False)
         for kind in ("added", "removed", "changed"):
             for item in delta[kind]:
                 print(f"  {kind:8} {item}")
