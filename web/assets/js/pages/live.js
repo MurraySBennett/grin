@@ -1,30 +1,32 @@
 /**
- * live.js — a short 2x2 identification task, with the model refitting between trials.
+ * live.js — a short 2x2 identification task run as a real experiment, with the model
+ * refitting between blocks.
  *
- * This is the paper's amortisation argument made concrete: inference costs one forward
- * pass, so the perceptual space, the construct probabilities and the posterior widths
- * can be recomputed after every response rather than after the session. Nothing is
- * simulated except the stimulus; the responses are the visitor's.
+ * Structure: configure -> overlay opens -> welcome -> instructions -> blocks of trials,
+ * with a diagnostics break between each -> results -> optional handoff to Analyse.
  *
  * DESIGN NOTES, because a demo that misrepresents the method is worse than no demo.
  *
- *  * Response keys are E / F / J / I, laid out to match the stimulus grid: the key's
- *    VERTICAL position codes dimension A (E, I = high; F, J = low) and its HORIZONTAL
- *    position codes dimension B (E, F = low; J, I = high). This is the mapping used in
- *    the lab, and it matters here because an arbitrary mapping adds response-selection
- *    noise that GRT would then attribute to perception.
- *  * Errors are produced by brief presentation and a response deadline, not by making
- *    the stimuli trivially similar. A speeded task with a real deadline is how an
- *    identification experiment normally lands in the 60-85% range the paper shows is
- *    informative; simply blurring the stimuli produces the same accuracy through a
- *    different mechanism.
- *  * Timeouts are DISCARDED rather than scored as errors. A missed deadline is not a
- *    confusion, and folding it into the matrix would bias every parameter.
- *  * The instruction screen shows all four stimuli. Identification assumes the observer
- *    knows the response set; without that the early trials measure learning instead.
+ *  * DIAGNOSTICS ARE HIDDEN DURING TRIALS BY DEFAULT. A live-updating plot beside a
+ *    200 ms stimulus is an attention confound, and showing a participant their own
+ *    fit mid-task is performance feedback that changes behaviour. The fit is shown at
+ *    block breaks, which is a natural pause and is also where an adaptive design would
+ *    actually make its stopping decision. A toggle can force it on for demonstration;
+ *    it says plainly that this is not how you would run the task.
+ *  * Response keys E / F / J / I map to high-low, low-low, low-high, high-high, laid
+ *    out so the key's row codes dimension A and its column dimension B. An arbitrary
+ *    mapping adds response-selection noise GRT would read as perceptual.
+ *  * Errors come from brief presentation and a response deadline, not from making the
+ *    stimuli nearly identical -- a speeded task is how identification experiments
+ *    normally land in the informative accuracy range.
+ *  * Timeouts are DISCARDED, not scored as errors. A missed deadline is not a
+ *    confusion; folding it into the matrix would bias every parameter.
+ *  * Trial-level data is kept so it can be handed to the Analyse page in the same
+ *    long format the tutorials document.
  */
 import { loadModelCached } from "../grin-model.js";
 import * as Plot from "../grt-plot.js";
+import * as IO from "../grt-io.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -36,319 +38,351 @@ const STIM = [
   { a: 1, b: 1, key: "i", name: "high / high" },
 ];
 const KEY_TO_STIM = Object.fromEntries(STIM.map((s, i) => [s.key, i]));
+const GRID = [2, 3, 0, 1];        // visual/keyboard 2x2: E I over F J
 
-// Two stimulus sets. Colour is the more conventional GRT pairing (saturation and hue
-// are separable-ish dimensions of one object); size is included because some visitors
-// find it easier to see what the task is asking.
 const SETS = {
   colour: {
-    label: "Colour patch — saturation × hue",
-    dimA: "saturation",
-    dimB: "hue",
-    draw(g, W, H, a, b, noise) {
-      const sat = (a ? 62 : 34) + noise * 6;
-      const hue = (b ? 38 : 8) + noise * 5;
-      g.fillStyle = `hsl(${hue} ${sat}% 52%)`;
-      const r = Math.min(W, H) * 0.3;
+    label: "Colour patch", dimA: "saturation", dimB: "hue",
+    draw(g, W, H, a, b, n) {
+      g.fillStyle = `hsl(${(b ? 38 : 8) + n * 5} ${(a ? 62 : 34) + n * 6}% 52%)`;
       g.beginPath();
-      g.arc(W / 2, H / 2, r, 0, Math.PI * 2);
+      g.arc(W / 2, H / 2, Math.min(W, H) * 0.3, 0, Math.PI * 2);
       g.fill();
     },
   },
   size: {
-    label: "Rectangle — width × height",
-    dimA: "width",
-    dimB: "height",
-    draw(g, W, H, a, b, noise) {
-      const w = (a ? 122 : 92) + noise * 7;
-      const h = (b ? 122 : 92) + noise * 7;
-      const css = getComputedStyle(document.documentElement);
-      g.fillStyle = css.getPropertyValue("--slate").trim() || "#456";
+    label: "Rectangle", dimA: "width", dimB: "height",
+    draw(g, W, H, a, b, n) {
+      const w = (a ? 122 : 92) + n * 7, h = (b ? 122 : 92) + n * 7;
+      g.fillStyle = getComputedStyle(document.documentElement)
+        .getPropertyValue("--slate").trim() || "#456";
       g.fillRect((W - w) / 2, (H - h) / 2, w, h);
     },
   },
 };
 
 let model = null;
-let counts = zeros();
-let stimIdx = null;
-let phase = "idle";        // idle | fixation | stimulus | response | feedback | done
-let nTrials = 0, nTimeouts = 0;
-let history = [];
-let deadlineTimer = null, stimTimer = null;
+let counts, trialLog, checkpoints, history;
+let stimIdx = null, phase = "idle", nTrials = 0, nTimeouts = 0;
+let blockN = 0, inBlock = 0, stimOnAt = 0;
+let timers = [];
 
-function zeros() {
-  return [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+const cfg = () => ({
+  set: $("stim-set").value,
+  stimMs: +$("stim-ms").value,
+  deadlineMs: +$("deadline-ms").value,
+  target: +$("sd-target").value,
+  block: +$("block-n").value,
+  maxTrials: +$("max-trials").value,
+  liveDiag: $("live-diag").checked,
+});
+
+function reset() {
+  counts = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+  trialLog = []; checkpoints = []; history = [];
+  nTrials = 0; nTimeouts = 0; blockN = 0; inBlock = 0;
 }
+function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+function after(ms, fn) { timers.push(setTimeout(fn, ms)); }
 function gauss() {
   let u = 0, v = 0;
   while (u === 0) u = Math.random();
   while (v === 0) v = Math.random();
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 }
-function setName() { return $("stim-set").value; }
-function stimMs() { return +$("stim-ms").value; }
-function deadlineMs() { return +$("deadline-ms").value; }
-
-// --------------------------------------------------------------------------- //
-// Drawing
-// --------------------------------------------------------------------------- //
-function ctx(canvas, H) {
+function ctx(c, H) {
   const dpr = window.devicePixelRatio || 1;
-  const W = canvas.clientWidth || 320;
-  canvas.width = W * dpr; canvas.height = H * dpr;
-  const g = canvas.getContext("2d");
+  const W = c.clientWidth || 320;
+  c.width = W * dpr; c.height = H * dpr;
+  const g = c.getContext("2d");
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   g.clearRect(0, 0, W, H);
   return { g, W, H };
 }
 
-function drawFixation() {
-  const { g, W, H } = ctx($("stim"), 260);
+// --------------------------------------------------------------------------- //
+// Screens
+// --------------------------------------------------------------------------- //
+function show(screen) {
+  ["welcome", "instructions", "trial", "break", "results"].forEach((s) => {
+    const el = $(`screen-${s}`);
+    if (el) el.hidden = s !== screen;
+  });
+}
+
+function openOverlay() {
+  $("overlay").hidden = false;
+  document.body.style.overflow = "hidden";
+}
+function closeOverlay() {
+  clearTimers();
+  phase = "idle";
+  $("overlay").hidden = true;
+  document.body.style.overflow = "";
+}
+
+function renderStimulusGrid(container, size) {
+  container.innerHTML = GRID.map((i) => `
+    <div class="legend-cell">
+      <canvas class="legend-canvas" data-stim="${i}" height="76"></canvas>
+      <div><kbd>${STIM[i].key.toUpperCase()}</kbd>
+        <span class="cap">${size.dimA} ${STIM[i].a ? "high" : "low"},
+        ${size.dimB} ${STIM[i].b ? "high" : "low"}</span></div>
+    </div>`).join("");
+  container.querySelectorAll(".legend-canvas").forEach((c) => {
+    const { g, W, H } = ctx(c, 76);
+    size.draw(g, W, H, STIM[+c.dataset.stim].a, STIM[+c.dataset.stim].b, 0);
+  });
+}
+
+// --------------------------------------------------------------------------- //
+// Trials
+// --------------------------------------------------------------------------- //
+function runTrial() {
+  const c = cfg();
+  if (nTrials >= c.maxTrials) return finish("reached the trial ceiling");
+  phase = "fixation";
+  const { g, W, H } = ctx($("stim"), 300);
   const css = getComputedStyle(document.documentElement);
   g.strokeStyle = css.getPropertyValue("--steel").trim() || "#888";
   g.lineWidth = 2;
   g.beginPath();
-  g.moveTo(W / 2 - 9, H / 2); g.lineTo(W / 2 + 9, H / 2);
-  g.moveTo(W / 2, H / 2 - 9); g.lineTo(W / 2, H / 2 + 9);
+  g.moveTo(W/2 - 9, H/2); g.lineTo(W/2 + 9, H/2);
+  g.moveTo(W/2, H/2 - 9); g.lineTo(W/2, H/2 + 9);
   g.stroke();
-}
+  $("trial-prompt").textContent = "";
 
-function drawStimulus(i) {
-  const { g, W, H } = ctx($("stim"), 260);
-  SETS[setName()].draw(g, W, H, STIM[i].a, STIM[i].b, gauss());
-}
-
-function drawBlank() { ctx($("stim"), 260); }
-
-// --------------------------------------------------------------------------- //
-// Trial loop
-// --------------------------------------------------------------------------- //
-function runTrial() {
-  if (phase === "done") return;
-  phase = "fixation";
-  drawFixation();
-  $("prompt").textContent = "";
-  clearTimeout(stimTimer);
-  stimTimer = setTimeout(() => {
+  after(420, () => {
     stimIdx = Math.floor(Math.random() * 4);
     phase = "stimulus";
-    drawStimulus(stimIdx);
-    setTimeout(() => {
+    const s = ctx($("stim"), 300);
+    SETS[c.set].draw(s.g, s.W, s.H, STIM[stimIdx].a, STIM[stimIdx].b, gauss());
+    after(c.stimMs, () => {
       if (phase !== "stimulus") return;
-      drawBlank();
+      ctx($("stim"), 300);
       phase = "response";
-      $("prompt").textContent = "Which one?";
-      clearTimeout(deadlineTimer);
-      deadlineTimer = setTimeout(onTimeout, deadlineMs());
-    }, stimMs());
-  }, 420);
+      stimOnAt = performance.now();
+      $("trial-prompt").textContent = "Which one?";
+      after(c.deadlineMs, onTimeout);
+    });
+  });
 }
 
 function onTimeout() {
   if (phase !== "response") return;
   phase = "feedback";
   nTimeouts += 1;
-  $("prompt").innerHTML = `<span class="pill warn">too slow</span>`;
-  $("timeouts").textContent = nTimeouts;
-  setTimeout(runTrial, 420);
+  $("trial-prompt").innerHTML = `<span class="pill warn">too slow</span>`;
+  updateBar();
+  after(420, nextAfterTrial);
 }
 
-async function respond(r) {
+function respond(r) {
   if (phase !== "response") return;
-  clearTimeout(deadlineTimer);
+  clearTimers();
   phase = "feedback";
+  const rt = (performance.now() - stimOnAt) / 1000;
 
   counts[stimIdx][r] += 1;
-  nTrials += 1;
-  $("n-trials").textContent = nTrials;
+  nTrials += 1; inBlock += 1;
+  trialLog.push({
+    trial: nTrials,
+    stimulus: `${STIM[stimIdx].a ? "a2" : "a1"}/${STIM[stimIdx].b ? "b2" : "b1"}`,
+    response: `${STIM[r].a ? "a2" : "a1"}/${STIM[r].b ? "b2" : "b1"}`,
+    rt: rt.toFixed(3),
+  });
+  updateBar();
+  if (cfg().liveDiag) refit(false);
+  after(180, nextAfterTrial);
+}
 
-  const btn = $(`resp-${r}`);
-  if (btn) { btn.classList.add("flash"); setTimeout(() => btn.classList.remove("flash"), 130); }
+function nextAfterTrial() {
+  if (inBlock >= cfg().block) return endBlock();
+  runTrial();
+}
 
-  await refit();
-  if (phase === "done") return;
-  setTimeout(runTrial, 220);
+function updateBar() {
+  const c = cfg();
+  $("bar-trials").textContent = nTrials;
+  $("bar-timeouts").textContent = nTimeouts;
+  $("bar-fill").style.width = `${Math.min(100, 100 * nTrials / c.maxTrials)}%`;
 }
 
 // --------------------------------------------------------------------------- //
 // Fit
 // --------------------------------------------------------------------------- //
-async function refit() {
+async function refit(record = true) {
   const trials = counts.map((r) => r.reduce((a, b) => a + b, 0));
-  if (trials.some((t) => t < 3)) {
-    $("fit-status").textContent =
-      "Collecting — each of the four stimuli needs a few trials before a fit means anything.";
-    return;
-  }
-
-  const t0 = performance.now();
+  if (trials.some((t) => t < 3)) return null;
   const out = await model.predict({ counts, trials });
-  const ms = performance.now() - t0;
-
-  Plot.renderSpace($("space"), {
-    stimuli: Plot.toStimuli(out.mean),
-    showMarginals: false,
-  });
-
   const meanSD = out.std.reduce((a, b) => a + b, 0) / out.std.length;
-  history.push(meanSD);
-  drawSparkline();
-
-  const pct = (x) => `${Math.round(100 * x)}%`;
-  $("constructs").innerHTML = `
-    <div class="est"><span>Perceptual independence</span><strong>${pct(out.corr.pi)}</strong></div>
-    <div class="est"><span>Separability, ${SETS[setName()].dimA}</span><strong>${pct(out.sep.A)}</strong></div>
-    <div class="est"><span>Separability, ${SETS[setName()].dimB}</span><strong>${pct(out.sep.B)}</strong></div>`;
-  $("fit-status").innerHTML =
-    `Refit in <strong>${ms.toFixed(1)} ms</strong> · mean posterior SD <strong>${meanSD.toFixed(3)}</strong>`;
-
-  updateAccuracy();
-  checkStop(meanSD);
+  if (record) {
+    history.push(meanSD);
+    checkpoints.push({ stimuli: Plot.toStimuli(out.mean), n: nTrials });
+  }
+  return { out, meanSD };
 }
 
-function updateAccuracy() {
-  let aOK = 0, bOK = 0, n = 0;
+function accuracy() {
+  let a = 0, b = 0, n = 0;
   for (let s = 0; s < 4; s++) for (let r = 0; r < 4; r++) {
     const c = counts[s][r];
     if (!c) continue;
     n += c;
-    if (s >> 1 === r >> 1) aOK += c;
-    if ((s & 1) === (r & 1)) bOK += c;
+    if (s >> 1 === r >> 1) a += c;
+    if ((s & 1) === (r & 1)) b += c;
   }
-  if (!n) return;
-  const acc = 0.5 * (aOK / n + bOK / n);
-  $("accuracy").innerHTML =
-    `Per-dimension accuracy <strong>${Math.round(100 * acc)}%</strong> ` +
-    (acc >= 0.6 && acc <= 0.85
-      ? `<span class="pill ok">informative range</span>`
-      : acc > 0.85
-        ? `<span class="pill warn">near ceiling — correlations get hard to see</span>`
-        : `<span class="pill warn">low — sensitivities get hard to pin down</span>`);
+  return n ? 0.5 * (a / n + b / n) : null;
 }
 
-function drawSparkline() {
-  if (history.length < 2) return;
-  const { g, W, H } = ctx($("spark"), 54);
-  const css = getComputedStyle(document.documentElement);
-  const lo = Math.min(...history), hi = Math.max(...history);
-  const span = hi - lo || 1;
-  g.strokeStyle = css.getPropertyValue("--slate").trim() || "#456";
-  g.lineWidth = 1.8;
-  g.beginPath();
-  history.forEach((v, i) => {
-    const x = (i / (history.length - 1)) * (W - 4) + 2;
-    const y = H - 4 - ((v - lo) / span) * (H - 10);
-    i ? g.lineTo(x, y) : g.moveTo(x, y);
-  });
-  g.stroke();
-  const target = +$("sd-target").value;
-  if (target >= lo && target <= hi) {
-    const y = H - 4 - ((target - lo) / span) * (H - 10);
-    g.strokeStyle = css.getPropertyValue("--rose-deep").trim() || "#c86a93";
-    g.setLineDash([4, 3]);
-    g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke();
-    g.setLineDash([]);
-  }
+function paintDiagnostics(prefix, fitted) {
+  if (!fitted) return;
+  const { out, meanSD } = fitted;
+  // The fade trail is the honest picture of convergence: every earlier fit stays on
+  // the canvas, dimmed, so the reader sees the estimate settling rather than a single
+  // confident-looking ellipse set.
+  Plot.renderFadeTrail($(`${prefix}-space`), checkpoints, { showMarginals: false });
+  const pct = (x) => `${Math.round(100 * x)}%`;
+  const set = SETS[cfg().set];
+  const el = $(`${prefix}-constructs`);
+  if (el) el.innerHTML = `
+    <div class="est"><span>Perceptual independence</span><strong>${pct(out.corr.pi)}</strong></div>
+    <div class="est"><span>Separability, ${set.dimA}</span><strong>${pct(out.sep.A)}</strong></div>
+    <div class="est"><span>Separability, ${set.dimB}</span><strong>${pct(out.sep.B)}</strong></div>`;
+  const acc = accuracy();
+  const st = $(`${prefix}-status`);
+  if (st) st.innerHTML =
+    `Mean posterior SD <strong>${meanSD.toFixed(3)}</strong> ` +
+    `(target ${cfg().target.toFixed(2)}) · accuracy <strong>${Math.round(100*acc)}%</strong> ` +
+    (acc >= 0.6 && acc <= 0.85 ? `<span class="pill ok">informative range</span>`
+      : `<span class="pill warn">${acc > 0.85 ? "near ceiling" : "low"}</span>`);
 }
 
-function checkStop(meanSD) {
-  const target = +$("sd-target").value;
-  if (meanSD > target) return;
+// --------------------------------------------------------------------------- //
+// Blocks
+// --------------------------------------------------------------------------- //
+async function endBlock() {
+  clearTimers();
+  blockN += 1; inBlock = 0;
+  phase = "break";
+  const fitted = await refit();
+  if (fitted && fitted.meanSD <= cfg().target) return finish("precision target reached");
+  if (nTrials >= cfg().maxTrials) return finish("reached the trial ceiling");
+
+  show("break");
+  $("break-title").textContent = `Block ${blockN} complete — ${nTrials} trials so far`;
+  paintDiagnostics("break", fitted);
+  $("break-note").textContent = fitted
+    ? "This is where an adaptive design makes its decision: carry on, or stop."
+    : "Not enough data yet for a stable fit — carry on.";
+  phase = "await-space-block";
+}
+
+function finish(why) {
+  clearTimers();
   phase = "done";
-  clearTimeout(deadlineTimer); clearTimeout(stimTimer);
-  drawBlank();
-  $("prompt").textContent = "";
-  $("stop-banner").hidden = false;
-  $("stop-banner").innerHTML =
-    `<h4>Stopped after ${nTrials} scored trials</h4>
-     <p>Mean posterior SD reached ${meanSD.toFixed(3)}, at or below the target of
-     ${target.toFixed(2)}${nTimeouts ? `. ${nTimeouts} trial${nTimeouts === 1 ? " was" : "s were"} discarded for missing the deadline` : ""}.
-     A fixed design would have had to choose this trial count in advance, for the least
-     precise participant in the sample.</p>`;
-  $("start").textContent = "Run again";
-  $("start").disabled = false;
-}
-
-// --------------------------------------------------------------------------- //
-// Instructions and wiring
-// --------------------------------------------------------------------------- //
-function renderInstructions() {
-  const set = SETS[setName()];
-  $("legend-title").textContent =
-    `${set.label} — press the key under each option`;
-  const cells = [2, 3, 0, 1];   // high/low, high/high, low/low, low/high -> visual grid
-  $("legend").innerHTML = cells.map((i) => {
-    const s = STIM[i];
-    return `<div class="legend-cell">
-      <canvas class="legend-canvas" data-stim="${i}" height="76"></canvas>
-      <div><kbd>${s.key.toUpperCase()}</kbd> <span class="cap">${set.dimA} ${s.a ? "high" : "low"},
-      ${set.dimB} ${s.b ? "high" : "low"}</span></div>
-    </div>`;
-  }).join("");
-  $("legend").querySelectorAll(".legend-canvas").forEach((c) => {
-    const i = +c.dataset.stim;
-    const dpr = window.devicePixelRatio || 1;
-    const W = c.clientWidth || 110, H = 76;
-    c.width = W * dpr; c.height = H * dpr;
-    const g = c.getContext("2d");
-    g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    g.clearRect(0, 0, W, H);
-    // no noise in the legend: this is the canonical form of each stimulus
-    SETS[setName()].draw(g, W, H, STIM[i].a, STIM[i].b, 0);
-  });
-  // response buttons mirror the same grid
-  cells.forEach((i) => {
-    const b = $(`resp-${i}`);
-    if (b) b.innerHTML = `${STIM[i].name} <kbd>${STIM[i].key.toUpperCase()}</kbd>`;
+  show("results");
+  refit().then((fitted) => {
+    $("results-title").textContent = `Finished — ${why}`;
+    paintDiagnostics("results", fitted);
+    const acc = accuracy();
+    $("results-detail").innerHTML =
+      `<p>${nTrials} scored trials over ${blockN} block${blockN === 1 ? "" : "s"}` +
+      (nTimeouts ? `, plus ${nTimeouts} discarded for missing the deadline` : "") +
+      `. Per-dimension accuracy ${Math.round(100 * acc)}%.</p>` +
+      `<p class="cap">Every earlier fit is still on the plot, dimmed. The estimate
+       settling as trials accumulate is the thing a fixed trial budget cannot see.</p>`;
   });
 }
 
-function reset() {
-  counts = zeros(); nTrials = 0; nTimeouts = 0; history = [];
-  $("stop-banner").hidden = true;
-  $("constructs").innerHTML = "";
-  $("accuracy").textContent = "";
-  $("fit-status").textContent = "";
-  $("n-trials").textContent = "0";
-  $("timeouts").textContent = "0";
-  ctx($("spark"), 54);
+// --------------------------------------------------------------------------- //
+// Handoff to Analyse
+// --------------------------------------------------------------------------- //
+function trialCSV() {
+  const rows = ["participant,trial,stimulus,response,rt"];
+  trialLog.forEach((t) =>
+    rows.push(`live,${t.trial},${t.stimulus},${t.response},${t.rt}`));
+  return rows.join("\n") + "\n";
 }
 
-async function start() {
+function sendToAnalyse() {
+  try {
+    sessionStorage.setItem("grin-handoff", JSON.stringify({
+      csv: IO.countsToCSV(counts),
+      trials: trialCSV(),
+      source: "live task",
+      n: nTrials,
+    }));
+  } catch (e) { /* private mode: fall through to the download */ }
+  window.location.href = "./analyse.html";
+}
+
+function downloadCSV() {
+  const blob = new Blob([trialCSV()], { type: "text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "grin_live_task.csv";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// --------------------------------------------------------------------------- //
+// Wiring
+// --------------------------------------------------------------------------- //
+async function begin() {
   $("start").disabled = true;
   $("start").textContent = "Loading model…";
   try {
     if (!model) model = await loadModelCached("./assets/models/cm",
-      (m) => { $("start").textContent = m || "Loading model…"; });
+      (m) => { $("start").textContent = m || "Loading…"; });
   } catch (e) {
     $("start").textContent = "Start";
     $("start").disabled = false;
-    $("fit-status").innerHTML = `<span class="pill bad">Couldn't load the model (${e.message}).</span>`;
+    $("config-status").innerHTML =
+      `<span class="pill bad">Couldn't load the model (${e.message}).</span>`;
     return;
   }
+  $("start").textContent = "Start";
+  $("start").disabled = false;
   reset();
-  $("start").textContent = "Running";
-  $("task").hidden = false;
-  runTrial();
+  openOverlay();
+  show("welcome");
+  phase = "await-space-welcome";
+  $("bar-diag").hidden = !cfg().liveDiag;
+  updateBar();
 }
 
-$("start").addEventListener("click", start);
-$("stim-set").addEventListener("change", renderInstructions);
-[0, 1, 2, 3].forEach((i) => {
-  const b = $(`resp-${i}`);
-  if (b) b.addEventListener("click", () => respond(i));
+$("start").addEventListener("click", begin);
+$("overlay-quit").addEventListener("click", () => {
+  if (nTrials > 0) finish("stopped early"); else closeOverlay();
 });
-["stim-ms", "deadline-ms", "sd-target"].forEach((id) => {
+$("results-close").addEventListener("click", closeOverlay);
+$("results-analyse").addEventListener("click", sendToAnalyse);
+$("results-download").addEventListener("click", downloadCSV);
+$("stim-set").addEventListener("change", () =>
+  renderStimulusGrid($("config-legend"), SETS[cfg().set]));
+["stim-ms", "deadline-ms", "sd-target", "block-n", "max-trials"].forEach((id) => {
   const el = $(id);
-  if (el) el.addEventListener("input", () => {
-    $(`${id}-val`).textContent = el.value;
-    if (id === "sd-target") drawSparkline();
-  });
-});
-window.addEventListener("keydown", (e) => {
-  const i = KEY_TO_STIM[e.key.toLowerCase()];
-  if (i !== undefined) { e.preventDefault(); respond(i); }
+  if (el) el.addEventListener("input", () => { $(`${id}-val`).textContent = el.value; });
 });
 
-renderInstructions();
+window.addEventListener("keydown", (e) => {
+  if ($("overlay").hidden) return;
+  if (e.key === "Escape") { e.preventDefault(); return $("overlay-quit").click(); }
+  if (e.code === "Space") {
+    e.preventDefault();
+    if (phase === "await-space-welcome") {
+      show("instructions");
+      renderStimulusGrid($("instr-legend"), SETS[cfg().set]);
+      phase = "await-space-instructions";
+    } else if (phase === "await-space-instructions" || phase === "await-space-block") {
+      show("trial");
+      runTrial();
+    }
+    return;
+  }
+  const i = KEY_TO_STIM[e.key.toLowerCase()];
+  if (i !== undefined && phase === "response") { e.preventDefault(); respond(i); }
+});
+
+renderStimulusGrid($("config-legend"), SETS[cfg().set]);

@@ -1434,3 +1434,79 @@ kbd {
   border-radius: var(--radius-sm);
   background: var(--paper);
 }
+
+/* --------------------------------------------------------------------------
+   Live task: full-screen experiment overlay.
+   Once the task starts it takes over the viewport. A participant working through
+   a speeded task should not be looking at page furniture, and the surrounding
+   controls are no longer relevant until they stop.
+   -------------------------------------------------------------------------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  background: var(--paper);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: auto;
+}
+.overlay[hidden] { display: none; }
+.overlay-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.55rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 0.82rem;
+  color: var(--steel);
+}
+.overlay-bar .spacer { margin-left: auto; }
+.overlay-body {
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 60rem;
+  margin: 0 auto;
+}
+.screen { max-width: 42rem; text-align: left; }
+.screen h2 { margin-top: 0; }
+.screen .continue {
+  margin-top: 1.6rem;
+  padding: 0.7rem 1rem;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  color: var(--steel);
+}
+/* The trial screen is deliberately bare: stimulus, nothing else. */
+.trial-stage {
+  display: grid;
+  place-items: center;
+  min-height: 60vh;
+  width: 100%;
+}
+.trial-stage canvas { display: block; }
+.progress-rail {
+  height: 3px;
+  background: var(--line-soft);
+  border-radius: 2px;
+  overflow: hidden;
+  width: 12rem;
+}
+.progress-rail > i {
+  display: block;
+  height: 100%;
+  background: var(--slate);
+  width: 0;
+}
+.results-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.2rem;
+  width: 100%;
+}
+@media (min-width: 60rem) {
+  .results-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}

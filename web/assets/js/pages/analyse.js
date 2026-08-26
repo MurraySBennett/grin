@@ -228,6 +228,28 @@ function readFile(f) {
   };
   reader.readAsText(f);
 }
+// Handoff from the live task: it stashes the session in sessionStorage and navigates
+// here. Consumed once and cleared, so a refresh does not silently re-load stale data.
+(function consumeHandoff() {
+  let payload = null;
+  try {
+    const raw = sessionStorage.getItem("grin-handoff");
+    if (raw) { payload = JSON.parse(raw); sessionStorage.removeItem("grin-handoff"); }
+  } catch (e) { return; }
+  if (!payload || !payload.csv) return;
+  try {
+    loadParsed(IO.parseCSV(payload.csv), payload.source || "live task");
+    const el = $("file-status");
+    if (el) el.innerHTML =
+      `<span class="pill ok">Loaded ${payload.n || ""} trials from the live task</span>` +
+      ` <span class="cap">this is your own session; nothing was uploaded</span>`;
+  } catch (e) {
+    const el = $("file-status");
+    if (el) el.innerHTML =
+      `<span class="pill bad">Could not load the live-task data (${e.message}).</span>`;
+  }
+})();
+
 $("parse-paste").addEventListener("click", () => {
   const txt = $("paste-area").value;
   if (!txt.trim()) return;

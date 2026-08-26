@@ -49,127 +49,184 @@
       <div class="stack">
         <section class="card">
           <p>
-            An ordinary 2&times;2 identification task. A stimulus appears briefly, you
-            name which of the four it was, and the panel on the right refits the GRT
-            model after every response. Nothing is simulated except the stimulus
-            &mdash; the responses are yours, and the model is the same network the R
-            and Python packages ship.
+            An ordinary 2&times;2 identification task, run as an experiment rather than
+            a widget: set it up here, and the task takes over the screen until you
+            finish or stop. Nothing is simulated except the stimulus &mdash; the
+            responses are yours, and the fit is the same network the R and Python
+            packages ship.
           </p>
           <p class="cap">
-            That refitting is the point. Fitting a GRT model by numerical optimisation
-            takes seconds, so it can only happen once a session is over. Here it takes
-            a fraction of a millisecond, so the design can respond to it while the
-            participant is still working.
+            Fitting a GRT model by numerical optimisation takes seconds, so it can only
+            happen once a session is over. Here it takes a fraction of a millisecond, so
+            the design can make a decision at every block break.
           </p>
+        </section>
 
+        <section class="card">
+          <h3 class="card-subhead">Set it up</h3>
           <div class="row" style="gap: 1.4rem; flex-wrap: wrap; align-items: end">
-            <label>
-              Stimulus set
+            <label>Stimulus
               <select id="stim-set">
                 <option value="colour">Colour — saturation × hue</option>
                 <option value="size">Rectangle — width × height</option>
               </select>
             </label>
-            <label>
-              Presentation (ms)
+            <label>Presentation (ms)
               <input type="range" id="stim-ms" min="80" max="500" step="20" value="200" />
               <span class="num" id="stim-ms-val">200</span>
             </label>
-            <label>
-              Response deadline (ms)
+            <label>Deadline (ms)
               <input type="range" id="deadline-ms" min="600" max="2500" step="100" value="1000" />
               <span class="num" id="deadline-ms-val">1000</span>
             </label>
-            <label>
-              Stop at posterior SD
+            <label>Trials per block
+              <input type="range" id="block-n" min="8" max="64" step="8" value="32" />
+              <span class="num" id="block-n-val">32</span>
+            </label>
+            <label>Stop at posterior SD
               <input type="range" id="sd-target" min="0.15" max="0.60" step="0.01" value="0.35" />
               <span class="num" id="sd-target-val">0.35</span>
             </label>
+            <label>Trial ceiling
+              <input type="range" id="max-trials" min="64" max="512" step="32" value="256" />
+              <span class="num" id="max-trials-val">256</span>
+            </label>
           </div>
-          <p class="cap">
-            Errors come from the presentation time and the deadline, not from making the
-            stimuli nearly identical. A speeded task is how an identification experiment
-            normally lands in the informative accuracy range; shorten the presentation
-            or tighten the deadline to push accuracy down.
-          </p>
-        </section>
 
-        <section class="card">
-          <h3 class="card-subhead" id="legend-title"></h3>
-          <p>
-            These are the four stimuli. The response keys are arranged to match:
-            the key's row codes the first dimension and its column the second, so
-            <kbd>E</kbd>/<kbd>I</kbd> are the high options and <kbd>F</kbd>/<kbd>J</kbd>
-            the low ones.
-          </p>
-          <div id="legend" class="legend-grid"></div>
+          <label class="row" style="margin-top: 0.9rem">
+            <input type="checkbox" id="live-diag" />
+            <span>Show the fit during trials
+              <span class="cap">Off by default, and off is the honest setting: a
+              plot updating beside a 200 ms stimulus competes for attention, and showing
+              a participant their own fit mid-task is performance feedback that changes
+              behaviour. The fit is shown at every block break regardless. Turn this on
+              only to watch the mechanism.</span>
+            </span>
+          </label>
+
+          <h3 class="card-subhead" style="margin-top: 1.2rem">The four stimuli</h3>
+          <div id="config-legend" class="legend-grid"></div>
           <div class="row" style="margin-top: 1rem">
-            <button class="button" id="start">Start</button>
+            <button class="button" id="start">Start the task</button>
           </div>
-        </section>
-
-        <section id="task" hidden>
-          <div style="display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 1.2rem">
-            <div class="card">
-              <h3 class="card-subhead">Task</h3>
-              <canvas id="stim" height="260" style="width: 100%; height: 260px"></canvas>
-              <p id="prompt" style="text-align: center; font-weight: 600; min-height: 1.6em"></p>
-              <div class="legend-grid" style="margin-top: 0.4rem">
-                <button class="choice" id="resp-2"></button>
-                <button class="choice" id="resp-3"></button>
-                <button class="choice" id="resp-0"></button>
-                <button class="choice" id="resp-1"></button>
-              </div>
-              <p class="cap">
-                Scored trials: <span class="num" id="n-trials">0</span> ·
-                discarded for missing the deadline:
-                <span class="num" id="timeouts">0</span>
-              </p>
-            </div>
-
-            <div class="card">
-              <h3 class="card-subhead">The fit, right now</h3>
-              <canvas id="space" style="width: 100%"></canvas>
-              <div id="constructs"></div>
-              <p id="accuracy" class="cap"></p>
-              <h3 class="card-subhead" style="margin-top: 1rem">
-                Posterior width over trials
-              </h3>
-              <canvas id="spark" height="54" style="width: 100%; height: 54px"></canvas>
-              <p class="cap" id="fit-status"></p>
-              <div class="note" id="stop-banner" hidden></div>
-            </div>
-          </div>
+          <p class="cap" id="config-status"></p>
         </section>
 
         <section class="card">
-          <h3 class="card-subhead">What you are looking at</h3>
+          <h3 class="card-subhead">What happens</h3>
           <p>
-            The ellipses are the perceptual distributions the model infers for each of
-            the four stimuli; the dashed lines are the decision bounds. Early on they
-            move a lot, because a handful of trials cannot pin down twelve parameters.
-            As trials accumulate they settle and the posterior-width trace falls. When
-            it crosses your target, the task stops.
-          </p>
-          <p>
-            That is the stopping rule the packages expose as
-            <code>grin_stop_on_precision()</code> and
-            <code>gt.stop_on_precision()</code>, evaluated between trials rather than
-            after the session. The
-            <a href="./tutorial-adaptive-stopping.html">adaptive stopping tutorial</a>
-            shows how to wire it into your own experiment.
+            A welcome screen, then the stimuli and keys, then blocks of trials. Between
+            blocks you see the fit so far &mdash; with every earlier estimate still on
+            the plot, dimmed, so the convergence is visible rather than asserted. The
+            task ends when the posterior reaches your precision target or the ceiling is
+            hit, whichever comes first, and you can then take the data to the
+            <a href="./analyse.html">Analyse</a> page.
           </p>
           <p class="cap">
-            Two things this demo does deliberately. Trials on which you miss the
-            deadline are <strong>discarded, not scored as errors</strong> &mdash; a
-            missed deadline is not a confusion, and counting it as one would bias every
-            parameter. And the intervals shown are the network's own: the paper reports
-            that its correlation intervals run narrower than nominal, which the
-            <a href="./validate.html">Evidence</a> page shows directly.
+            Trials on which you miss the deadline are discarded, not scored as errors:
+            a missed deadline is not a confusion, and counting it as one would bias
+            every parameter. <kbd>Esc</kbd> stops the task at any point.
           </p>
         </section>
       </div>
     </main>
+
+    <!-- ===================================================================== -->
+    <div class="overlay" id="overlay" hidden>
+      <div class="overlay-bar">
+        <span><strong id="bar-trials">0</strong> trials</span>
+        <span class="cap"><span id="bar-timeouts">0</span> missed</span>
+        <div class="progress-rail"><i id="bar-fill"></i></div>
+        <span class="cap" id="bar-diag" hidden>live fit shown</span>
+        <span class="spacer"></span>
+        <button class="ghost" id="overlay-quit">Stop (Esc)</button>
+      </div>
+
+      <div class="overlay-body">
+        <!-- welcome -->
+        <div class="screen" id="screen-welcome">
+          <h2>An identification task</h2>
+          <p>
+            You will see one shape at a time. It varies on two features at once, and
+            each feature can be high or low &mdash; so there are four possible stimuli.
+            Your job is to say which of the four you just saw.
+          </p>
+          <p>
+            Each one appears only briefly and then disappears, and you have a short
+            window to answer. You will make mistakes; that is expected and it is what
+            makes the data informative. Answer as accurately as you can, as quickly as
+            you can.
+          </p>
+          <div class="continue">Press <kbd>space</kbd> to see the stimuli</div>
+        </div>
+
+        <!-- instructions -->
+        <div class="screen" id="screen-instructions">
+          <h2>The four stimuli, and your keys</h2>
+          <p>
+            These are the four. The keys are arranged to match: the top row
+            (<kbd>E</kbd> <kbd>I</kbd>) is the high level of the first feature, the
+            bottom row (<kbd>F</kbd> <kbd>J</kbd>) the low level; the left pair is the
+            low level of the second feature and the right pair the high level.
+          </p>
+          <div id="instr-legend" class="legend-grid"></div>
+          <p class="cap" style="margin-top: 0.9rem">
+            Rest your left hand on <kbd>E</kbd>/<kbd>F</kbd> and your right on
+            <kbd>I</kbd>/<kbd>J</kbd>.
+          </p>
+          <div class="continue">Press <kbd>space</kbd> to begin</div>
+        </div>
+
+        <!-- trials -->
+        <div class="screen" id="screen-trial" hidden style="max-width: none; width: 100%">
+          <div class="trial-stage">
+            <canvas id="stim" height="300" style="width: 420px; height: 300px"></canvas>
+          </div>
+          <p id="trial-prompt" style="text-align: center; font-weight: 600; min-height: 1.6em"></p>
+        </div>
+
+        <!-- block break -->
+        <div class="screen" id="screen-break" hidden style="max-width: 52rem">
+          <h2 id="break-title"></h2>
+          <div class="results-grid">
+            <div>
+              <canvas id="break-space" style="width: 100%"></canvas>
+            </div>
+            <div>
+              <div id="break-constructs"></div>
+              <p class="cap" id="break-status"></p>
+              <p class="cap" id="break-note"></p>
+            </div>
+          </div>
+          <div class="continue">Press <kbd>space</kbd> for the next block</div>
+        </div>
+
+        <!-- results -->
+        <div class="screen" id="screen-results" hidden style="max-width: 52rem">
+          <h2 id="results-title"></h2>
+          <div class="results-grid">
+            <div>
+              <canvas id="results-space" style="width: 100%"></canvas>
+            </div>
+            <div>
+              <div id="results-constructs"></div>
+              <p class="cap" id="results-status"></p>
+              <div id="results-detail"></div>
+            </div>
+          </div>
+          <div class="row" style="margin-top: 1.2rem; flex-wrap: wrap">
+            <button class="button" id="results-analyse">Open this in Analyse</button>
+            <button class="ghost" id="results-download">Download the trials (CSV)</button>
+            <button class="ghost" id="results-close">Close</button>
+          </div>
+          <p class="cap">
+            The intervals here are the network's own. The paper reports that its
+            correlation intervals run narrower than nominal, which the
+            <a href="./validate.html">Evidence</a> page shows directly.
+          </p>
+        </div>
+      </div>
+    </div>
 
     <div id="footer-placeholder"></div>
     <script type="module" src="./assets/js/grin-shell.js"></script>
