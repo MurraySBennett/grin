@@ -84,6 +84,10 @@ cm_cols <- paste0("cm_", rep(0:3, each = 4), rep(0:3, times = 4))
 # (stimuli and responses use the same convention) before any grtools call.
 grtools_perm <- c(1, 3, 2, 4)
 
+# RNG seed for the random-restart searches; see fit_one(). Change only deliberately,
+# and report the value alongside any convergence rate derived from this script.
+BASELINE_SEED <- 20260826L
+
 # --- helper: collapse whatever grtools/mdsdt hands back into ONE scalar string ---
 as_scalar <- function(x) {
   if (is.null(x) || length(x) == 0) {
@@ -128,6 +132,17 @@ extract_grtools_params <- function(hm) {
 fit_one <- function(i) {
   row <- dat[i, ]
   cmat <- matrix(as.numeric(row[cm_cols]), nrow = 4, byrow = TRUE)
+
+  # REPRODUCIBILITY. grt_hm_fit() searches from n_reps RANDOM starting points and reports
+  # the winning fit's optim() convergence code, so the same matrix refitted under a
+  # different RNG state can return a different code -- verified directly: one real matrix
+  # refitted under 12 seeds returned code 0 on 10 of them and 52 on the other 2, while
+  # selecting the identical model every time. Without a seed the reported convergence RATE
+  # is therefore not reproducible, and re-running this script would legitimately produce a
+  # different number. Seed per matrix (not once per run) so the result is invariant to the
+  # order matrices are processed in and to whether the run is resumed partway.
+  # See scripts/R/grtools_seed_stability.R for the quantification.
+  set.seed(BASELINE_SEED + i)
   
   # ---------------- mdsdt ----------------
   md_ok <- FALSE
