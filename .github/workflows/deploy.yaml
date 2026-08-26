@@ -234,12 +234,17 @@ jobs:
       #     within the hour instead of persisting for up to a year.
       - name: Sync remaining assets (short cache)
         run: |
+          # 60s rather than an hour. Page JS carries unversioned filenames, so a long
+          # TTL means a visitor keeps running old application code against new HTML
+          # after a deploy -- which has already caused one silent breakage. The files
+          # are a few kB and CloudFront still absorbs the load; only the edge revalidates
+          # often. Versioned artifacts (.onnx, ort) keep their immutable year above.
           aws s3 sync web/assets s3://${{ secrets.S3_BUCKET_NAME }}/assets \
             --exclude "*.html" \
             --exclude "models/*.onnx" \
             --exclude "vendor/ort/ort-wasm-simd.wasm" \
             --exclude "vendor/ort/ort.min.js" \
-            --cache-control "public, max-age=3600" \
+            --cache-control "public, max-age=60, must-revalidate" \
             --delete
 
       # 4. Invalidate the CloudFront distribution so the CDN edge sees the

@@ -2,6 +2,7 @@ import * as IO from "../grt-io.js";
 import * as Fit from "../grt-fit.js";
 import * as Core from "../grt-core.js";
 import * as Plot from "../grt-plot.js";
+import * as Store from "../session-store.js";
 import { loadModelCached } from "../grin-model.js";
 
 const $ = (id) => document.getElementById(id);
@@ -228,26 +229,43 @@ function readFile(f) {
   };
   reader.readAsText(f);
 }
-// Handoff from the live task: it stashes the session in sessionStorage and navigates
-// here. Consumed once and cleared, so a refresh does not silently re-load stale data.
-(function consumeHandoff() {
-  let payload = null;
-  try {
-    const raw = sessionStorage.getItem("grin-handoff");
-    if (raw) { payload = JSON.parse(raw); sessionStorage.removeItem("grin-handoff"); }
-  } catch (e) { return; }
-  if (!payload || !payload.csv) return;
-  try {
-    loadParsed(IO.parseCSV(payload.csv), payload.source || "live task");
-    const el = $("file-status");
-    if (el) el.innerHTML =
-      `<span class="pill ok">Loaded ${payload.n || ""} trials from the live task</span>` +
-      ` <span class="cap">this is your own session; nothing was uploaded</span>`;
-  } catch (e) {
-    const el = $("file-status");
-    if (el) el.innerHTML =
-      `<span class="pill bad">Could not load the live-task data (${e.message}).</span>`;
+// A live-task session stored in this browser. Two entry points: arriving from the
+// task with the open flag set (load it straight away), or arriving cold with a session
+// still saved (offer it, do not assume). The data lives in localStorage rather than
+// being handed over once, so a stale cached copy of this page can no longer lose it and
+// there is a way back to your own results after navigating away.
+(function offerStoredSession() {
+  const sess = Store.load();
+  const box = $("stored-session");
+  if (!sess || !sess.matrixCSV) return;
+
+  const open = () => {
+    try {
+      loadParsed(IO.parseCSV(sess.matrixCSV), "your live-task session");
+      if (box) box.hidden = true;
+    } catch (e) {
+      $("file-status").innerHTML =
+        `<span class="pill bad">Could not load the stored session (${e.message}).</span>`;
+    }
+  };
+
+  let asked = false;
+  try { asked = sessionStorage.getItem("grin.openSession") === "1"; } catch (e) {}
+  if (asked) {
+    try { sessionStorage.removeItem("grin.openSession"); } catch (e) {}
+    open();
+    return;
   }
+
+  if (!box) return;
+  box.hidden = false;
+  $("stored-detail").textContent =
+    `${sess.nTrials} trials from the live task, finished ${Store.describeAge(sess.savedAt)}.`;
+  $("stored-open").addEventListener("click", open);
+  $("stored-clear").addEventListener("click", () => {
+    Store.clear();
+    box.hidden = true;
+  });
 })();
 
 $("parse-paste").addEventListener("click", () => {

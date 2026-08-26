@@ -27,6 +27,7 @@
 import { loadModelCached } from "../grin-model.js";
 import * as Plot from "../grt-plot.js";
 import * as IO from "../grt-io.js";
+import * as Store from "../session-store.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -302,6 +303,24 @@ function finish(why) {
   phase = "done";
   show("results");
   refit().then((fitted) => {
+    // Persist before painting: if anything below throws, the data still survives.
+    const saved = Store.save({
+      counts,
+      matrixCSV: IO.countsToCSV(counts),
+      trialsCSV: trialCSV(),
+      nTrials, nTimeouts, blocks: blockN,
+      accuracy: accuracy(),
+      set: cfg().set,
+      why,
+    });
+    const dl = $("results-analyse");
+    if (dl) dl.disabled = !saved;
+    if (!saved) {
+      const d = $("results-detail");
+      if (d) d.innerHTML =
+        `<p class="cap">This browser will not let the page store data, so the
+         hand-off to Analyse is unavailable. Download the trials instead.</p>`;
+    }
     $("results-title").textContent = `Finished — ${why}`;
     paintDiagnostics("results", fitted);
     const acc = accuracy();
@@ -325,14 +344,10 @@ function trialCSV() {
 }
 
 function sendToAnalyse() {
-  try {
-    sessionStorage.setItem("grin-handoff", JSON.stringify({
-      csv: IO.countsToCSV(counts),
-      trials: trialCSV(),
-      source: "live task",
-      n: nTrials,
-    }));
-  } catch (e) { /* private mode: fall through to the download */ }
+  // The session is already in localStorage; this only asks the Analyse page to open
+  // it on arrival rather than merely offering it. A missed flag is now harmless --
+  // the data is still there to be loaded by hand.
+  try { sessionStorage.setItem("grin.openSession", "1"); } catch (e) {}
   window.location.href = "./analyse.html";
 }
 
@@ -408,3 +423,23 @@ window.addEventListener("keydown", (e) => {
 });
 
 renderStimulusGrid($("config-legend"), SETS[cfg().set]);
+
+// A previous run is still in this browser: say so, rather than silently discarding it
+// when the next task starts.
+(function offerPrevious() {
+  const prev = Store.load();
+  const box = $("prev-session");
+  if (!prev || !box) return;
+  box.hidden = false;
+  $("prev-detail").textContent =
+    `${prev.nTrials} trials, finished ${Store.describeAge(prev.savedAt)}` +
+    (prev.accuracy ? ` at ${Math.round(100 * prev.accuracy)}% per-dimension accuracy` : "") + ".";
+  $("prev-analyse").addEventListener("click", () => {
+    try { sessionStorage.setItem("grin.openSession", "1"); } catch (e) {}
+    window.location.href = "./analyse.html";
+  });
+  $("prev-clear").addEventListener("click", () => {
+    Store.clear();
+    box.hidden = true;
+  });
+})();
