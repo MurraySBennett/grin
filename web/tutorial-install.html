@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <script>
+      (function () {
+        try {
+          var s = localStorage.getItem("msb-dark-mode");
+          var dark =
+            s === "dark" ||
+            (s !== "light" &&
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) document.documentElement.classList.add("is-dark");
+        } catch (e) {}
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Installing GRIN - GRIN</title>
+    <meta
+      name="description"
+      content="How to install the GRIN packages in Python and R, verify they work, and get past the two failure modes people actually hit."
+    />
+    <link rel="canonical" href="https://grin.murraysbennett.com/tutorial-install.html" />
+    <meta property="og:title" content="Installing GRIN - GRIN" />
+    <meta property="og:description" content="How to install the GRIN packages in Python and R, verify they work, and get past the two failure modes people actually hit." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://grin.murraysbennett.com/tutorial-install.html" />
+    <meta property="og:image" content="https://grin.murraysbennett.com/assets/images/og-card.svg" />
+    <link rel="icon" href="./assets/images/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./assets/css/grin.css" />
+  </head>
+  <body data-page="tutorial-install">
+    <header class="site">
+      <h1>Installing GRIN</h1>
+      <p class="tagline">
+        Python, R, and the two things that go wrong.
+      </p>
+      <div id="nav-placeholder"></div>
+    </header>
+
+    <main class="container">
+      <div class="stack">
+        <section class="card">
+          <p>
+            <strong>You may not need to install anything.</strong> The
+            <a href="./analyse.html">Analyse</a> page runs the same network in your
+            browser: paste or upload a matrix and it returns the same numbers the
+            packages do, with nothing uploaded anywhere. Install the packages when you
+            want to script an analysis, run a sample, or drive an adaptive design.
+          </p>
+          <p class="cap">
+            Both packages are open source under an MIT licence and wrap identical
+            trained weights, verified to agree to floating-point tolerance.
+          </p>
+        </section>
+
+        <section class="card">
+          <h3 class="card-subhead">Where things stand</h3>
+          <p>
+            <code>grintools</code> (Python) and <code>grin</code> (R) are not yet on
+            PyPI and CRAN. Until they are, install from the repository &mdash; the
+            instructions below are the supported route, not a workaround, and they
+            install exactly what the paper describes.
+          </p>
+        </section>
+
+        <ol class="recipe-steps">
+          <li>
+            <h3 class="card-subhead">Python</h3>
+            <p>
+              Needs Python 3.9 or newer. There is no PyTorch dependency: the network
+              ships as an ONNX graph and runs under <code>onnxruntime</code>, so the
+              install is small and fast.
+            </p>
+            <div class="codeblock" data-codeblock>
+<pre data-lang="Shell"><code>git clone https://github.com/MurraySBennett/grin.git
+pip install ./grin/packages/grintools
+
+# check it worked
+python -c "import grintools as gt; \
+print(gt.infer([[83,112,47,11],[38,154,28,33],[15,27,117,94],[6,36,75,136]])[1]['p_PI'])"
+</code></pre>
+            </div>
+            <p class="cap">
+              That prints a probability of perceptual independence for the example
+              matrix. If you see a number, you are done.
+            </p>
+          </li>
+
+          <li>
+            <h3 class="card-subhead">R</h3>
+            <p>
+              The R package runs the same weights as a TorchScript graph through
+              <code>torch</code>, so no Python installation is needed on the R side
+              &mdash; but <code>torch</code> itself has a second, separate download.
+            </p>
+            <div class="codeblock" data-codeblock>
+<pre data-lang="R"><code>install.packages(c("torch", "remotes", "jsonlite"))
+
+# libtorch is a SEPARATE ~2 GB download, and this is the slow step
+torch::install_torch()
+torch::torch_tensor(1)        # confirm it actually works
+
+remotes::install_github("MurraySBennett/grin", subdir = "packages/grin")
+
+# check it worked
+library(grin)
+cm &lt;- matrix(c(83,112,47,11, 38,154,28,33,
+               15,27,117,94, 6,36,75,136), nrow = 4, byrow = TRUE)
+grin_infer(cm)$constructs$p_PI
+</code></pre>
+            </div>
+            <p>
+              <code>jsonlite</code> is optional. Without it everything works except the
+              calibrated-interval flag, which falls back to the network's own intervals
+              with a warning rather than failing.
+            </p>
+          </li>
+
+          <li>
+            <h3 class="card-subhead">Two things that go wrong</h3>
+            <p>
+              <strong><code>torch::install_torch()</code> can report an error and still
+              have succeeded.</strong> Run non-interactively it sometimes ends with
+              <code>cannot change value of locked binding for '.torch_can_load'</code>
+              after the download has already completed. Do not trust the exit status
+              &mdash; check with <code>torch::torch_tensor(1)</code> instead. If that
+              returns a tensor, you are fine.
+            </p>
+            <p>
+              <strong>On Windows with WSL, <code>~</code> does not cross the
+              boundary.</strong> An R session running on Windows expands
+              <code>~</code> to your Windows profile, so a path like
+              <code>~/projects/grin</code> will not find a clone that lives inside WSL.
+              Use the UNC path, and prefer a built tarball over a directory, since
+              <code>install_local()</code> copies recursively across the mount and
+              tends to fail:
+            </p>
+            <div class="codeblock" data-codeblock>
+<pre data-lang="R"><code># built in WSL with:  R CMD build --no-build-vignettes packages/grin
+install.packages(
+  "//wsl.localhost/Ubuntu/home/USER/projects/grin/dist/grin_0.1.0.tar.gz",
+  repos = NULL, type = "source"
+)
+</code></pre>
+            </div>
+          </li>
+
+          <li>
+            <h3 class="card-subhead">Check the optional interval correction</h3>
+            <p>
+              Both packages ship an off-by-default correction for the interval widths
+              (see <a href="./validate.html">Evidence</a>). This verifies it is present
+              and behaving:
+            </p>
+            <div class="codeblock" data-codeblock>
+<pre data-lang="R"><code># from a clone of the repository
+Rscript scripts/R/verify_recalibration.R
+# -> twelve checks, all PASS
+</code></pre>
+<pre data-lang="Python" hidden><code>import grintools as gt
+
+cm = [[83,112,47,11],[38,154,28,33],[15,27,117,94],[6,36,75,136]]
+raw, _ = gt.infer(cm)
+cal, _ = gt.infer(cm, calibrated=True)
+
+assert (raw.params == cal.params).all()        # point estimates unchanged
+assert cal.std[8] &gt; raw.std[8]                 # correlation intervals widened
+assert cal.std[0] &lt; raw.std[0]                 # sensitivity intervals narrowed
+print("calibration available:", cal.calibrated)
+</code></pre>
+            </div>
+            <p class="cap">
+              If <code>cal.calibrated</code> comes back <code>False</code>, the
+              correction file did not ship with your build; the package still works,
+              and you get the network's own intervals.
+            </p>
+          </li>
+        </ol>
+
+        <section class="card">
+          <h3 class="card-subhead">Next</h3>
+          <p>
+            <a href="./tutorial-existing-data.html">Analyse data you already have</a>,
+            or see the <a href="./tutorials.html">other tutorials</a>.
+          </p>
+        </section>
+      </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+    <script type="module" src="./assets/js/grin-shell.js"></script>
+    <script type="module" src="./assets/js/tutorials.js"></script>
+</body>
+</html>

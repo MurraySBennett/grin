@@ -1387,3 +1387,50 @@ kbd {
   color: var(--ice);
   transition: none;
 }
+
+/* --------------------------------------------------------------------------
+   Tutorials: what a call actually returns, shown next to the call.
+   -------------------------------------------------------------------------- */
+.io {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.55rem;
+  margin: 0.9rem 0;
+}
+@media (min-width: 62rem) {
+  .io.side { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); align-items: start; }
+  .io.side > .codeblock { margin: 0; }
+}
+.io > .codeblock { margin: 0; }
+.output {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--steel);
+  border-radius: var(--radius-sm);
+  background: var(--line-soft);
+  padding: 0.7rem 0.9rem;
+  text-align: left;
+  overflow-x: auto;
+}
+.output .output-label {
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--steel);
+  margin-bottom: 0.35rem;
+}
+.output pre {
+  margin: 0;
+  font-family: "SF Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  white-space: pre;
+  text-align: left;
+}
+.output img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+}

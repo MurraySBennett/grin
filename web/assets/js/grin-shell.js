@@ -101,6 +101,7 @@ function initNav() {
     validate: "evidence",
     // the tutorials are their own tab; each sub-page lights the parent
     tutorials: "tutorials",
+    "tutorial-install": "tutorials",
     "tutorial-existing-data": "tutorials",
     "tutorial-adaptive-stopping": "tutorials",
     "tutorial-stimulus-levels": "tutorials",
