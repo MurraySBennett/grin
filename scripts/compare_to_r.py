@@ -38,11 +38,11 @@ from src.inference.predict import predict_point
 from src.inference.mle import fit_selected
 from src.inference.model_posterior import amortized_compare
 from src.viz.labels import to_grin_labels, labels_from_amortized
+from scripts.export_for_r import TRIAL_BIN_LABELS, N_TRIAL_BINS
 import src.grt_model as gm
 
 CSV = os.path.join(SIMULATED_DATA_DIR, "test_set_for_R.csv")
 RFITS = os.path.join(MLE_FITS_DIR, "baseline_fits.csv")
-TRIAL_BIN_NAMES = ("low", "mid", "high")
 
 
 def _params(df, prefix):
@@ -106,11 +106,32 @@ def main(n_single=50):
     # Speed only — the RT model was evaluated on its own held-out set, so its accuracy is
     # NOT comparable on these exact matrices and is deliberately left out of panel 3.
     import json as _json
-    rt_json = os.path.join(RESULTS_DIR, "rt_metrics.json")
-    if os.path.exists(rt_json):
-        _rt = _json.load(open(rt_json))
-        ms["+RT (1 matrix)"] = _rt["rt_model"]["single_ms"]
-        print(f"(+RT model timing folded in from {rt_json})")
+    # Prefer a dedicated repeated-measures timing run over the single in-script
+    # measurements above. Those are taken while this process is also fitting the MLE
+    # baseline and building figures, so they are a throughput estimate under load, not
+    # a clean latency measurement -- and the manuscript quotes the clean one. Same
+    # fold-in idiom as the +RT timing below. Delete results/timing_laptop.json to fall
+    # back to whatever this run measured.
+    t_json = os.path.join(RESULTS_DIR, "timing_laptop.json")
+    if os.path.exists(t_json):
+        _t = _json.load(open(t_json))
+        ms["GRIN (batched)"]  = _t["grin_batched"]["median_ms"]
+        ms["GRIN (1 matrix)"] = _t["grin_single"]["median_ms"]
+        ms["Python-MLE"]      = _t["python_mle"]["median_ms"]
+        print(f"(GRIN/Python-MLE timing taken from {t_json} -- medians of "
+              f"{_t['grin_batched']['reps']}/{_t['python_mle']['reps']} dedicated reps, "
+              f"not this run's single in-script measurement)")
+
+    # The response-time model is NOT folded into this figure. It is trained on a
+    # generator that docs/dynamic_grt_rt_design.md retired on 2026-08-14, and that
+    # document forbids using it as evidence until the replacement passes its gates.
+    # Set GRIN_INCLUDE_RT=1 only for developmental comparisons, never for the manuscript.
+    if os.environ.get("GRIN_INCLUDE_RT") == "1":
+        rt_json = os.path.join(RESULTS_DIR, "rt_metrics.json")
+        if os.path.exists(rt_json):
+            _rt = _json.load(open(rt_json))
+            ms["+RT (1 matrix)"] = _rt["rt_model"]["single_ms"]
+            print(f"(+RT timing folded in from {rt_json} -- DEVELOPMENTAL ONLY)")
 
     methods = list(params)
     common = np.ones(N, bool)
@@ -146,17 +167,31 @@ def _figure(methods, params, labels, ok, ms, truth, true_labels, trial_bin, comm
     cols = [BLUE_DEEP if k.startswith("GRIN") else
             (MUTE if k.startswith("Python") else (BLUE if "mdsdt" in k else RED_DEEP))
             for k in keys]
-    ax[0].bar(range(len(keys)), vals, color=cols, width=0.65)
+    # Dots on a log axis, not bars: a bar on a log scale encodes nothing meaningful in
+    # its length (the baseline is arbitrary), and the level is the whole message. A stem
+    # to the axis floor keeps each point anchored to its label without the ink of a bar.
+    floor = min(vals) / 6
+    ax[0].vlines(range(len(keys)), floor, vals, color=cols, lw=1.1, alpha=0.45)
+    ax[0].plot(range(len(keys)), vals, "o", ms=8, ls="none",
+               markerfacecolor="none", markeredgewidth=0)
+    for i, (v, c) in enumerate(zip(vals, cols)):
+        ax[0].plot([i], [v], "o", color=c, ms=7.5, zorder=3)
     ax[0].set_yscale("log"); ax[0].set_ylabel("ms per matrix (log)")
+    ax[0].set_ylim(bottom=floor)
+    ax[0].set_xlim(-0.6, len(keys) - 0.4)
     ax[0].set_xticks(range(len(keys)))
     ax[0].set_xticklabels(keys, rotation=35, ha="right", fontsize=8.5)
     for i, v in enumerate(vals):
-        ax[0].text(i, v, f" {v:.3g}", ha="center", va="bottom", fontsize=8)
+        ax[0].text(i, v * 1.35, f"{v:.3g}", ha="center", va="bottom", fontsize=8)
     baseline_ms = {k: v for k, v in ms.items() if not k.startswith("GRIN")}
     slow = max(baseline_ms.values())
     slow_name = max(baseline_ms, key=baseline_ms.get)
-    ax[0].set_title(f"Speed — {slow / ms['GRIN (1 matrix)']:,.0f}× faster than {slow_name}\n"
-                    f"(per matrix; GRIN batched is {slow / ms['GRIN (batched)']:,.0f}×)")
+    # Headline the within-machine comparison (GRIN vs the Python MLE, identical forward
+    # model, same CPU). The R timings come from a different machine; see the manuscript's
+    # Speed subsection. Quoting a cross-machine ratio as the headline would overstate it.
+    pymle = ms.get("Python-MLE")
+    ax[0].set_title(f"Speed — {pymle / ms['GRIN (1 matrix)']:,.0f}× faster than the\n"
+                    f"same-model MLE ({pymle / ms['GRIN (batched)']:,.0f}× batched)")
 
     # --- 2. convergence ---
     fr = [100 * (1 - ok[m].mean()) for m in methods]
@@ -164,23 +199,38 @@ def _figure(methods, params, labels, ok, ms, truth, true_labels, trial_bin, comm
                     for l, h in [_wilson(int(ok[m].sum()), N)]])
     e = np.vstack([np.clip(np.array(fr) - err[:, 0], 0, None),
                    np.clip(err[:, 1] - np.array(fr), 0, None)])
-    ax[1].bar(methods, fr, color=[colour.get(m, MUTE) for m in methods], width=0.6,
-              yerr=e, error_kw=dict(ecolor=INK, elinewidth=0.9, capsize=3, alpha=0.7))
+    xi = np.arange(len(methods))
+    for i, m in enumerate(methods):
+        c = colour.get(m, MUTE)
+        ax[1].vlines(i, err[i, 0], err[i, 1], color=c, lw=1.5, alpha=0.85, zorder=2)
+        ax[1].plot([i], [fr[i]], "o", color=c, ms=7.5, zorder=3)
+    ax[1].axhline(0, color=MUTE, lw=0.9, ls=(0, (4, 3)), zorder=0)
+    ax[1].set_xticks(xi); ax[1].set_xticklabels(methods)
+    ax[1].set_xlim(-0.6, len(methods) - 0.4)
     ax[1].set_ylabel("fit failure rate (%)")
     ax[1].set_title("Convergence — GRIN always returns an answer")
     ax[1].tick_params(axis="x", labelrotation=25, labelsize=9)
     for i, v in enumerate(fr):
-        ax[1].text(i, v, f" {v:.1f}%", ha="center", va="bottom", fontsize=8.5)
+        ax[1].text(i + 0.12, v, f"{v:.1f}%", ha="left", va="center", fontsize=8.5)
 
     # --- 3. accuracy by trial regime, common-convergence subset ---
-    x = np.arange(len(TRIAL_BIN_NAMES)); w = 0.8 / len(methods)
-    for i, m in enumerate(methods):
+    # Bins come from export_for_r.TRIAL_BIN_LABELS, so this scores EVERY band the export
+    # wrote. It previously walked range(len("low","mid","high")) against a 9-bin export
+    # and silently dropped bins 3-8 -- the bar drawn as "high" was 15-20 trials/stimulus.
+    # Lines rather than grouped bars: 9 bins x 4 methods is 36 bars, and MAE against
+    # trials per stimulus is a curve, which is what the manuscript actually claims.
+    x = np.arange(N_TRIAL_BINS)
+    counts = [int((common & (trial_bin == b)).sum()) for b in range(N_TRIAL_BINS)]
+    for m in methods:
         v = [np.nanmean(np.abs(params[m][common & (trial_bin == b)] -
                                truth[common & (trial_bin == b)]))
-             for b in range(len(TRIAL_BIN_NAMES))]
-        ax[2].bar(x + (i - (len(methods) - 1) / 2) * w, v, w * 0.92,
-                  color=colour.get(m, MUTE), label=m)
-    ax[2].set_xticks(x); ax[2].set_xticklabels([f"{n}\ntrials" for n in TRIAL_BIN_NAMES])
+             if counts[b] else np.nan
+             for b in range(N_TRIAL_BINS)]
+        ax[2].plot(x, v, marker="o", ms=4, lw=1.6, color=colour.get(m, MUTE), label=m)
+    ax[2].set_xticks(x)
+    ax[2].set_xticklabels([f"{l}\n(n={c})" for l, c in zip(TRIAL_BIN_LABELS, counts)],
+                          fontsize=6.5)
+    ax[2].set_xlabel("trials per stimulus")
     ax[2].set_ylabel("parameter MAE")
     ax[2].set_title(f"Accuracy by data regime (n={int(common.sum())})")
     ax[2].legend(fontsize=8.5)

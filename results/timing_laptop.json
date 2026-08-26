@@ -1,0 +1,30 @@
+{
+  "machine": {
+    "cpu": "x86_64",
+    "torch": "2.13.0+cu130",
+    "threads": 7,
+    "python": "3.13.14",
+    "device": "cpu"
+  },
+  "n_matrices": 594,
+  "grin_batched": {
+    "median_ms": 0.004575609465471472,
+    "min_ms": 0.00304104542745409,
+    "max_ms": 0.053129143137265286,
+    "reps": 25
+  },
+  "grin_single": {
+    "median_ms": 0.9691304730949923,
+    "min_ms": 0.8489890656608818,
+    "max_ms": 1.2070827154945958,
+    "reps": 5
+  },
+  "python_mle": {
+    "median_ms": 1305.3206250302837,
+    "min_ms": 1151.968391666656,
+    "max_ms": 1458.6728583939114,
+    "reps": 2
+  },
+  "speedup_batched": 285277.9798801695,
+  "speedup_single": 1346.8987523028168
+}

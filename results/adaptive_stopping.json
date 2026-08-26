@@ -1,0 +1,91 @@
+{
+  "M": 396,
+  "levels": [
+    5,
+    10,
+    15,
+    20,
+    30,
+    40,
+    60,
+    80,
+    120,
+    160,
+    240,
+    320,
+    480,
+    640
+  ],
+  "cohort_mean_sd": [
+    0.5437058964461992,
+    0.4635011087162326,
+    0.4191433554797461,
+    0.3886387102832698,
+    0.35110628326432874,
+    0.3270147302460791,
+    0.2969022397742127,
+    0.2793240130248696,
+    0.25932331740705655,
+    0.24754372148802786,
+    0.2342603946048202,
+    0.22545874186537482,
+    0.21497505929584454,
+    0.20821294308912874
+  ],
+  "by_sd_max": {
+    "0.5": {
+      "adaptive_mean_trials": 10.404040404040405,
+      "fixed_matched_coverage": 15.0,
+      "saving_matched": 0.30639730639730633,
+      "fixed_cohort_mean": 10.0,
+      "saving_cohort_mean": -0.04040404040404044,
+      "never_reached_frac": 0.0,
+      "coverage": 1.0
+    },
+    "0.45": {
+      "adaptive_mean_trials": 15.18939393939394,
+      "fixed_matched_coverage": 30.0,
+      "saving_matched": 0.49368686868686873,
+      "fixed_cohort_mean": 15.0,
+      "saving_cohort_mean": -0.012626262626262541,
+      "never_reached_frac": 0.0,
+      "coverage": 1.0
+    },
+    "0.4": {
+      "adaptive_mean_trials": 23.88888888888889,
+      "fixed_matched_coverage": 60.0,
+      "saving_matched": 0.6018518518518519,
+      "fixed_cohort_mean": 20.0,
+      "saving_cohort_mean": -0.19444444444444442,
+      "never_reached_frac": 0.0,
+      "coverage": 1.0
+    },
+    "0.35": {
+      "adaptive_mean_trials": 42.323232323232325,
+      "fixed_matched_coverage": 160.0,
+      "saving_matched": 0.735479797979798,
+      "fixed_cohort_mean": 40.0,
+      "saving_cohort_mean": -0.05808080808080818,
+      "never_reached_frac": 0.0,
+      "coverage": 1.0
+    },
+    "0.3": {
+      "adaptive_mean_trials": 96.25,
+      "fixed_matched_coverage": 640.0,
+      "saving_matched": 0.849609375,
+      "fixed_cohort_mean": 60.0,
+      "saving_cohort_mean": -0.6041666666666667,
+      "never_reached_frac": 0.0025252525252525255,
+      "coverage": 0.9974747474747475
+    },
+    "0.25": {
+      "adaptive_mean_trials": 264.8989898989899,
+      "fixed_matched_coverage": 640.0,
+      "saving_matched": 0.5860953282828283,
+      "fixed_cohort_mean": 160.0,
+      "saving_cohort_mean": -0.6556186868686869,
+      "never_reached_frac": 0.13131313131313133,
+      "coverage": 0.8686868686868687
+    }
+  }
+}

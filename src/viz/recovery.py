@@ -198,20 +198,36 @@ def _boot_ci(vals, n_boot=2000, seed=0):
     return v.mean(), np.quantile(bs, 0.025), np.quantile(bs, 0.975)
 
 
-def _grouped_bars(ax, groups, methods, values, errs=None, ylabel="", title=""):
-    """values[method][group] -> grouped bar chart with optional asymmetric error bars."""
+def _grouped_bars(ax, groups, methods, values, errs=None, ylabel="", title="",
+                  connect=True):
+    """values[method][group] -> grouped POINT plot with optional asymmetric intervals.
+
+    Points rather than bars: the informative quantity is the level of each estimate, and
+    a bar spends ink from zero up to it for no gain. Dodging within each group keeps the
+    methods separable, and a faint connecting line per method carries the trend across
+    groups, which grouped bars leave the eye to reconstruct.
+
+    Name retained for backwards compatibility with existing callers.
+    """
     x = np.arange(len(groups))
     w = 0.8 / max(len(methods), 1)
     for i, m in enumerate(methods):
         off = (i - (len(methods) - 1) / 2) * w
         v = np.asarray(values[m], dtype=float)
-        e = None
+        col = METHOD_COLORS.get(m, MUTE)
         if errs is not None:
             lo, hi = np.asarray(errs[m]).T
-            e = np.vstack([np.clip(v - lo, 0, None), np.clip(hi - v, 0, None)])
-        ax.bar(x + off, v, w * 0.92, color=METHOD_COLORS.get(m, MUTE), label=m,
-               yerr=e, error_kw=dict(ecolor=INK, elinewidth=0.9, capsize=2, alpha=0.65))
-    ax.set_xticks(x); ax.set_xticklabels(groups)
+            ax.vlines(x + off, lo, hi, color=col, lw=1.3, alpha=0.85, zorder=2)
+        if connect:
+            ax.plot(x + off, v, "-", color=col, lw=1.0, alpha=0.35, zorder=1)
+        ax.plot(x + off, v, "o", color=col, ms=5.0, zorder=3, label=m)
+    ax.set_xticks(x)
+    ax.set_xlim(-0.5, len(groups) - 0.5)
+    ax.set_ylim(bottom=0)
+    if len(groups) > 5:
+        ax.set_xticklabels(groups, rotation=45, ha="right", fontsize=8)
+    else:
+        ax.set_xticklabels(groups)
     ax.set_ylabel(ylabel); ax.set_title(title)
 
 
@@ -234,7 +250,7 @@ def summary_recovery(results, path, trial_bin_names=("low", "mid", "high"),
         vals[m] = [np.nanmean(e[:, sl]) for sl in fams.values()]
         errs[m] = [_boot_ci(np.nanmean(e[:, sl], axis=1))[1:] for sl in fams.values()]
     _grouped_bars(ax[0], list(fams), methods, vals, errs, "MAE",
-                  "Recovery by parameter family")
+                  "Recovery by parameter family", connect=False)
     ax[0].legend()
 
     for k, (key, gnames, sl, ylab, title) in enumerate([
@@ -247,6 +263,15 @@ def summary_recovery(results, path, trial_bin_names=("low", "mid", "high"),
             r = results[m]
             per_row = np.nanmean(np.abs(r["pred"][:, sl] - r["true"][:, sl]), axis=1)
             b = np.asarray(r[key])
+            # Guard against the failure this function used to have silently: if the
+            # caller passes fewer group names than there are bins in the data, the
+            # loop below just skips the tail, and the last NAMED group gets read as
+            # the top of the range when it is not. Fail loudly instead.
+            if b.size and int(np.nanmax(b)) >= len(gnames):
+                raise ValueError(
+                    f"{key}: data has {int(np.nanmax(b)) + 1} bins but only "
+                    f"{len(gnames)} names {tuple(gnames)} were given -- bins "
+                    f"{len(gnames)}..{int(np.nanmax(b))} would be dropped silently.")
             vals[m], errs[m] = [], []
             for gi in range(len(gnames)):
                 mu, lo, hi = _boot_ci(per_row[b == gi])

@@ -1,0 +1,55 @@
+{
+  "model_selection": {
+    "n": 594,
+    "aicbic_parsed_ok": 594,
+    "separability": {
+      "grin": 0.7188552188552189,
+      "aicbic": 0.6346801346801347
+    },
+    "corr_structure": {
+      "grin": 0.4882154882154882,
+      "aicbic": 0.4276094276094276
+    },
+    "ms_per_matrix": {
+      "grin": 0.006944084185667913,
+      "aicbic": 1162.7474774293244
+    },
+    "speedup": 167444.32330315796,
+    "sepA": {
+      "grin": 0.8333333333333334,
+      "aicbic": 0.7760942760942761
+    },
+    "sepB": {
+      "grin": 0.8451178451178452,
+      "aicbic": 0.797979797979798
+    }
+  },
+  "envelope_v09_production": {
+    "id": "v09",
+    "claim": "data outside the trained envelope (reversed response mapping) is flagged, gradedly with severity, at a controlled false-alarm rate against in-envelope data",
+    "result": {
+      "in_dist_median": 7.4487242908471005,
+      "threshold95": 29.292618774808318,
+      "false_alarm": 0.05,
+      "severity_curve": {
+        "0.25": {
+          "median_deviance": 8.87097725406897,
+          "detection_rate": 0.006666666666666667
+        },
+        "0.5": {
+          "median_deviance": 20.633686099982434,
+          "detection_rate": 0.17333333333333334
+        },
+        "0.75": {
+          "median_deviance": 224.20934507992433,
+          "detection_rate": 1.0
+        },
+        "1.0": {
+          "median_deviance": 960.6326619121357,
+          "detection_rate": 1.0
+        }
+      }
+    },
+    "pass": true
+  }
+}
