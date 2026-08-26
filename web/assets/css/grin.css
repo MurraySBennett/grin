@@ -1267,6 +1267,8 @@ body.konami-mode canvas {
    inheriting the inline <code> pill.
    -------------------------------------------------------------------------- */
 .codeblock {
+  /* Explicit: code is never centred, whatever an ancestor decides. */
+  text-align: left;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   overflow: hidden;
@@ -1309,6 +1311,7 @@ body.konami-mode canvas {
 }
 .codeblock .copy:hover { color: var(--ink); }
 .codeblock pre {
+  text-align: left;
   margin: 0;
   padding: 0.85rem 1rem;
   overflow-x: auto;
@@ -1321,7 +1324,7 @@ body.konami-mode canvas {
 .codeblock pre[hidden] { display: none; }
 .codeblock pre code { background: none; padding: 0; font-size: inherit; }
 
-.recipe-steps { counter-reset: step; list-style: none; padding-left: 0; }
+.recipe-steps { counter-reset: step; list-style: none; padding-left: 0; text-align: left; }
 .recipe-steps > li {
   counter-increment: step;
   position: relative;
@@ -1342,4 +1345,45 @@ body.konami-mode canvas {
   place-items: center;
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+/* Vertical rhythm for the tutorial pages. */
+.stack { display: flex; flex-direction: column; gap: 1.25rem; text-align: left; }
+
+/* --------------------------------------------------------------------------
+   Live task: the stimulus legend and response grid.
+   Both use the same 2x2 layout so the on-screen arrangement matches the key
+   arrangement (E/I above F/J, left pair vs right pair) -- an arbitrary mapping
+   would add response-selection noise the model would read as perceptual.
+   -------------------------------------------------------------------------- */
+.legend-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  text-align: center;
+}
+.legend-cell {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem;
+  background: var(--panel);
+}
+.legend-canvas {
+  width: 100%;
+  height: 76px;
+  display: block;
+}
+kbd {
+  font-family: "SF Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+  font-size: 0.78rem;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 0.25rem;
+  padding: 0.05rem 0.4rem;
+  background: var(--line-soft);
+}
+.choice.flash {
+  background: var(--slate);
+  color: var(--ice);
+  transition: none;
 }

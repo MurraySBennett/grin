@@ -43,61 +43,88 @@
         Do the task yourself. Watch the fit update after every response.
       </p>
       <div id="nav-placeholder"></div>
+    </header>
 
     <main class="container">
       <div class="stack">
         <section class="card">
           <p>
-            This is an ordinary 2&times;2 identification task: a rectangle appears,
-            varying in <strong>width</strong> (dimension A) and
-            <strong>height</strong> (dimension B), and you say which of the four it
-            was. Nothing is simulated except the stimulus &mdash; the responses are
-            yours, and the panel on the right is the same network the R and Python
-            packages ship, refitted after every trial.
+            An ordinary 2&times;2 identification task. A stimulus appears briefly, you
+            name which of the four it was, and the panel on the right refits the GRT
+            model after every response. Nothing is simulated except the stimulus
+            &mdash; the responses are yours, and the model is the same network the R
+            and Python packages ship.
           </p>
           <p class="cap">
-            That refitting is the point. Fitting a GRT model by numerical
-            optimisation takes seconds, so it can only happen once the session is
-            over. Here it takes a fraction of a millisecond, so the design can react
-            to it while you are still working.
+            That refitting is the point. Fitting a GRT model by numerical optimisation
+            takes seconds, so it can only happen once a session is over. Here it takes
+            a fraction of a millisecond, so the design can respond to it while the
+            participant is still working.
           </p>
 
           <div class="row" style="gap: 1.4rem; flex-wrap: wrap; align-items: end">
             <label>
-              Stopping target (mean posterior SD)
-              <input type="range" id="sd-target" min="0.15" max="0.60"
-                     step="0.01" value="0.35" />
-              <span class="num" id="sd-target-val">0.35</span>
+              Stimulus set
+              <select id="stim-set">
+                <option value="colour">Colour — saturation × hue</option>
+                <option value="size">Rectangle — width × height</option>
+              </select>
             </label>
             <label>
-              Stimulus noise (px)
-              <input type="range" id="jitter" min="0" max="26" step="1" value="13" />
-              <span class="num" id="jitter-val">13</span>
+              Presentation (ms)
+              <input type="range" id="stim-ms" min="80" max="500" step="20" value="200" />
+              <span class="num" id="stim-ms-val">200</span>
             </label>
-            <button class="button" id="start">Start</button>
+            <label>
+              Response deadline (ms)
+              <input type="range" id="deadline-ms" min="600" max="2500" step="100" value="1000" />
+              <span class="num" id="deadline-ms-val">1000</span>
+            </label>
+            <label>
+              Stop at posterior SD
+              <input type="range" id="sd-target" min="0.15" max="0.60" step="0.01" value="0.35" />
+              <span class="num" id="sd-target-val">0.35</span>
+            </label>
           </div>
           <p class="cap">
-            Noise controls how hard the task is. Turn it down and you will sit near
-            ceiling, where the paper shows the within-stimulus correlations are least
-            identifiable; turn it up and the sensitivities become hard to pin down.
-            The accuracy readout tells you which side you are on.
+            Errors come from the presentation time and the deadline, not from making the
+            stimuli nearly identical. A speeded task is how an identification experiment
+            normally lands in the informative accuracy range; shorten the presentation
+            or tighten the deadline to push accuracy down.
           </p>
         </section>
 
+        <section class="card">
+          <h3 class="card-subhead" id="legend-title"></h3>
+          <p>
+            These are the four stimuli. The response keys are arranged to match:
+            the key's row codes the first dimension and its column the second, so
+            <kbd>E</kbd>/<kbd>I</kbd> are the high options and <kbd>F</kbd>/<kbd>J</kbd>
+            the low ones.
+          </p>
+          <div id="legend" class="legend-grid"></div>
+          <div class="row" style="margin-top: 1rem">
+            <button class="button" id="start">Start</button>
+          </div>
+        </section>
+
         <section id="task" hidden>
-          <div class="two-col" style="display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 1.2rem">
+          <div style="display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 1.2rem">
             <div class="card">
-              <h3 class="card-subhead">The task</h3>
+              <h3 class="card-subhead">Task</h3>
               <canvas id="stim" height="260" style="width: 100%; height: 260px"></canvas>
-              <p id="prompt" style="text-align: center; font-weight: 600"></p>
-              <div class="choices" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem">
-                <button class="choice" id="resp-0">narrow / short <span class="cap">1</span></button>
-                <button class="choice" id="resp-1">narrow / tall <span class="cap">2</span></button>
-                <button class="choice" id="resp-2">wide / short <span class="cap">3</span></button>
-                <button class="choice" id="resp-3">wide / tall <span class="cap">4</span></button>
+              <p id="prompt" style="text-align: center; font-weight: 600; min-height: 1.6em"></p>
+              <div class="legend-grid" style="margin-top: 0.4rem">
+                <button class="choice" id="resp-2"></button>
+                <button class="choice" id="resp-3"></button>
+                <button class="choice" id="resp-0"></button>
+                <button class="choice" id="resp-1"></button>
               </div>
-              <p class="cap">Keys 1&ndash;4 work too. Trials so far:
-                <span class="num" id="n-trials">0</span></p>
+              <p class="cap">
+                Scored trials: <span class="num" id="n-trials">0</span> ·
+                discarded for missing the deadline:
+                <span class="num" id="timeouts">0</span>
+              </p>
             </div>
 
             <div class="card">
@@ -119,25 +146,26 @@
           <h3 class="card-subhead">What you are looking at</h3>
           <p>
             The ellipses are the perceptual distributions the model infers for each of
-            the four stimuli, and the dashed lines are the decision bounds. Early on
-            they are all over the place, because four trials cannot pin down twelve
-            parameters. As trials accumulate they settle, and the posterior-width trace
-            below them falls.
+            the four stimuli; the dashed lines are the decision bounds. Early on they
+            move a lot, because a handful of trials cannot pin down twelve parameters.
+            As trials accumulate they settle and the posterior-width trace falls. When
+            it crosses your target, the task stops.
           </p>
           <p>
-            When that trace crosses your target the task stops. That is the stopping
-            rule the packages expose as
+            That is the stopping rule the packages expose as
             <code>grin_stop_on_precision()</code> and
             <code>gt.stop_on_precision()</code>, evaluated between trials rather than
-            after the session &mdash; see the
-            <a href="./recipes.html">recipes</a> for how to wire it into your own
-            experiment.
+            after the session. The
+            <a href="./tutorial-adaptive-stopping.html">adaptive stopping tutorial</a>
+            shows how to wire it into your own experiment.
           </p>
           <p class="cap">
-            One honest caveat: the intervals shown here are the network's own, and the
-            paper reports that its correlation intervals run narrower than nominal.
-            The <a href="./validate.html">Evidence</a> page shows this directly, and
-            the packages ship an optional correction for it.
+            Two things this demo does deliberately. Trials on which you miss the
+            deadline are <strong>discarded, not scored as errors</strong> &mdash; a
+            missed deadline is not a confusion, and counting it as one would bias every
+            parameter. And the intervals shown are the network's own: the paper reports
+            that its correlation intervals run narrower than nominal, which the
+            <a href="./validate.html">Evidence</a> page shows directly.
           </p>
         </section>
       </div>

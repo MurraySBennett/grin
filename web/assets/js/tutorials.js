@@ -1,5 +1,5 @@
 /**
- * recipes.js — language tabs and copy-to-clipboard for the recipe pages.
+ * tutorials.js — language tabs and copy-to-clipboard for the tutorial pages.
  *
  * Progressive enhancement only: with JS disabled every code sample is still in
  * the document, the first one visible and the rest hidden, so the page degrades
@@ -13,7 +13,7 @@
  * The tab strip is built from the data-lang attributes, so adding a language
  * means adding a <pre> and nothing else.
  */
-const LANG_KEY = "grin-recipe-lang";
+const LANG_KEY = "grin-tutorial-lang";
 
 function buildTabs(block) {
   const panes = [...block.querySelectorAll("pre[data-lang]")];
@@ -32,7 +32,7 @@ function buildTabs(block) {
     b.addEventListener("click", () => {
       select(pane.dataset.lang);
       // Remember the choice: a reader working in R should not have to re-pick
-      // the language on every step of every recipe.
+      // the language on every step of every tutorial.
       try { localStorage.setItem(LANG_KEY, pane.dataset.lang); } catch (e) {}
     });
     strip.appendChild(b);
