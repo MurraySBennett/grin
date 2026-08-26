@@ -431,18 +431,25 @@ renderStimulusGrid($("config-legend"), SETS[cfg().set]);
 // A previous run is still in this browser: say so, rather than silently discarding it
 // when the next task starts.
 (function offerPrevious() {
-  const prev = Store.load();
+  // Same defensiveness as the Analyse side: a cache-window mismatch must not throw at
+  // module level and take the configuration page down with it.
+  let prev = null;
+  try { prev = Store.load(); } catch (e) { return; }
   const box = $("prev-session");
-  if (!prev || !box) return;
+  const detail = $("prev-detail");
+  const goBtn = $("prev-analyse");
+  const clearBtn = $("prev-clear");
+  if (!prev || !box || !detail || !goBtn || !clearBtn) return;
+
   box.hidden = false;
-  $("prev-detail").textContent =
+  detail.textContent =
     `${prev.nTrials} trials, finished ${Store.describeAge(prev.savedAt)}` +
     (prev.accuracy ? ` at ${Math.round(100 * prev.accuracy)}% per-dimension accuracy` : "") + ".";
-  $("prev-analyse").addEventListener("click", () => {
+  goBtn.addEventListener("click", () => {
     try { sessionStorage.setItem("grin.openSession", "1"); } catch (e) {}
     window.location.href = "./analyse.html";
   });
-  $("prev-clear").addEventListener("click", () => {
+  clearBtn.addEventListener("click", () => {
     Store.clear();
     box.hidden = true;
   });

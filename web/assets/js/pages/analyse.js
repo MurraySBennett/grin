@@ -235,16 +235,24 @@ function readFile(f) {
 // being handed over once, so a stale cached copy of this page can no longer lose it and
 // there is a way back to your own results after navigating away.
 (function offerStoredSession() {
-  const sess = Store.load();
-  const box = $("stored-session");
+  // Defensive throughout. During a deploy a visitor can hold cached HTML and fresh JS
+  // (or the reverse), so every element this touches may legitimately be absent. A
+  // missing element must degrade to "no offer", never to a module-level throw -- that
+  // would take the whole Analyse page down, not just this feature.
+  let sess = null;
+  try { sess = Store.load(); } catch (e) { return; }
   if (!sess || !sess.matrixCSV) return;
+
+  const box = $("stored-session");
+  const status = () => $("file-status");
 
   const open = () => {
     try {
       loadParsed(IO.parseCSV(sess.matrixCSV), "your live-task session");
       if (box) box.hidden = true;
     } catch (e) {
-      $("file-status").innerHTML =
+      const el = status();
+      if (el) el.innerHTML =
         `<span class="pill bad">Could not load the stored session (${e.message}).</span>`;
     }
   };
@@ -257,12 +265,16 @@ function readFile(f) {
     return;
   }
 
-  if (!box) return;
+  const detail = $("stored-detail");
+  const openBtn = $("stored-open");
+  const clearBtn = $("stored-clear");
+  if (!box || !detail || !openBtn || !clearBtn) return;   // older markup: stay silent
+
   box.hidden = false;
-  $("stored-detail").textContent =
+  detail.textContent =
     `${sess.nTrials} trials from the live task, finished ${Store.describeAge(sess.savedAt)}.`;
-  $("stored-open").addEventListener("click", open);
-  $("stored-clear").addEventListener("click", () => {
+  openBtn.addEventListener("click", open);
+  clearBtn.addEventListener("click", () => {
     Store.clear();
     box.hidden = true;
   });
