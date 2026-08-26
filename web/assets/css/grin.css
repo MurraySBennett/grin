@@ -1510,3 +1510,11 @@ kbd {
 @media (min-width: 60rem) {
   .results-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 }
+
+/* Trial screen: single column normally, two when the live-fit panel is on. */
+.trial-layout { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; gap: 1.2rem; }
+.trial-layout.with-diag { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 64rem) {
+  .trial-layout.with-diag { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); align-items: start; }
+}
+.trial-diag[hidden] { display: none; }

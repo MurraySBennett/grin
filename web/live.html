@@ -179,10 +179,28 @@
 
         <!-- trials -->
         <div class="screen" id="screen-trial" hidden style="max-width: none; width: 100%">
-          <div class="trial-stage">
-            <canvas id="stim" height="300" style="width: 420px; height: 300px"></canvas>
+          <div class="trial-layout" id="trial-layout">
+            <div>
+              <div class="trial-stage">
+                <canvas id="stim" height="300" style="width: 420px; height: 300px"></canvas>
+              </div>
+              <p id="trial-prompt" style="text-align: center; font-weight: 600; min-height: 1.6em"></p>
+            </div>
+            <!-- Only rendered when the live-fit toggle is on. See the note on the
+                 configuration page: this is a demonstration mode, not how the task
+                 should be run. -->
+            <aside class="card trial-diag" id="trial-diag" hidden>
+              <h3 class="card-subhead">The fit, updating</h3>
+              <canvas id="trial-space" style="width: 100%"></canvas>
+              <div id="trial-constructs"></div>
+              <p class="cap" id="trial-status"></p>
+              <p class="cap">
+                Shown because you asked for it. In a real session this panel is not on
+                screen: it competes for attention during a speeded trial, and it is
+                performance feedback.
+              </p>
+            </aside>
           </div>
-          <p id="trial-prompt" style="text-align: center; font-weight: 600; min-height: 1.6em"></p>
         </div>
 
         <!-- block break -->

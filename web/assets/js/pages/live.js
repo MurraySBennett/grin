@@ -192,7 +192,11 @@ function respond(r) {
     rt: rt.toFixed(3),
   });
   updateBar();
-  if (cfg().liveDiag) refit(false);
+  if (cfg().liveDiag) {
+    refit().then((f) => {
+      if (phase !== "idle") paintDiagnostics("trial", f);
+    });
+  }
   after(180, nextAfterTrial);
 }
 
@@ -211,15 +215,13 @@ function updateBar() {
 // --------------------------------------------------------------------------- //
 // Fit
 // --------------------------------------------------------------------------- //
-async function refit(record = true) {
+async function refit() {
   const trials = counts.map((r) => r.reduce((a, b) => a + b, 0));
   if (trials.some((t) => t < 3)) return null;
   const out = await model.predict({ counts, trials });
   const meanSD = out.std.reduce((a, b) => a + b, 0) / out.std.length;
-  if (record) {
-    history.push(meanSD);
-    checkpoints.push({ stimuli: Plot.toStimuli(out.mean), n: nTrials });
-  }
+  history.push(meanSD);
+  checkpoints.push({ stimuli: Plot.toStimuli(out.mean), n: nTrials });
   return { out, meanSD };
 }
 
@@ -235,13 +237,30 @@ function accuracy() {
   return n ? 0.5 * (a / n + b / n) : null;
 }
 
+// At most this many layers in the fade trail. With the live panel on we refit every
+// trial, so an uncapped trail would be hundreds of near-identical ellipses -- slow to
+// draw and impossible to read. Thin evenly and always keep the most recent fit.
+const MAX_TRAIL = 24;
+function thinned(cps) {
+  if (cps.length <= MAX_TRAIL) return cps;
+  const step = (cps.length - 1) / (MAX_TRAIL - 1);
+  return Array.from({ length: MAX_TRAIL }, (_, i) => cps[Math.round(i * step)]);
+}
+
 function paintDiagnostics(prefix, fitted) {
-  if (!fitted) return;
+  const canvas = $(`${prefix}-space`);
+  if (!canvas || !canvas.clientWidth) return;   // not laid out yet
+  if (!fitted) {
+    const st = $(`${prefix}-status`);
+    if (st) st.textContent =
+      "Waiting for a few trials of each stimulus before the fit means anything.";
+    return;
+  }
   const { out, meanSD } = fitted;
   // The fade trail is the honest picture of convergence: every earlier fit stays on
   // the canvas, dimmed, so the reader sees the estimate settling rather than a single
   // confident-looking ellipse set.
-  Plot.renderFadeTrail($(`${prefix}-space`), checkpoints, { showMarginals: false });
+  Plot.renderFadeTrail(canvas, thinned(checkpoints), { showMarginals: false });
   const pct = (x) => `${Math.round(100 * x)}%`;
   const set = SETS[cfg().set];
   const el = $(`${prefix}-constructs`);
@@ -348,7 +367,10 @@ async function begin() {
   openOverlay();
   show("welcome");
   phase = "await-space-welcome";
-  $("bar-diag").hidden = !cfg().liveDiag;
+  const live = cfg().liveDiag;
+  $("bar-diag").hidden = !live;
+  $("trial-diag").hidden = !live;
+  $("trial-layout").classList.toggle("with-diag", live);
   updateBar();
 }
 
