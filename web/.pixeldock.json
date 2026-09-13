@@ -1,0 +1,8 @@
+{
+  "name": "GRIN",
+  "icon": "generic",
+  "start": "python3 -m http.server 8302",
+  "url": "http://127.0.0.1:8302/",
+  "port": 8302,
+  "description": "grin explorer (static)"
+}
