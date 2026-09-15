@@ -35,6 +35,8 @@ results/mle_fits/*
 # results/mle_fits/baseline_fits.csv as a source of manuscript headline numbers,
 # so it is manuscript evidence (tier 2), not bulk -- it was being ignored.
 !results/mle_fits/*.csv
+# ...but not the per-analysis MLE caches, which are regenerable scratch, not evidence.
+results/mle_fits/*_mle_cache.csv
 results/training_history/*
 results/_archive/**
 !results/_archive/**/
