@@ -16,6 +16,12 @@ packages build and test clean; `R CMD check --as-cran` is clean both with libtor
 absent (CRAN's environment) and present (125 tests, 0 fail, 0 skip), and the
 grintools wheel and sdist both install and infer correctly. Names verified free:
 `grintools` on PyPI, `grin` on CRAN.
+Merged to main and CI is green: 15/15 grintools platform x version jobs
+(Python 3.9-3.13 on Linux/macOS/Windows), and `R CMD check --as-cran` under
+CRAN's own condition (libtorch absent) returns **Status: OK** -- no errors,
+warnings or notes. That also cleared the `grin_infer.Rd` code/documentation
+mismatch that had left Test red on main since 2026-09-06.
+
 Remaining work is the part that needs credentials: register on PyPI, enable
 Zenodo, tag, and submit to CRAN. Runbook is `docs/RELEASE.md` -> "Shipping the
 packages".
@@ -42,7 +48,7 @@ packages".
 - [x] 2026-09-15 renamed the root distribution `grin` → `grin-pipeline` with `Private :: Do Not Upload`; `grin` on PyPI belongs to an unrelated project
 - [x] 2026-09-15 R package to CRAN standard: all 9 libtorch-dependent examples guarded (CRAN *runs* `\donttest{}`), vignette eval made conditional, `test-recalibration.R` was missing its libtorch guard, added `\value` ×6 and `\examples` ×16, `.Rbuildignore`, `cran-comments.md`, trimmed DESCRIPTION
 - [x] 2026-09-15 fixed a latent roxygen bug: `model.R:109` had `#' @export` followed by an `#'`-prefixed *comment*, so `grin_infer`'s docs attached to `.grin_recalibration` and `man/grin_infer.Rd` was surviving only by hand-editing
-- [x] 2026-09-15 added a deterministic `r-package-cran-conditions` CI job (libtorch deliberately absent) so the CRAN path is not left to whether a 500MB download happened to succeed
+- [x] 2026-09-15 added a deterministic `r-package-cran-conditions` CI job (libtorch deliberately absent) so the CRAN path is not left to whether a 500MB download happened to succeed. Took two fixes: the job must not override `args` (that drops `--no-manual` and fails on LaTeX the runner lacks), and it must *remove* libtorch rather than assert its absence -- `setup-r-dependencies` caches the R library and the sibling `r-package` job installs libtorch into it
 - [ ] next (M) record what the web workstream delivered — live task, session persistence, tutorials and the stopping-savings report all landed unrecorded
 
 ### infra
