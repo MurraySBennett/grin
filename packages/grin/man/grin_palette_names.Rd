@@ -14,3 +14,6 @@ A character vector of palette names.
 \code{\link{.grin_palettes}}. Pass any of these to a \code{palette}
 argument, or pass your own character vector of hex colours instead.
 }
+\examples{
+grin_palette_names()
+}

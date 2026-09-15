@@ -5,7 +5,7 @@
 \alias{PARAM_NAMES}
 \title{GRT parameter names, in canonical model order}
 \format{
-An object of class \code{character} of length 12.
+A character vector of length 12.
 }
 \usage{
 PARAM_NAMES
@@ -15,5 +15,8 @@ The 12 identified parameters GRIN reports: four per-stimulus x-sensitivities
 (\code{zx_0..zx_3}), four y-sensitivities (\code{zy_0..zy_3}), four within-stimulus
 correlations (\code{rho_0..rho_3}), one per canonical stimulus (A1B1, A1B2, A2B1,
 A2B2, in that order).
+}
+\examples{
+PARAM_NAMES
 }
 \keyword{datasets}

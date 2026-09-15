@@ -69,9 +69,13 @@ grin_empirical_bias <- function(counts, trials = NULL) {
 #'   approximate, not exact).
 #' @examples
 #' \donttest{
-#' M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
-#'               13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
-#' grin_response_bias(grin_infer(M)$result)
+#' # Inference needs libtorch, which is downloaded on first use and is not
+#' # present on CRAN's check machines; the guard keeps this example safe there.
+#' if (torch::torch_is_installed()) {
+#'   M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+#'                 13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+#'   grin_response_bias(grin_infer(M)$result)
+#' }
 #' }
 #' @export
 grin_response_bias <- function(result) {
@@ -100,9 +104,13 @@ grin_response_bias <- function(result) {
 #' @return A ggplot object.
 #' @examples
 #' \donttest{
-#' M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
-#'               13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
-#' grin_plot_bias(grin_infer(M)$result)
+#' # Inference needs libtorch, which is downloaded on first use and is not
+#' # present on CRAN's check machines; the guard keeps this example safe there.
+#' if (torch::torch_is_installed()) {
+#'   M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+#'                 13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+#'   grin_plot_bias(grin_infer(M)$result)
+#' }
 #' }
 #' @export
 grin_plot_bias <- function(result, ci = 0.90, palette = NULL, title = NULL,
@@ -175,6 +183,17 @@ grin_plot_empirical_bias <- function(counts, trials = NULL, palette = NULL, titl
 #'
 #' @inheritParams grin_plot_space_group
 #' @return A ggplot object.
+#' @examples
+#' \donttest{
+#' # Inference needs libtorch, which is downloaded on first use and is not
+#' # present on CRAN's check machines; the guard keeps this example safe there.
+#' if (torch::torch_is_installed()) {
+#'   M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+#'                 13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+#'   fits <- list(p1 = grin_infer(M), p2 = grin_infer(M))
+#'   grin_plot_bias_group(fits)
+#' }
+#' }
 #' @export
 grin_plot_bias_group <- function(results, ids = NULL, palette = NULL, title = NULL, base_size = 12) {
   td <- grin_tidy(results, ids)
@@ -204,6 +223,10 @@ grin_plot_bias_group <- function(results, ids = NULL, palette = NULL, title = NU
 #'   as `counts_list`; defaults to row sums for each.
 #' @param palette,title,base_size As in [grin_plot_space_group()].
 #' @return A ggplot object.
+#' @examples
+#' M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+#'               13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+#' grin_plot_empirical_bias_group(list(p1 = M, p2 = M))
 #' @export
 grin_plot_empirical_bias_group <- function(counts_list, trials_list = NULL, palette = NULL,
                                            title = NULL, base_size = 12) {

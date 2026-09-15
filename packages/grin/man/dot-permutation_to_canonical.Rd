@@ -6,6 +6,16 @@
 \usage{
 .permutation_to_canonical(labels, factor_a, factor_b, sep)
 }
+\arguments{
+\item{labels}{The 4 row or column labels, in the order the data has them.}
+
+\item{factor_a, factor_b}{Length-2 character vectors giving each dimension's levels.}
+
+\item{sep}{Separator used to split compound labels.}
+}
+\value{
+A list with \code{perm} (length-4 index vector) and \code{placement}.
+}
 \description{
 Returns list(perm, placement). \code{perm} is a length-4 index vector into \code{labels}
 such that \code{labels[perm[c]]} belongs at canonical position c. Raises unless the 4

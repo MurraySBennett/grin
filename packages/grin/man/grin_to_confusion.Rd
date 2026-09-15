@@ -51,3 +51,8 @@ canonical-order (A1B1, A1B2, A2B1, A2B2 x A1B1, A1B2, A2B1, A2B2) form GRIN's
 models expect, and never guesses the two things a wrong guess would silently
 corrupt: stimulus/response order, and counts-vs-proportions.
 }
+\examples{
+M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+              13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+grin_to_confusion(M, order = "canonical")
+}

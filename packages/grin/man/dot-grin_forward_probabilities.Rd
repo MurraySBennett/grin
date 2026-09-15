@@ -7,6 +7,14 @@ probabilities (rows = stimuli, cols = responses, canonical order).}
 \usage{
 .grin_forward_probabilities(zx, zy, rho)
 }
+\arguments{
+\item{zx, zy}{Per-stimulus sensitivities on dimensions A and B (length 4 each).}
+
+\item{rho}{Per-stimulus within-trial correlations (length 4).}
+}
+\value{
+A 4x4 numeric matrix of predicted response probabilities.
+}
 \description{
 Forward model: per-stimulus (zx, zy, rho) -> 4x4 predicted response
 probabilities (rows = stimuli, cols = responses, canonical order).

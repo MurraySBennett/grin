@@ -19,11 +19,22 @@
   paste(parts, collapse = " + ")
 }
 
+.construct_decision <- function(probability, evidence_tol) {
+  lower <- 0.5 - evidence_tol / 2
+  if (probability < lower) return("against")
+  if (probability > 1 - lower) return("for")
+  "undecided"
+}
+
 #' Path to the TorchScript model bundled with this package version
 #'
 #' The package version pins the model: `packageVersion("grin")` identifies exactly
 #' which trained weights produced a given inference (mirrors grintools' Python-side
 #' `default_model_path()` / version-pinning contract).
+#' @return A length-1 character vector: the file path of the TorchScript
+#'   model bundled with this version of the package.
+#' @examples
+#' grin_default_model_path()
 #' @export
 grin_default_model_path <- function() {
   p <- system.file("models", "npe_model_ts.pt", package = "grin")
@@ -40,6 +51,17 @@ grin_default_model_path <- function() {
 #'   with this package.
 #' @return A `grin_model` object, ready to pass to [grin_infer()]. Models are
 #'   cached per session by path, so repeated calls are free.
+#' @examples
+#' \donttest{
+#' # Inference needs libtorch, which is downloaded on first use and is not
+#' # present on CRAN's check machines; the guard keeps this example safe there.
+#' if (torch::torch_is_installed()) {
+#'   M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+#'                 13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+#'   model <- grin_model()
+#'   print(model)
+#' }
+#' }
 #' @export
 grin_model <- function(path = NULL) {
   if (is.null(path)) path <- grin_default_model_path()
@@ -77,42 +99,12 @@ print.grin_model <- function(x, ...) {
   matrix(v, nrow = 4, ncol = 4, byrow = TRUE)
 }
 
-#' Run GRIN inference on a canonical-order confusion matrix
-#'
-#' The fast path: `counts` is trusted to already be in canonical order (rows/cols
-#' A1B1, A1B2, A2B1, A2B2). If your data isn't already canonical, resolve it first
-#' with [grin_to_confusion()] and pass its `$counts`/`$trials`.
-#'
-#' @param counts A canonical-order 4x4 matrix, or a length-16 vector read row-major
-#'   (stimulus varies slower than response).
-#' @param trials Optional per-stimulus trial totals (length 4); defaults to row sums.
-#' @param model A `grin_model` (see [grin_model()]); the bundled model is loaded and
-#'   cached automatically if omitted.
-#' @param evidence_tol Width of the "undecided" band around p = 0.5 for the
-#'   `evidence_*` construct flags (default 0.5).
-#' @return A `grin_inference` object: `$result` (class `grin_result`: `$params`,
-#'   `$std`, `$ci_low`, `$ci_high`, `$names`, `$model_class`) and `$constructs`
-#'   (`p_PI`, `p_sep_A`, `p_sep_B`, `p_corr`, `evidence_PI`, `evidence_sep_A`,
-#'   `evidence_sep_B`). Unlike Python's `(result, constructs)` tuple, R returns one
-#'   object with both as named elements -- there is no tuple-unpacking idiom to
-#'   mirror here.
-#' @examples
-#' \donttest{
-#' M <- matrix(c(71, 17,  9,  5,
-#'               20, 67,  5,  9,
-#'               13,  6, 63, 20,
-#'                5, 10, 15, 71), nrow = 4, byrow = TRUE)
-#' out <- grin_infer(M)
-#' print(out$result)
-#' out$constructs$p_PI
-#' }
-#' @export
-#' Per-family posterior scale factors, fitted on held-out simulations by
-#' scripts/fit_recalibration.py and validated on a further held-out set. Applied only
-#' when the caller passes calibrated = TRUE. See the package documentation for why this
-#' is opt-in: the correction is estimated under the training prior and may not transfer
-#' to observers far outside it, and a rescaled interval is a calibrated interval derived
-#' from the posterior rather than the posterior itself.
+# Per-family posterior scale factors, fitted on held-out simulations by
+# scripts/fit_recalibration.py and validated on a further held-out set. Applied only
+# when the caller passes calibrated = TRUE. See the package documentation for why this
+# is opt-in: the correction is estimated under the training prior and may not transfer
+# to observers far outside it, and a rescaled interval is a calibrated interval derived
+# from the posterior rather than the posterior itself.
 .grin_recalibration <- local({
   cache <- NULL
   function() {
@@ -140,6 +132,46 @@ print.grin_model <- function(x, ...) {
   s
 }
 
+#' Run GRIN inference on a canonical-order confusion matrix
+#'
+#' The fast path: `counts` is trusted to already be in canonical order (rows/cols
+#' A1B1, A1B2, A2B1, A2B2). If your data isn't already canonical, resolve it first
+#' with [grin_to_confusion()] and pass its `$counts`/`$trials`.
+#'
+#' @param counts A canonical-order 4x4 matrix, or a length-16 vector read row-major
+#'   (stimulus varies slower than response).
+#' @param trials Optional per-stimulus trial totals (length 4); defaults to row sums.
+#' @param model A `grin_model` (see [grin_model()]); the bundled model is loaded and
+#'   cached automatically if omitted.
+#' @param evidence_tol Width of the "undecided" band around p = 0.5 for the
+#'   direction-explicit `decision_*` outputs and legacy `evidence_*` decisiveness
+#'   flags (default 0.5).
+#' @param calibrated If `TRUE`, apply the shipped per-family interval correction
+#'   (see the package documentation). Point estimates are unchanged; only the
+#'   posterior SDs and credible intervals are rescaled. Default `FALSE`, so
+#'   published results do not depend on the correction being present.
+#' @return A `grin_inference` object: `$result` (class `grin_result`: `$params`,
+#'   `$std`, `$ci_low`, `$ci_high`, `$names`, `$model_class`) and `$constructs`
+#'   (`p_PI`, `p_sep_A`, `p_sep_B`, `p_corr`, `decision_PI`, `decision_sep_A`,
+#'   `decision_sep_B`, and the back-compatible `evidence_*` flags). Unlike Python's
+#'   `(result, constructs)` tuple, R returns one
+#'   object with both as named elements -- there is no tuple-unpacking idiom to
+#'   mirror here.
+#' @examples
+#' \donttest{
+#' # Inference needs libtorch, which is downloaded on first use and is not
+#' # present on CRAN's check machines; the guard keeps this example safe there.
+#' if (torch::torch_is_installed()) {
+#'   M <- matrix(c(71, 17,  9,  5,
+#'                 20, 67,  5,  9,
+#'                 13,  6, 63, 20,
+#'                  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+#'   out <- grin_infer(M)
+#'   print(out$result)
+#'   out$constructs$p_PI
+#' }
+#' }
+#' @export
 grin_infer <- function(counts, trials = NULL, model = NULL, evidence_tol = 0.5,
                        calibrated = FALSE) {
   if (!requireNamespace("torch", quietly = TRUE)) {
@@ -162,6 +194,10 @@ grin_infer <- function(counts, trials = NULL, model = NULL, evidence_tol = 0.5,
   p_pi <- p_corr[1]; p_a <- p_sep[1]; p_b <- p_sep[2]
   band <- 0.5 - evidence_tol / 2.0
   constructs <- list(p_PI = p_pi, p_sep_A = p_a, p_sep_B = p_b, p_corr = p_corr,
+                     decision_PI = .construct_decision(p_pi, evidence_tol),
+                     decision_sep_A = .construct_decision(p_a, evidence_tol),
+                     decision_sep_B = .construct_decision(p_b, evidence_tol),
+                     # Back-compatible decisiveness flags; these do not encode direction.
                      evidence_PI = abs(p_pi - 0.5) > band,
                      evidence_sep_A = abs(p_a - 0.5) > band,
                      evidence_sep_B = abs(p_b - 0.5) > band)
@@ -186,7 +222,7 @@ print.grin_result <- function(x, ...) {
                x$names[i], x$params[i], x$std[i], x$ci_low[i], x$ci_high[i]))
   }
   cat(strrep("-", 46), "\n")
-  cat(sprintf("  most likely structure : %s\n", x$model_class))
+  cat(sprintf("  componentwise modal structure : %s\n", x$model_class))
   invisible(x)
 }
 

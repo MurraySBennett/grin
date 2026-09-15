@@ -6,8 +6,15 @@
 \usage{
 grin_default_model_path()
 }
+\value{
+A length-1 character vector: the file path of the TorchScript
+model bundled with this version of the package.
+}
 \description{
 The package version pins the model: \code{packageVersion("grin")} identifies exactly
 which trained weights produced a given inference (mirrors grintools' Python-side
 \code{default_model_path()} / version-pinning contract).
+}
+\examples{
+grin_default_model_path()
 }

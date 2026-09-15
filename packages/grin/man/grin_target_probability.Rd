@@ -11,6 +11,13 @@ grin_target_probability(construct, at_least)
 
 \item{at_least}{Probability threshold.}
 }
+\value{
+A \code{grin_target} object, to be passed to \code{\link[=grin_criterion]{grin_criterion()}}.
+}
 \description{
 Stop when a construct probability crosses a threshold.
+}
+\examples{
+grin_target_probability("PS_A", at_least = 0.90)
+grin_target_probability("PI_violated", at_least = 0.95)
 }

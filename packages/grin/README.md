@@ -180,7 +180,7 @@ sample <- list(p01 = grin_infer(M1), p02 = grin_infer(M2), p03 = grin_infer(M3))
 grin_tidy(sample)                   # one row per participant: estimates, SDs, constructs
 grin_plot_space_group(sample)       # one panel per participant -- the individual-level analysis GRT licenses
 grin_plot_params_group(sample)      # per-parameter distribution across the sample
-grin_plot_model_classes(sample)     # how many participants landed in each GRT model class
+grin_plot_model_classes(sample)     # componentwise modal structures across participants
 grin_plot_precision_group(sample)   # posterior SD distribution -- data quality across the sample
 grin_plot_bias_group(sample)        # response bias distribution across the sample
 ```

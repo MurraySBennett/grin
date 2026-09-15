@@ -38,8 +38,12 @@ A two-bar summary of \code{\link[=grin_response_bias]{grin_response_bias()}}, wi
 }
 \examples{
 \donttest{
-M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
-              13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
-grin_plot_bias(grin_infer(M)$result)
+# Inference needs libtorch, which is downloaded on first use and is not
+# present on CRAN's check machines; the guard keeps this example safe there.
+if (torch::torch_is_installed()) {
+  M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+                13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+  grin_plot_bias(grin_infer(M)$result)
+}
 }
 }

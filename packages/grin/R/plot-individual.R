@@ -40,7 +40,7 @@
 #'   `options(grin.palette)`, itself default `"mono"` (black-on-white). Pass a
 #'   name from [grin_palette_names()], or your own vector of hex colours.
 #' @param title Plot title. `NULL` (default) uses
-#'   `"Perceptual space (<model class>)"`; pass `""` for no title.
+#'   `"Perceptual space (<componentwise modal structure>)"`; pass `""` for no title.
 #' @param xlab,ylab Axis titles. Default to `"dimension A (zx)"` /
 #'   `"dimension B (zy)"`; pass `NULL` to hide an axis title entirely (the
 #'   ordinary ggplot2 convention).
@@ -69,9 +69,13 @@
 #'   `show_marginals = TRUE` if you need it applied to every panel).
 #' @examples
 #' \donttest{
-#' M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
-#'               13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
-#' grin_plot_space(grin_infer(M)$result)
+#' # Inference needs libtorch, which is downloaded on first use and is not
+#' # present on CRAN's check machines; the guard keeps this example safe there.
+#' if (torch::torch_is_installed()) {
+#'   M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+#'                 13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+#'   grin_plot_space(grin_infer(M)$result)
+#' }
 #' }
 #' @export
 grin_plot_space <- function(result, ci = 0.90, palette = NULL, title = NULL,
@@ -172,9 +176,13 @@ grin_plot_space <- function(result, ci = 0.90, palette = NULL, title = NULL,
 #' @return A ggplot object.
 #' @examples
 #' \donttest{
-#' M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
-#'               13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
-#' grin_plot_params(grin_infer(M)$result)
+#' # Inference needs libtorch, which is downloaded on first use and is not
+#' # present on CRAN's check machines; the guard keeps this example safe there.
+#' if (torch::torch_is_installed()) {
+#'   M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+#'                 13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+#'   grin_plot_params(grin_infer(M)$result)
+#' }
 #' }
 #' @export
 grin_plot_params <- function(result, palette = NULL, title = NULL,
@@ -213,15 +221,19 @@ grin_plot_params <- function(result, palette = NULL, title = NULL,
 #' @param palette Colour palette (one colour per panel). `NULL` (default)
 #'   defers to `options(grin.palette)`. See [grin_plot_space()].
 #' @param title Plot title. `NULL` (default) uses
-#'   `"Construct probabilities (<model class>)"`.
+#'   `"Construct probabilities (<componentwise modal structure>)"`.
 #' @param base_size Base font size in points (default 12).
 #' @return A ggplot object.
 #' @examples
 #' \donttest{
-#' M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
-#'               13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
-#' out <- grin_infer(M)
-#' grin_plot_constructs(out$result, out$constructs)
+#' # Inference needs libtorch, which is downloaded on first use and is not
+#' # present on CRAN's check machines; the guard keeps this example safe there.
+#' if (torch::torch_is_installed()) {
+#'   M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+#'                 13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+#'   out <- grin_infer(M)
+#'   grin_plot_constructs(out$result, out$constructs)
+#' }
 #' }
 #' @export
 grin_plot_constructs <- function(result, constructs, palette = NULL, title = NULL, base_size = 12) {

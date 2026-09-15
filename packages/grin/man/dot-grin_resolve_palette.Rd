@@ -6,6 +6,12 @@
 \usage{
 .grin_resolve_palette(palette = NULL)
 }
+\arguments{
+\item{palette}{Palette name, character vector of hex colours, or \code{NULL}.}
+}
+\value{
+A character vector of hex colours.
+}
 \description{
 \code{palette} is one of: \code{NULL} (defer to \code{options(grin.palette)}, itself
 default \code{"mono"}), the name of a built-in palette (see

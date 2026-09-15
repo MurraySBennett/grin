@@ -34,6 +34,8 @@
 
 #' Gauss-Legendre quadrature nodes/weights on the interval -1 to 1, via the
 #' Golub-Welsch eigendecomposition of the Jacobi matrix. Cached per session.
+#' @param n Number of quadrature nodes (default 48).
+#' @return A list with `nodes` and `weights`, each of length `n`.
 #' @keywords internal
 .grin_gauss_legendre <- function(n = 48) {
   key <- as.character(n)
@@ -54,6 +56,9 @@
 #' Bivariate normal CDF Phi2(h, k; rho) = P(X <= h, Y <= k), standard normal
 #' margins, correlation rho. Sheppard's r-integration: Phi2 = Phi(h)Phi(k) +
 #' int_0^rho phi2(h,k;t) dt, evaluated by 48-point Gauss-Legendre quadrature.
+#' @param h,k Upper limits of integration on the x and y margins.
+#' @param rho Correlation between the two standard normal margins.
+#' @return A numeric vector of bivariate normal probabilities.
 #' @keywords internal
 .grin_bvn_cdf <- function(h, k, rho) {
   base <- stats::pnorm(h) * stats::pnorm(k)
@@ -67,6 +72,9 @@
 
 #' Forward model: per-stimulus (zx, zy, rho) -> 4x4 predicted response
 #' probabilities (rows = stimuli, cols = responses, canonical order).
+#' @param zx,zy Per-stimulus sensitivities on dimensions A and B (length 4 each).
+#' @param rho Per-stimulus within-trial correlations (length 4).
+#' @return A 4x4 numeric matrix of predicted response probabilities.
 #' @keywords internal
 .grin_forward_probabilities <- function(zx, zy, rho) {
   p_x1 <- stats::pnorm(-zx)

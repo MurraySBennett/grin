@@ -6,6 +6,14 @@
 \usage{
 .grin_group_colors(n, palette = NULL)
 }
+\arguments{
+\item{n}{Number of colours required.}
+
+\item{palette}{Palette name, character vector of hex colours, or \code{NULL}.}
+}
+\value{
+A character vector of \code{n} hex colours.
+}
 \description{
 The requested palette repeated/interpolated to length \code{n} (mono repeats a
 single colour, so callers can use the same \verb{scale_*_manual()} machinery

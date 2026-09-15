@@ -8,6 +8,14 @@ int_0^rho phi2(h,k;t) dt, evaluated by 48-point Gauss-Legendre quadrature.}
 \usage{
 .grin_bvn_cdf(h, k, rho)
 }
+\arguments{
+\item{h, k}{Upper limits of integration on the x and y margins.}
+
+\item{rho}{Correlation between the two standard normal margins.}
+}
+\value{
+A numeric vector of bivariate normal probabilities.
+}
 \description{
 Bivariate normal CDF Phi2(h, k; rho) = P(X <= h, Y <= k), standard normal
 margins, correlation rho. Sheppard's r-integration: Phi2 = Phi(h)Phi(k) +

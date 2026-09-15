@@ -24,3 +24,8 @@ Setup guide / dev mode / exception surface in one. Never raises: parse errors ar
 captured and printed, not thrown, so this is safe to run while wiring up an
 experiment. Pass the same arguments you would pass to \code{\link[=grin_to_confusion]{grin_to_confusion()}}.
 }
+\examples{
+M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+              13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+grin_describe(M, order = "canonical")
+}

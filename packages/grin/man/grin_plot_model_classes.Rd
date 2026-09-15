@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot-group.R
 \name{grin_plot_model_classes}
 \alias{grin_plot_model_classes}
-\title{Plot the distribution of GRT model classes across many participants}
+\title{Plot componentwise modal structures across many participants}
 \usage{
 grin_plot_model_classes(
   results,
@@ -28,5 +28,17 @@ grin_plot_model_classes(
 A ggplot object.
 }
 \description{
-Plot the distribution of GRT model classes across many participants
+Plot componentwise modal structures across many participants
+}
+\examples{
+\donttest{
+# Inference needs libtorch, which is downloaded on first use and is not
+# present on CRAN's check machines; the guard keeps this example safe there.
+if (torch::torch_is_installed()) {
+  M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+                13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+  fits <- list(p1 = grin_infer(M), p2 = grin_infer(M))
+  grin_plot_model_classes(fits)
+}
+}
 }

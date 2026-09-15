@@ -19,6 +19,8 @@ test_that("the shipped scale factors are present and have the fitted values", {
 
 test_that("calibrated = TRUE rescales widths and leaves everything else alone", {
   skip_if_not_installed("torch")
+  skip_if_not(isTRUE(tryCatch(torch::torch_is_installed(), error = function(e) FALSE)),
+              "libtorch is not installed (torch::install_torch())")
   skip_if_not_installed("jsonlite")
   raw <- grin_infer(cm)
   cal <- grin_infer(cm, calibrated = TRUE)
@@ -39,6 +41,8 @@ test_that("calibrated = TRUE rescales widths and leaves everything else alone", 
 
 test_that("the default is uncorrected, so published results do not depend on version", {
   skip_if_not_installed("torch")
+  skip_if_not(isTRUE(tryCatch(torch::torch_is_installed(), error = function(e) FALSE)),
+              "libtorch is not installed (torch::install_torch())")
   expect_false(grin_infer(cm)$result$calibrated)
   expect_equal(grin_infer(cm)$result$scale, rep(1, 12))
 })

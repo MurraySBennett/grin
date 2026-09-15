@@ -7,6 +7,12 @@ Golub-Welsch eigendecomposition of the Jacobi matrix. Cached per session.}
 \usage{
 .grin_gauss_legendre(n = 48)
 }
+\arguments{
+\item{n}{Number of quadrature nodes (default 48).}
+}
+\value{
+A list with \code{nodes} and \code{weights}, each of length \code{n}.
+}
 \description{
 Gauss-Legendre quadrature nodes/weights on the interval -1 to 1, via the
 Golub-Welsch eigendecomposition of the Jacobi matrix. Cached per session.

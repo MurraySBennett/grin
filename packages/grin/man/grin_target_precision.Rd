@@ -14,7 +14,14 @@ grin_target_precision(params = NULL, sd_max = NULL, ci_width_max = NULL)
 
 \item{ci_width_max}{Stop when every selected parameter's 90\% CI width is at most this.}
 }
+\value{
+A \code{grin_target} object, to be passed to \code{\link[=grin_criterion]{grin_criterion()}}.
+}
 \description{
 Stop when the posterior for the selected parameters is tight enough. Exactly one
 of \code{sd_max}/\code{ci_width_max} must be given.
+}
+\examples{
+grin_target_precision(params = c("zx", "zy"), sd_max = 0.10)
+grin_target_precision(params = "all", ci_width_max = 0.50)
 }

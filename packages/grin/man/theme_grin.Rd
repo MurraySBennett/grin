@@ -11,8 +11,15 @@ theme_grin(base_size = 12)
 \code{ggplot2::theme_minimal()}. Every \verb{grin_plot_*()} function also takes a
 \code{base_size} argument that forwards here.}
 }
+\value{
+A ggplot2 theme object, as returned by \code{ggplot2::theme()}.
+}
 \description{
 Used internally by every \verb{grin_plot_*()} function; exported so a
 plot built with one can be further customised the normal ggplot2 way
 (\code{grin_plot_space(x) + ggplot2::labs(title = "...")}).
+}
+\examples{
+library(ggplot2)
+ggplot(mtcars, aes(wt, mpg)) + geom_point() + theme_grin()
 }

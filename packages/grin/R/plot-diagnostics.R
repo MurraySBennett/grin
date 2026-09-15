@@ -58,10 +58,14 @@
 #'   is returned instead, with a warning).
 #' @examples
 #' \donttest{
-#' M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
-#'               13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
-#' out <- grin_infer(M)
-#' grin_plot_diagnostics(out$result, M)
+#' # Inference needs libtorch, which is downloaded on first use and is not
+#' # present on CRAN's check machines; the guard keeps this example safe there.
+#' if (torch::torch_is_installed()) {
+#'   M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+#'                 13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+#'   out <- grin_infer(M)
+#'   grin_plot_diagnostics(out$result, M)
+#' }
 #' }
 #' @export
 grin_plot_diagnostics <- function(result, counts, trials = NULL,

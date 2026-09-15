@@ -1,0 +1,6 @@
+^cran-comments\.md$
+^\.Rbuildignore$
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.github$
+^revdep$

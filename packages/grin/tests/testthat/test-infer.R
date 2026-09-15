@@ -24,7 +24,9 @@ test_that("grin_infer returns a well-formed result and constructs on a 4x4 matri
   expect_true(all(out$result$std > 0))
   expect_equal(out$result$names, PARAM_NAMES)
   expect_true(all(c("p_PI", "p_sep_A", "p_sep_B", "p_corr",
+                    "decision_PI", "decision_sep_A", "decision_sep_B",
                     "evidence_PI", "evidence_sep_A", "evidence_sep_B") %in% names(out$constructs)))
+  expect_true(out$constructs$decision_PI %in% c("for", "against", "undecided"))
   expect_true(out$constructs$p_PI >= 0 && out$constructs$p_PI <= 1)
 })
 

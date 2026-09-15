@@ -10,14 +10,19 @@
 #'   `results`. Defaults to the list's names if present, otherwise `p1, p2, ...`.
 #' @return A data.frame, one row per participant: `id`, `model_class`, the 12
 #'   parameter estimates (`zx_0`...`rho_3`), their SDs (`zx_0_sd`...`rho_3_sd`),
-#'   `p_PI`/`p_sep_A`/`p_sep_B`, `evidence_PI`/`evidence_sep_A`/`evidence_sep_B`,
+#'   `p_PI`/`p_sep_A`/`p_sep_B`, direction-explicit `decision_PI`/
+#'   `decision_sep_A`/`decision_sep_B`, and the back-compatible decisiveness flags,
 #'   and `x_bias`/`y_bias` (the decision-criterion bias of [grin_response_bias()]).
 #' @examples
 #' \donttest{
-#' M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
-#'               13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
-#' out <- list(p1 = grin_infer(M), p2 = grin_infer(M))
-#' grin_tidy(out)
+#' # Inference needs libtorch, which is downloaded on first use and is not
+#' # present on CRAN's check machines; the guard keeps this example safe there.
+#' if (torch::torch_is_installed()) {
+#'   M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+#'                 13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+#'   out <- list(p1 = grin_infer(M), p2 = grin_infer(M))
+#'   grin_tidy(out)
+#' }
 #' }
 #' @export
 grin_tidy <- function(results, ids = NULL) {
@@ -40,6 +45,8 @@ grin_tidy <- function(results, ids = NULL) {
     bias <- grin_response_bias(res)
     c(list(id = id, model_class = res$model_class), est, sd_,
       list(p_PI = con$p_PI, p_sep_A = con$p_sep_A, p_sep_B = con$p_sep_B,
+          decision_PI = con$decision_PI, decision_sep_A = con$decision_sep_A,
+          decision_sep_B = con$decision_sep_B,
           evidence_PI = con$evidence_PI, evidence_sep_A = con$evidence_sep_A,
           evidence_sep_B = con$evidence_sep_B,
           x_bias = bias$x_bias, y_bias = bias$y_bias))

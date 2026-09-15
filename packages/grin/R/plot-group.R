@@ -32,6 +32,17 @@
 #' @param title Plot title. `NULL` (default) uses a built-in title.
 #' @param base_size Base font size in points (default 12).
 #' @return A ggplot object.
+#' @examples
+#' \donttest{
+#' # Inference needs libtorch, which is downloaded on first use and is not
+#' # present on CRAN's check machines; the guard keeps this example safe there.
+#' if (torch::torch_is_installed()) {
+#'   M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+#'                 13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+#'   fits <- list(p1 = grin_infer(M), p2 = grin_infer(M))
+#'   grin_plot_space_group(fits)
+#' }
+#' }
 #' @export
 grin_plot_space_group <- function(results, ids = NULL, facet = TRUE, ci = 0.90,
                                   palette = NULL, title = NULL, base_size = 12) {
@@ -104,6 +115,17 @@ grin_plot_space_group <- function(results, ids = NULL, facet = TRUE, ci = 0.90,
 #'
 #' @inheritParams grin_plot_space_group
 #' @return A ggplot object.
+#' @examples
+#' \donttest{
+#' # Inference needs libtorch, which is downloaded on first use and is not
+#' # present on CRAN's check machines; the guard keeps this example safe there.
+#' if (torch::torch_is_installed()) {
+#'   M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+#'                 13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+#'   fits <- list(p1 = grin_infer(M), p2 = grin_infer(M))
+#'   grin_plot_params_group(fits)
+#' }
+#' }
 #' @export
 grin_plot_params_group <- function(results, ids = NULL, palette = NULL, title = NULL, base_size = 12) {
   td <- grin_tidy(results, ids)
@@ -124,10 +146,21 @@ grin_plot_params_group <- function(results, ids = NULL, palette = NULL, title = 
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
 }
 
-#' Plot the distribution of GRT model classes across many participants
+#' Plot componentwise modal structures across many participants
 #'
 #' @inheritParams grin_plot_space_group
 #' @return A ggplot object.
+#' @examples
+#' \donttest{
+#' # Inference needs libtorch, which is downloaded on first use and is not
+#' # present on CRAN's check machines; the guard keeps this example safe there.
+#' if (torch::torch_is_installed()) {
+#'   M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+#'                 13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+#'   fits <- list(p1 = grin_infer(M), p2 = grin_infer(M))
+#'   grin_plot_model_classes(fits)
+#' }
+#' }
 #' @export
 grin_plot_model_classes <- function(results, ids = NULL, palette = NULL, title = NULL, base_size = 12) {
   td <- grin_tidy(results, ids)
@@ -140,7 +173,7 @@ grin_plot_model_classes <- function(results, ids = NULL, palette = NULL, title =
     ggplot2::geom_col(fill = col) +
     ggplot2::geom_text(ggplot2::aes(label = .data$Freq), vjust = -0.4, color = .grin_colors$ink) +
     ggplot2::labs(x = NULL, y = "participants",
-                 title = .grin_title(title, "Inferred model class"),
+                 title = .grin_title(title, "Componentwise modal structure"),
                  subtitle = sprintf("n = %d participants", nrow(td))) +
     theme_grin(base_size) +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 30, hjust = 1))
@@ -155,6 +188,17 @@ grin_plot_model_classes <- function(results, ids = NULL, palette = NULL, title =
 #'
 #' @inheritParams grin_plot_space_group
 #' @return A ggplot object.
+#' @examples
+#' \donttest{
+#' # Inference needs libtorch, which is downloaded on first use and is not
+#' # present on CRAN's check machines; the guard keeps this example safe there.
+#' if (torch::torch_is_installed()) {
+#'   M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+#'                 13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+#'   fits <- list(p1 = grin_infer(M), p2 = grin_infer(M))
+#'   grin_plot_precision_group(fits)
+#' }
+#' }
 #' @export
 grin_plot_precision_group <- function(results, ids = NULL, palette = NULL, title = NULL, base_size = 12) {
   td <- grin_tidy(results, ids)
