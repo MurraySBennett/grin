@@ -187,6 +187,101 @@ treatment.
 
 ---
 
+## Shipping the packages
+
+Two distributables, two registries, one git tag. The tag is what makes a version
+claim in the manuscript retrievable: package metadata saying `0.1.0` is not a
+release, and `pip install grintools==0.1.0` has to actually resolve before the
+Code availability statement can say so.
+
+| | name | registry | install |
+|---|---|---|---|
+| Python | `grintools` | PyPI | `pip install grintools` |
+| R | `grin` | CRAN | `install.packages("grin")` |
+| research pipeline | `grin-pipeline` | **nowhere** | `pip install -e .` |
+
+The third is the training and validation code at the repo root. It is not a
+product: it carries the `Private :: Do Not Upload` classifier so PyPI refuses it,
+and the name `grin` on PyPI belongs to an unrelated project.
+
+### 1. Verify before tagging
+
+Both must be green **before** the tag, because the tag is what CI publishes from.
+
+```bash
+# Python: build, check metadata, install the wheel, test from OUTSIDE the repo
+python -m build packages/grintools
+twine check packages/grintools/dist/*
+pip install --force-reinstall packages/grintools/dist/*.whl
+mkdir -p /tmp/grin_smoke && cp packages/grintools/tests/test_*.py /tmp/grin_smoke/
+(cd /tmp/grin_smoke && pytest -q)     # must be green from a directory with no source
+
+# R: check as CRAN does, with libtorch ABSENT (that is CRAN's environment)
+R CMD build packages/grin
+R CMD check --as-cran grin_*.tar.gz
+```
+
+Running the R check outside the repo matters for the same reason the Python one
+does: a `grintools/` directory in the working directory shadows the installed
+package through implicit namespace resolution, so a test can pass against source
+that was never packaged.
+
+### 2. Tag and release
+
+```bash
+git tag -a v0.1.0 -m "GRIN 0.1.0 — manuscript submission"
+git push --tags
+gh release create v0.1.0 --title "GRIN 0.1.0" --notes-file packages/grin/NEWS.md
+```
+
+Publishing the GitHub release fires `.github/workflows/publish.yml`, which builds
+and uploads `grintools` to PyPI over OIDC trusted publishing. No API token is
+stored anywhere. This requires, one time only: register the project on PyPI, then
+add `MurraySBennett/grin` + workflow `publish.yml` as a trusted publisher.
+
+### 3. Archive for a citable DOI
+
+Enable the repo in Zenodo **before** cutting the release — Zenodo only sees
+releases created after the hook is switched on. The release then mints a DOI;
+record it in `CITATION.cff` under `doi:` and in the manuscript.
+
+This is a *software* DOI and is not the same thing as the OSF bulk-artifact DOI
+already in `results/run_manifest.json` under `bulk_archive`. The paper needs both:
+one identifies the code, the other the gigabytes of training output the figures
+rest on.
+
+### 4. CRAN
+
+CRAN is a human queue, and unlike PyPI it is not same-day. Submit via
+<https://cran.r-project.org/submit.html> with `packages/grin/cran-comments.md`.
+
+The one thing that will draw a comment is libtorch. The `torch` package downloads
+it on first *use*, not at install, so it is absent on CRAN's check machines and
+the package must degrade cleanly rather than fail:
+
+* examples that infer are `\donttest{}` **and** guarded by
+  `if (torch::torch_is_installed())`
+* the vignette sets `eval` from `torch::torch_is_installed()` and prints a note
+  when output is omitted
+* inference tests `skip_if_not(torch::torch_is_installed())`
+
+`cran-comments.md` states all three up front. Re-run `R CMD check --as-cran` with
+libtorch genuinely absent before every resubmission — that, not a local run with
+libtorch present, is the check CRAN actually performs.
+
+On acceptance, three things become true that are currently written as pending:
+
+* add `https://cran.r-project.org/package=grin` to `CITATION.cff` `identifiers`
+* replace the "from GitHub until this is on CRAN" install block in
+  `packages/grin/README.md` with `install.packages("grin")`
+* the manuscript's Code availability statement can name CRAN rather than a commit
+
+Do not write any of them before the acceptance email arrives. A README promising
+`install.packages("grin")` while CRAN is still reviewing is the same class of
+false claim this whole section exists to remove.
+
+---
+
 ## Shipping the website
 
 ```bash
