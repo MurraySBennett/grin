@@ -106,10 +106,12 @@ jobs:
         run: |
           Rscript -e 'if (isTRUE(torch::torch_is_installed())) stop("libtorch present; this job must run without it")'
         working-directory: packages/grin
+      # No args override: the action already defaults to c("--no-manual", "--as-cran").
+      # Passing just c("--as-cran") re-enables the PDF manual, which needs LaTeX the
+      # runner does not have -- that fails the job on the manual, not on the package.
       - uses: r-lib/actions/check-r-package@v2
         with:
           working-directory: packages/grin
-          args: 'c("--as-cran")'
           error-on: '"warning"'
 
   r-package:
