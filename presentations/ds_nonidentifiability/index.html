@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Decisional Separability Non-identifiability</title>
+  <style>
+    /* Same design system as ../grin_project_talks/index.html:
+       flat, typographic, one accent. Rules instead of boxes. */
+    :root {
+      --bg: #faf8f3;
+      --paper: transparent;
+      --panel: transparent;
+      --ink: #16191b;
+      --muted: #6d7377;
+      --line: #d7d1c4;
+      --rule: #b9b2a2;
+      --accent: #a8412c;
+      --teal: var(--accent); --rust: var(--accent);
+      --gold: var(--muted); --violet: var(--muted);
+      --shadow: none;
+      --mono: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .deck { width: 100vw; height: 100vh; position: relative; }
+
+    .slide {
+      display: none;
+      min-height: 100vh;
+      padding: 8vh 8vw 10vh;
+      overflow: auto;
+      align-content: center;
+      gap: 1.6rem;
+      background: var(--bg);
+    }
+
+    .slide.active { display: grid; }
+
+    h1, h2, h3, p { margin: 0; }
+
+    h1 {
+      max-width: 16ch;
+      font-size: clamp(2.9rem, 5.2vw, 5.2rem);
+      font-weight: 600;
+      line-height: 1.02;
+      letter-spacing: -0.022em;
+    }
+
+    h2 {
+      max-width: 20ch;
+      font-size: clamp(1.9rem, 3.4vw, 3.5rem);
+      font-weight: 600;
+      line-height: 1.06;
+      letter-spacing: -0.018em;
+    }
+
+    h3 {
+      font-size: clamp(1.05rem, 1.55vw, 1.4rem);
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    p, li {
+      font-size: clamp(1rem, 1.32vw, 1.32rem);
+      line-height: 1.5;
+      font-weight: 400;
+    }
+
+    .kicker {
+      font-family: var(--mono);
+      color: var(--muted);
+      font-size: clamp(0.7rem, 0.82vw, 0.82rem);
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding-bottom: 0.55rem;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 0.15rem;
+    }
+
+    .lede {
+      max-width: 62rem;
+      font-size: clamp(1.15rem, 1.72vw, 1.72rem);
+      line-height: 1.34;
+      color: var(--muted);
+    }
+
+    .muted { color: var(--muted); }
+    .accent, .teal { color: var(--accent); }
+
+    .grid-2 { display: grid; grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr); gap: clamp(1.5rem, 4vw, 4rem); align-items: center; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem; }
+
+    .panel {
+      background: var(--panel);
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+      padding: 0;
+    }
+
+    .figure {
+      display: block;
+      width: 100%;
+      max-height: 74vh;
+      object-fit: contain;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .equation {
+      display: grid;
+      gap: 0.55rem;
+      font-family: var(--mono);
+      font-size: clamp(0.98rem, 1.4vw, 1.45rem);
+      line-height: 1.42;
+      color: var(--ink);
+    }
+
+    .equation div {
+      padding: 0.15rem 0 0.15rem 1.05rem;
+      border-left: 2px solid var(--line);
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .stat {
+      background: transparent;
+      border: 0;
+      border-top: 1px solid var(--line);
+      border-radius: 0;
+      box-shadow: none;
+      padding: 0.9rem 0 0;
+      display: grid;
+      align-content: start;
+      gap: 0.3rem;
+    }
+
+    .stat strong {
+      font-family: var(--mono);
+      font-size: clamp(1.4rem, 2.35vw, 2.35rem);
+      font-weight: 500;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat span { color: var(--muted); font-size: clamp(0.84rem, 1vw, 0.98rem); line-height: 1.4; }
+
+    .mini { font-size: clamp(0.82rem, 0.95vw, 0.98rem); line-height: 1.45; color: var(--muted); }
+
+    .callout {
+      border: 0;
+      border-left: 2px solid var(--accent);
+      border-radius: 0;
+      background: transparent;
+      color: var(--ink);
+      padding: 0.15rem 0 0.15rem 1.15rem;
+      max-width: 72rem;
+    }
+
+    .svgbox {
+      width: 100%;
+      aspect-ratio: 1.45;
+      min-height: 26rem;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      overflow: hidden;
+    }
+
+    svg { width: 100%; height: 100%; display: block; }
+
+    .range-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 0.9rem;
+      margin-top: 1.1rem;
+      font-family: var(--mono);
+      font-size: 0.84rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: transparent;
+      border: 0;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      border-radius: 0;
+      font-size: clamp(0.86rem, 1.02vw, 1.02rem);
+      font-variant-numeric: tabular-nums;
+    }
+
+    th, td { padding: 0.62rem 0.8rem 0.62rem 0; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th:first-child, td:first-child { padding-left: 0; }
+
+    th {
+      background: transparent;
+      font-family: var(--mono);
+      font-size: 0.78em;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom-color: var(--rule);
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .controls {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      transform: none;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.42rem 0.6rem;
+      background: var(--bg);
+      border: 0;
+      border-top: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      border-radius: 0;
+      box-shadow: none;
+      backdrop-filter: none;
+      z-index: 10;
+      font-family: var(--mono);
+      opacity: 0.42;
+      transition: opacity 0.15s ease;
+    }
+
+    .controls:hover, .controls:focus-within { opacity: 1; }
+
+    .controls button {
+      min-height: 1.9rem;
+      padding: 0.34rem 0.6rem;
+      border: 1px solid var(--ink);
+      border-radius: 0;
+      background: var(--ink);
+      color: var(--bg);
+      font-family: var(--mono);
+      font-size: 0.76rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .controls button:disabled { opacity: 0.3; cursor: default; }
+
+    .counter { min-width: 4.6rem; text-align: center; color: var(--muted); font-family: var(--mono); font-size: 0.76rem; font-variant-numeric: tabular-nums; }
+    .progress { position: fixed; left: 0; bottom: 0; height: 2px; background: var(--accent); z-index: 11; width: 0; }
+
+    .two-lines { display: grid; gap: 1rem; max-width: 70rem; }
+    .compact-list { display: grid; gap: 0.6rem; margin: 0; padding-left: 1.15rem; }
+    .compact-list li::marker { color: var(--muted); }
+
+    .badge-row { display: flex; flex-wrap: wrap; gap: 0 0.7rem; font-family: var(--mono); }
+    .badge {
+      border: 0;
+      background: transparent;
+      border-radius: 0;
+      padding: 0;
+      color: var(--muted);
+      font-weight: 500;
+      font-size: clamp(0.72rem, 0.84vw, 0.84rem);
+      letter-spacing: 0.04em;
+    }
+    .badge + .badge::before { content: "·"; margin-right: 0.7rem; color: var(--rule); }
+
+    @media (max-width: 960px) {
+      body { overflow: auto; }
+      .deck { height: auto; min-height: 100vh; }
+      .slide { min-height: 100vh; padding: 4rem 1.4rem 6rem; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      h1 { max-width: 14ch; }
+      h2 { max-width: 16ch; }
+      .svgbox { min-height: 18rem; }
+      .controls { width: 100%; justify-content: center; opacity: 1; }
+    }
+
+    @media print {
+      body { overflow: visible; background: #fff; }
+      .deck { height: auto; }
+      .slide { display: grid !important; page-break-after: always; min-height: 100vh; padding: 0.5in; background: #fff; }
+      .controls, .progress { display: none !important; }
+      .panel, .figure, .stat, table { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck" id="deck">
+    <section class="slide active">
+      <div class="kicker">GRIN teaching deck</div>
+      <h1>Why DS is hard to see</h1>
+      <p class="lede">A decisional-separability violation can produce the same identification probabilities as a non-violated GRT model after a rotation, shear, or stretch of perceptual space.</p>
+      <div class="badge-row">
+        <span class="badge">2x2 identification</span>
+        <span class="badge">Gaussian GRT</span>
+        <span class="badge">Known identifiability limit</span>
+        <span class="badge">Robustness output: 2026-08-28</span>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="grid-2">
+        <div class="two-lines">
+          <div class="kicker">The data problem</div>
+          <h2>The matrix is not the mechanism</h2>
+          <p>Identification data give response probabilities for each stimulus. They do not directly reveal whether an interaction came from perception or from the response rule.</p>
+          <p class="muted">This is why decisional separability is an assumption in the current GRIN model, not a construct the estimator can test from a single confusion matrix.</p>
+        </div>
+        <img class="figure" src="assets/vignette.png" alt="Four matched-accuracy identification examples from the manuscript vignette">
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="grid-2">
+        <div class="two-lines">
+          <div class="kicker">Geometry</div>
+          <h2>Move the bound or move the space</h2>
+          <p>The red decision bound violates DS because the A criterion changes with perceived B. But the same response rule is a vertical bound in a transformed coordinate system.</p>
+          <div class="range-row">
+            <strong>A-bound slope</strong>
+            <input id="slope" type="range" min="0" max="0.6" step="0.15" value="0.3">
+            <strong id="slopeValue">0.30</strong>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="svgbox">
+            <svg viewBox="0 0 720 500" role="img" aria-label="Interactive schematic of tilted decisional bound and transformed coordinate">
+              <defs>
+                <marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+                  <path d="M0,0 L8,4 L0,8 Z" fill="#6d7377"></path>
+                </marker>
+              </defs>
+              
+              <line x1="80" y1="250" x2="640" y2="250" stroke="#b9b2a2" stroke-width="1"></line>
+              <line x1="360" y1="450" x2="360" y2="50" stroke="#b9b2a2" stroke-width="1"></line>
+              <line x1="360" y1="450" x2="360" y2="50" stroke="#16191b" stroke-width="2.5"></line>
+              <line id="tiltLine" x1="240" y1="450" x2="480" y2="50" stroke="#a8412c" stroke-width="2.5"></line>
+              <line id="uAxis" x1="150" y1="380" x2="570" y2="120" stroke="#6d7377" stroke-width="1.5" stroke-dasharray="10 8" marker-end="url(#arrow)"></line>
+              <text x="370" y="74" fill="#16191b" font-size="22" font-weight="600">DS model: x = 0</text>
+              <text id="tiltLabel" x="445" y="93" fill="#a8412c" font-size="22" font-weight="600">DS violation: x = 0.30 y</text>
+              <text id="axisLabel" x="505" y="142" fill="#6d7377" font-size="20" font-weight="600">U = X - 0.30Y</text>
+              <g id="clouds">
+                <ellipse cx="260" cy="335" rx="54" ry="36" fill="#5AA9E6" opacity="0.16" stroke="#5AA9E6" stroke-width="1.5"></ellipse>
+                <ellipse cx="270" cy="170" rx="54" ry="36" fill="#C86A93" opacity="0.16" stroke="#C86A93" stroke-width="1.5"></ellipse>
+                <ellipse cx="475" cy="335" rx="54" ry="36" fill="#2E6CA4" opacity="0.16" stroke="#6d7377" stroke-width="1.5"></ellipse>
+                <ellipse cx="485" cy="170" rx="54" ry="36" fill="#F2A5C0" opacity="0.16" stroke="#F2A5C0" stroke-width="1.5"></ellipse>
+                <circle cx="260" cy="335" r="5" fill="#5AA9E6"></circle>
+                <circle cx="270" cy="170" r="5" fill="#C86A93"></circle>
+                <circle cx="475" cy="335" r="5" fill="#2E6CA4"></circle>
+                <circle cx="485" cy="170" r="5" fill="#F2A5C0"></circle>
+              </g>
+              <text x="610" y="270" fill="#6d7377" font-size="20">X</text>
+              <text x="374" y="58" fill="#6d7377" font-size="20">Y</text>
+            </svg>
+          </div>
+          <p class="mini">The schematic is conceptual. The robustness script uses exact bivariate-normal quadrant probabilities for the tilted decision rule.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="grid-2">
+        <div class="two-lines">
+          <div class="kicker">The equivalence</div>
+          <h2>A tilted bound can be absorbed into the perceptual coordinates</h2>
+          <p>Define a new coordinate that measures signed distance from the tilted A-bound. The response quadrants become ordinary GRT quadrants again.</p>
+        </div>
+        <div class="panel equation">
+          <div>DS-violating rule:  respond A₂ if  X − sY &gt; 0</div>
+          <div>Transform:  U = X − sY,  V = Y</div>
+          <div>Sensitivity:  zᵤ = (zₓ − s·zᵧ) ∕ √(1 + s² − 2sρ)</div>
+          <div>Correlation:  ρᵤᵥ = (ρ − s) ∕ √(1 + s² − 2sρ)</div>
+          <div>⇒ P(response) is ordinary Gaussian GRT in (U, V)</div>
+        </div>
+      </div>
+      <div class="callout">
+        <p>The confusion matrix cannot say whether the observer used a tilted decision bound in (X, Y), or a vertical bound in a sheared/rotated perceptual space.</p>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="grid-2">
+        <div class="two-lines">
+          <div class="kicker">What we ran</div>
+          <h2>Use GRIN as the demonstration</h2>
+          <p>We generated clean PI/PS/DS perceptual representations, then tilted the A decision bound by slope. GRIN was then asked to fit the usual DS-assuming model to the resulting matrices.</p>
+          <p class="muted">This is not a new validation claim. It is a practical visualization of the known GRT identifiability issue.</p>
+        </div>
+        <div class="panel">
+          <table>
+            <thead>
+              <tr>
+                <th>Quantity</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Seed</td><td>20260828</td></tr>
+              <tr><td>Matrices per DS slope</td><td>1,800</td></tr>
+              <tr><td>Trial range per stimulus</td><td>12 to 200</td></tr>
+              <tr><td>True generating class</td><td>PI, PS, DS</td></tr>
+              <tr><td>Scored outputs</td><td>construct evidence, class accuracy, parameter MAE, support warning</td></tr>
+              <tr><td>Source script</td><td>scripts/robustness_addendum.py</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="grid-2">
+        <div class="two-lines">
+          <div class="kicker">Observed result</div>
+          <h2>False construct evidence rises; support warnings barely move</h2>
+          <p>The network is not broken here. It is doing what any DS-assuming GRT estimator must do: find the best non-violated representation for data that can be re-expressed that way.</p>
+          <div class="grid-3">
+            <div class="stat"><strong>90.9%</strong><span>false construct evidence at slope 0.60</span></div>
+            <div class="stat"><strong>6.8%</strong><span>training-support warning rate at slope 0.60</span></div>
+            <div class="stat"><strong>2.9%</strong><span>exact 12-way class accuracy at slope 0.60</span></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="svgbox"><svg id="dsChart" viewBox="0 0 720 500" role="img" aria-label="Line chart of false construct evidence and support warnings by DS bound slope"></svg></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="grid-2">
+        <div class="two-lines">
+          <div class="kicker">Contrast</div>
+          <h2>Other departures are model-mismatch problems, not the same problem</h2>
+          <p>Lapses and overdispersion degrade recovery too. But DS is sharper pedagogically because the response matrix can remain perfectly compatible with a different non-violated GRT representation.</p>
+          <p class="muted">That is why the support check should be described as a training-support check, not a detector of decisional-rule violations.</p>
+        </div>
+        <img class="figure" src="assets/robustness_addendum.png" alt="Robustness addendum summary figure">
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="two-lines">
+        <div class="kicker">Teaching script</div>
+        <h2>What students should take away</h2>
+        <ul class="compact-list">
+          <li>GRT separates perceptual and decisional explanations only under assumptions about the decision bounds.</li>
+          <li>A single identification confusion matrix is a probability table, not a direct picture of the perceptual space.</li>
+          <li>DS violations can masquerade as perceptual separability or correlation effects after a coordinate transformation.</li>
+          <li>GRIN inherits this limitation because it estimates the Gaussian GRT model class; amortisation does not create new information.</li>
+          <li>To move the boundary, change the design: add conditions with known bounds, extra observables, response times with an explicit joint model, or group-level constraints.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="grid-2">
+        <div class="two-lines">
+          <div class="kicker">Where this belongs</div>
+          <h2>Good classroom figure; weak main-text contribution</h2>
+          <p>The manuscript should cite the formal identifiability result and state the limitation plainly. This deck is useful because it makes the abstract equivalence visible.</p>
+        </div>
+        <div class="panel">
+          <table>
+            <thead>
+              <tr>
+                <th>Use case</th>
+                <th>Recommended handling</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Classroom or lab meeting</td><td>Use this deck</td></tr>
+              <tr><td>Reviewer asks about DS robustness</td><td>Use addendum as response/supplement</td></tr>
+              <tr><td>Main manuscript</td><td>Cite known limit; do not overclaim</td></tr>
+              <tr><td>Future project</td><td>Design-based identification, not another confusion-matrix estimator</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="controls" aria-label="Slide controls">
+    <button id="prev" type="button">Prev</button>
+    <span class="counter" id="counter">1 / 9</span>
+    <button id="next" type="button">Next</button>
+  </div>
+  <div class="progress" id="progress"></div>
+
+  <script>
+    const dsRows = [
+      { slope: 0.00, falseEvidence: 0.10333333333333333, supportWarning: 0.0, classAccuracy: 0.6522222222222223 },
+      { slope: 0.15, falseEvidence: 0.31, supportWarning: 0.0, classAccuracy: 0.4061111111111111 },
+      { slope: 0.30, falseEvidence: 0.6511111111111111, supportWarning: 0.0044444444444444444, classAccuracy: 0.16277777777777777 },
+      { slope: 0.45, falseEvidence: 0.8111111111111111, supportWarning: 0.02388888888888889, classAccuracy: 0.07611111111111112 },
+      { slope: 0.60, falseEvidence: 0.9088888888888889, supportWarning: 0.06777777777777778, classAccuracy: 0.028888888888888888 }
+    ];
+
+    const slides = Array.from(document.querySelectorAll(".slide"));
+    const prev = document.getElementById("prev");
+    const next = document.getElementById("next");
+    const counter = document.getElementById("counter");
+    const progress = document.getElementById("progress");
+    let index = 0;
+
+    function showSlide(i) {
+      index = Math.max(0, Math.min(slides.length - 1, i));
+      slides.forEach((slide, j) => slide.classList.toggle("active", j === index));
+      prev.disabled = index === 0;
+      next.disabled = index === slides.length - 1;
+      counter.textContent = `${index + 1} / ${slides.length}`;
+      progress.style.width = `${((index + 1) / slides.length) * 100}%`;
+    }
+
+    prev.addEventListener("click", () => showSlide(index - 1));
+    next.addEventListener("click", () => showSlide(index + 1));
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") showSlide(index + 1);
+      if (event.key === "ArrowLeft" || event.key === "PageUp") showSlide(index - 1);
+      if (event.key === "Home") showSlide(0);
+      if (event.key === "End") showSlide(slides.length - 1);
+    });
+
+    const slope = document.getElementById("slope");
+    const slopeValue = document.getElementById("slopeValue");
+    const tiltLine = document.getElementById("tiltLine");
+    const tiltLabel = document.getElementById("tiltLabel");
+    const axisLabel = document.getElementById("axisLabel");
+    const uAxis = document.getElementById("uAxis");
+
+    function updateSlope() {
+      const s = Number(slope.value);
+      slopeValue.textContent = s.toFixed(2);
+      const centerX = 360;
+      const centerY = 250;
+      const topY = 50;
+      const bottomY = 450;
+      const scaleY = 120;
+      const topX = centerX + s * ((centerY - topY) / scaleY) * 75;
+      const bottomX = centerX + s * ((centerY - bottomY) / scaleY) * 75;
+      tiltLine.setAttribute("x1", bottomX);
+      tiltLine.setAttribute("y1", bottomY);
+      tiltLine.setAttribute("x2", topX);
+      tiltLine.setAttribute("y2", topY);
+      uAxis.setAttribute("x1", 165 + s * 60);
+      uAxis.setAttribute("y1", 384);
+      uAxis.setAttribute("x2", 585 - s * 30);
+      uAxis.setAttribute("y2", 134 - s * 60);
+      tiltLabel.textContent = `DS violation: x = ${s.toFixed(2)} y`;
+      axisLabel.textContent = `U = X - ${s.toFixed(2)}Y`;
+    }
+
+    slope.addEventListener("input", updateSlope);
+    updateSlope();
+
+    function chartPath(rows, key, x, y) {
+      return rows.map((row, i) => {
+        const px = x(row.slope);
+        const py = y(row[key]);
+        return `${i === 0 ? "M" : "L"}${px.toFixed(1)},${py.toFixed(1)}`;
+      }).join(" ");
+    }
+
+    function drawChart() {
+      const svg = document.getElementById("dsChart");
+      const width = 720;
+      const height = 500;
+      const margin = { left: 78, right: 34, top: 46, bottom: 76 };
+      const x0 = margin.left;
+      const x1 = width - margin.right;
+      const y0 = height - margin.bottom;
+      const y1 = margin.top;
+      const x = (v) => x0 + (v / 0.6) * (x1 - x0);
+      const y = (v) => y0 - v * (y0 - y1);
+      const ticks = [0, 0.25, 0.5, 0.75, 1.0];
+      const slopeTicks = [0, 0.15, 0.30, 0.45, 0.60];
+      const circles = (key, color) => dsRows.map((row) =>
+        `<circle cx="${x(row.slope).toFixed(1)}" cy="${y(row[key]).toFixed(1)}" r="6" fill="${color}"></circle>`
+      ).join("");
+
+      svg.innerHTML = `
+        <rect width="${width}" height="${height}" fill="#fff"></rect>
+        ${ticks.map((t) => `
+          <line x1="${x0}" x2="${x1}" y1="${y(t)}" y2="${y(t)}" stroke="#e4ded1" stroke-width="1"></line>
+          <text x="${x0 - 16}" y="${y(t) + 6}" text-anchor="end" fill="#6d7377" font-size="17">${Math.round(t * 100)}%</text>
+        `).join("")}
+        ${slopeTicks.map((t) => `
+          <line x1="${x(t)}" x2="${x(t)}" y1="${y0}" y2="${y0 + 7}" stroke="#b9b2a2" stroke-width="1"></line>
+          <text x="${x(t)}" y="${y0 + 34}" text-anchor="middle" fill="#6d7377" font-size="17">${t.toFixed(2)}</text>
+        `).join("")}
+        <line x1="${x0}" x2="${x1}" y1="${y0}" y2="${y0}" stroke="#16191b" stroke-width="1"></line>
+        <line x1="${x0}" x2="${x0}" y1="${y0}" y2="${y1}" stroke="#16191b" stroke-width="1"></line>
+        <path d="${chartPath(dsRows, "falseEvidence", x, y)}" fill="none" stroke="#a8412c" stroke-width="2"></path>
+        <path d="${chartPath(dsRows, "supportWarning", x, y)}" fill="none" stroke="#16191b" stroke-width="2"></path>
+        <path d="${chartPath(dsRows, "classAccuracy", x, y)}" fill="none" stroke="#6d7377" stroke-width="1.75" stroke-dasharray="10 8"></path>
+        ${circles("falseEvidence", "#a8412c")}
+        ${circles("supportWarning", "#16191b")}
+        ${circles("classAccuracy", "#6d7377")}
+        <text x="${(x0 + x1) / 2}" y="${height - 22}" text-anchor="middle" fill="#16191b" font-size="20" font-weight="600">A-bound tilt slope</text>
+        <text x="22" y="${(y0 + y1) / 2}" transform="rotate(-90 22 ${(y0 + y1) / 2})" text-anchor="middle" fill="#16191b" font-size="20" font-weight="600">fraction of matrices</text>
+        <rect x="395" y="58" width="250" height="92" rx="0" fill="none" stroke="none"></rect>
+        <line x1="412" x2="452" y1="84" y2="84" stroke="#a8412c" stroke-width="2"></line>
+        <text x="464" y="91" fill="#16191b" font-size="17">false construct evidence</text>
+        <line x1="412" x2="452" y1="112" y2="112" stroke="#16191b" stroke-width="2"></line>
+        <text x="464" y="119" fill="#16191b" font-size="17">support warning</text>
+        <line x1="412" x2="452" y1="140" y2="140" stroke="#6d7377" stroke-width="1.75" stroke-dasharray="10 8"></line>
+        <text x="464" y="147" fill="#16191b" font-size="17">exact class accuracy</text>
+      `;
+    }
+
+    drawChart();
+    showSlide(0);
+  </script>
+</body>
+</html>

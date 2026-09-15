@@ -1,0 +1,1088 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GRIN Project Talks</title>
+  <style>
+    /* ------------------------------------------------------------------
+       Flat, typographic, two-colour. Rules instead of boxes; no shadows,
+       no pills, no rainbow. Labels are monospace, prose is not.
+       ------------------------------------------------------------------ */
+    :root {
+      --bg: #faf8f3;
+      --ink: #16191b;
+      --muted: #6d7377;
+      --line: #d7d1c4;
+      --rule: #b9b2a2;
+      --paper: transparent;
+      --accent: #a8412c;
+      /* aliases: kept so nothing referencing the old names breaks */
+      --teal: var(--accent); --teal2: var(--accent); --rust: var(--accent);
+      --gold: var(--muted); --green: var(--muted); --violet: var(--muted); --blue: var(--muted);
+      --shadow: none;
+      --mono: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body.light { --bg: #fdfcf9; }
+    body.stage {
+      --bg: #14181a; --ink: #f2efe8; --muted: #9aa3a7;
+      --line: #333c40; --rule: #4a555a; --accent: #e07a5f;
+      background: var(--bg); color: var(--ink);
+    }
+    body.stage .slide { background: var(--bg); }
+    body.stage table { background: transparent; }
+    body.stage th { background: #1e2528; }
+
+    .deck { width: 100vw; height: 100vh; position: relative; }
+
+    .slide {
+      display: none;
+      min-height: 100vh;
+      padding: 8vh 8vw 10vh;
+      overflow: auto;
+      align-content: center;
+      gap: 1.6rem;
+      background: var(--bg);
+    }
+
+    .slide.active { display: grid; }
+
+    h1, h2, h3, p { margin: 0; }
+
+    h1 {
+      max-width: 16ch;
+      font-size: clamp(2.9rem, 5.2vw, 5.2rem);
+      font-weight: 600;
+      line-height: 1.02;
+      letter-spacing: -0.022em;
+    }
+
+    h2 {
+      max-width: 20ch;
+      font-size: clamp(1.9rem, 3.4vw, 3.5rem);
+      font-weight: 600;
+      line-height: 1.06;
+      letter-spacing: -0.018em;
+    }
+
+    h3 {
+      font-size: clamp(1.05rem, 1.55vw, 1.4rem);
+      font-weight: 600;
+      line-height: 1.2;
+      letter-spacing: -0.006em;
+    }
+
+    p, li {
+      font-size: clamp(1rem, 1.32vw, 1.32rem);
+      line-height: 1.5;
+      font-weight: 400;
+    }
+
+    /* Section label: monospace, quiet, sits above the rule. */
+    .kicker {
+      font-family: var(--mono);
+      color: var(--muted);
+      font-size: clamp(0.7rem, 0.82vw, 0.82rem);
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding-bottom: 0.55rem;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 0.15rem;
+    }
+
+    .lede {
+      max-width: 62rem;
+      font-size: clamp(1.15rem, 1.72vw, 1.72rem);
+      line-height: 1.34;
+      font-weight: 400;
+      color: var(--muted);
+    }
+
+    .muted { color: var(--muted); }
+    .small { color: var(--muted); font-size: clamp(0.82rem, 0.95vw, 0.96rem); line-height: 1.45; }
+    .rust, .teal, .gold { color: var(--accent); }
+
+    .stack { display: grid; gap: 1.1rem; align-content: start; }
+    .wide { max-width: 72rem; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+      gap: clamp(1.5rem, 4vw, 4rem);
+      align-items: center;
+    }
+
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.6rem; }
+
+    /* No fills, no borders, no shadows. A hairline and space. */
+    .panel, .card, .stat {
+      background: var(--paper);
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .panel { padding: 0; }
+
+    .card {
+      padding: 0.9rem 0 0;
+      min-height: 0;
+      border-top: 1px solid var(--line);
+      display: grid;
+      align-content: start;
+      gap: 0.4rem;
+    }
+
+    .card strong {
+      display: block;
+      color: var(--ink);
+      font-size: clamp(0.98rem, 1.2vw, 1.18rem);
+      font-weight: 600;
+      line-height: 1.22;
+    }
+
+    .card span {
+      color: var(--muted);
+      font-size: clamp(0.86rem, 1vw, 1rem);
+      line-height: 1.45;
+    }
+
+    .stat {
+      min-height: 0;
+      padding: 0.9rem 0 0;
+      border-top: 1px solid var(--line);
+      display: grid;
+      align-content: start;
+      gap: 0.3rem;
+    }
+
+    .stat strong {
+      font-family: var(--mono);
+      color: var(--ink);
+      font-size: clamp(1.4rem, 2.35vw, 2.35rem);
+      font-weight: 500;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: clamp(0.84rem, 1vw, 0.98rem);
+      line-height: 1.4;
+    }
+
+    /* Figures sit on the page. They are already framed by matplotlib. */
+    .figure {
+      display: block;
+      width: 100%;
+      max-height: 74vh;
+      object-fit: contain;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .figure.short { max-height: 60vh; }
+    .figure.tall { max-height: 80vh; }
+    body.stage .figure { background: #fff; padding: 0.6rem; }
+
+    .callout {
+      max-width: 72rem;
+      border: 0;
+      border-left: 2px solid var(--accent);
+      border-radius: 0;
+      background: transparent;
+      color: var(--ink);
+      padding: 0.15rem 0 0.15rem 1.15rem;
+    }
+
+    body.stage .callout { background: transparent; color: var(--ink); }
+
+    ul { margin: 0; padding-left: 1.15rem; display: grid; gap: 0.6rem; }
+    li::marker { color: var(--muted); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: transparent;
+      border: 0;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      border-radius: 0;
+      font-size: clamp(0.86rem, 1.02vw, 1.02rem);
+      font-variant-numeric: tabular-nums;
+    }
+
+    th, td {
+      padding: 0.62rem 0.8rem 0.62rem 0;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: transparent;
+      font-family: var(--mono);
+      font-size: 0.78em;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom-color: var(--rule);
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    /* Numbered steps, one hairline each. No colour coding. */
+    .workflow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1.4rem; counter-reset: step; }
+
+    .step {
+      min-height: 0;
+      background: transparent;
+      border: 0;
+      border-top: 1px solid var(--line);
+      border-radius: 0;
+      padding: 0.85rem 0 0;
+      counter-increment: step;
+    }
+
+    .step::before {
+      content: counter(step);
+      display: block;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .step strong { display: block; margin-bottom: 0.3rem; font-weight: 600; font-size: 1rem; line-height: 1.2; }
+    .step span { color: var(--muted); font-size: 0.9rem; line-height: 1.45; }
+
+    .svgbox {
+      width: 100%;
+      aspect-ratio: 1.45;
+      min-height: 26rem;
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      overflow: hidden;
+      box-shadow: none;
+    }
+
+    svg { width: 100%; height: 100%; display: block; }
+
+    .equation { display: grid; gap: 0.55rem; font-family: var(--mono); font-size: clamp(0.94rem, 1.24vw, 1.26rem); line-height: 1.42; }
+
+    .equation div {
+      padding: 0.15rem 0 0.15rem 1.05rem;
+      border-left: 2px solid var(--line);
+      border-radius: 0;
+      background: transparent;
+      color: var(--ink);
+    }
+
+    /* Metadata line, not pills. */
+    .badge-row { display: flex; flex-wrap: wrap; gap: 0 0.7rem; font-family: var(--mono); }
+    .badge {
+      border: 0;
+      background: transparent;
+      border-radius: 0;
+      padding: 0;
+      color: var(--muted);
+      font-weight: 500;
+      font-size: clamp(0.72rem, 0.84vw, 0.84rem);
+      letter-spacing: 0.04em;
+    }
+    .badge + .badge::before { content: "·"; margin-right: 0.7rem; color: var(--rule); }
+
+    /* Controls recede: flat, square, bottom-left, monospace. */
+    .toolbar {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      transform: none;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.42rem 0.6rem;
+      max-width: 100vw;
+      background: var(--bg);
+      border: 0;
+      border-top: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      border-radius: 0;
+      box-shadow: none;
+      backdrop-filter: none;
+      opacity: 0.42;
+      transition: opacity 0.15s ease;
+      font-family: var(--mono);
+    }
+
+    .toolbar:hover, .toolbar:focus-within { opacity: 1; }
+
+    .toolbar button, .toolbar select, .toolbar label {
+      min-height: 1.9rem;
+      border-radius: 0;
+      border: 1px solid var(--line);
+      font-family: var(--mono);
+      font-size: 0.76rem;
+      font-weight: 500;
+    }
+
+    .toolbar button {
+      padding: 0.34rem 0.6rem;
+      color: var(--bg);
+      background: var(--ink);
+      border-color: var(--ink);
+      cursor: pointer;
+    }
+
+    .toolbar button:disabled { opacity: 0.3; cursor: default; }
+    .toolbar select { padding: 0.32rem 0.5rem; background: transparent; color: var(--ink); cursor: pointer; }
+    .toolbar label { display: flex; gap: 0.28rem; align-items: center; padding: 0.26rem 0.48rem; background: transparent; color: var(--muted); }
+    .toolbar input { accent-color: var(--accent); }
+
+    .counter { min-width: 4.6rem; text-align: center; color: var(--muted); font-weight: 500; font-size: 0.76rem; font-variant-numeric: tabular-nums; }
+    .progress { position: fixed; left: 0; bottom: 0; height: 2px; background: var(--accent); z-index: 21; width: 0; }
+
+    .note {
+      position: fixed;
+      top: 0;
+      right: 0;
+      z-index: 15;
+      display: none;
+      max-width: 26rem;
+      padding: 1rem 1.15rem;
+      border: 0;
+      border-left: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      border-radius: 0;
+      background: var(--bg);
+      box-shadow: none;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.5;
+      white-space: pre-line;
+    }
+
+    body.show-notes .note { display: block; }
+
+    .print-only { display: none; }
+
+    @media (max-width: 960px) {
+      html, body { overflow: auto; }
+      .deck { height: auto; min-height: 100vh; }
+      .slide { min-height: 100vh; padding: 4rem 1.4rem 6rem; }
+      .grid-2, .grid-3, .grid-4, .workflow { grid-template-columns: 1fr; }
+      h1 { max-width: 14ch; }
+      h2 { max-width: 16ch; }
+      .toolbar { width: 100%; flex-wrap: wrap; justify-content: center; opacity: 1; }
+      .svgbox { min-height: 18rem; }
+    }
+
+    @media print {
+      html, body { overflow: visible; background: #fff; }
+      .deck { height: auto; }
+      .slide {
+        display: grid !important;
+        page-break-after: always;
+        min-height: 100vh;
+        padding: 0.5in;
+        background: #fff;
+      }
+      .slide.hidden { display: none !important; }
+      .toolbar, .progress, .note { display: none !important; }
+      .panel, .card, .stat, .figure, .svgbox { box-shadow: none; }
+      .print-only { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck" id="deck"></main>
+
+  <div class="toolbar" aria-label="Deck controls">
+    <button id="prev" type="button">Prev</button>
+    <select id="profile" aria-label="Talk profile">
+      <option value="mathpsych">Math Psych</option>
+      <option value="psychonomics">Psychonomics</option>
+      <option value="university">University-wide</option>
+      <option value="jobtalk">Job talk segment</option>
+      <option value="postdoc">Postdoc/lab</option>
+      <option value="lab">Casual lab</option>
+    </select>
+    <select id="duration" aria-label="Talk length">
+      <option value="5">5 min</option>
+      <option value="10">10 min</option>
+      <option value="15" selected>15 min</option>
+      <option value="25">25 min</option>
+      <option value="45">45 min</option>
+    </select>
+    <label><input id="technical" type="checkbox"> technical</label>
+    <label><input id="ds" type="checkbox"> DS</label>
+    <label><input id="notes" type="checkbox"> notes</label>
+    <label><input id="stage" type="checkbox"> dark</label>
+    <span class="counter" id="counter">1 / 1</span>
+    <button id="print" type="button">Print</button>
+    <button id="next" type="button">Next</button>
+  </div>
+  <div class="progress" id="progress"></div>
+
+  <script>
+    const profileLabels = {
+      mathpsych: "Mathematical Psychology",
+      psychonomics: "Psychonomics",
+      university: "University-wide workshop",
+      jobtalk: "Job talk segment",
+      postdoc: "Postdoc/lab talk",
+      lab: "Casual lab meeting"
+    };
+
+    const slides = [
+      {
+        id: "title",
+        profiles: ["mathpsych", "psychonomics", "university", "jobtalk", "postdoc", "lab"],
+        durations: ["5", "10", "15", "25", "45"],
+        type: "title",
+        kicker: "GRIN",
+        title: "Real-time inference for perceptual expertise",
+        lede: "An amortised estimator for Gaussian GRT \u2014 fast enough to run inside the experiment, which is what adaptive perceptual training needs.",
+        badges: ["GRT", "simulation-based inference", "adaptive training", "open tools"],
+        notes: "Open with the research arc, not the package. The claim is that adaptive training needs a real-time model of what the learner currently perceives. GRIN is the engine that makes that feasible for GRT-style perceptual representations."
+      },
+      {
+        id: "training_arc",
+        profiles: ["university", "jobtalk", "postdoc", "lab", "psychonomics", "mathpsych"],
+        durations: ["5", "10", "15", "25", "45"],
+        type: "adaptive",
+        kicker: "Research arc",
+        title: "A training system needs a live model of the learner",
+        text: "The long-term goal is adaptive perceptual-expertise training: estimate what a learner is seeing now, compare it with expert structure, and choose the next stimulus that should move the learner in the right direction.",
+        notes: "This is the bridge to melanoma identification and other expertise domains. If someone is insensitive to a diagnostic dimension, simplify or isolate it. If they are doing well, increase difficulty. If their perceptual representation differs from experts, choose stimuli that should reshape that relation."
+      },
+      {
+        id: "same_accuracy",
+        profiles: ["mathpsych", "psychonomics", "university", "jobtalk", "postdoc", "lab"],
+        durations: ["5", "10", "15", "25", "45"],
+        type: "figure",
+        kicker: "Why model perception?",
+        title: "Same score, different learner",
+        textByProfile: {
+          university: "Two trainees can make the same number of mistakes for different reasons. A useful training system should not treat them the same.",
+          psychonomics: "Overall accuracy can hide whether errors reflect sensitivity loss, perceptual interaction, decisional strategy, or attention.",
+          mathpsych: "Matched performance can reflect different GRT structures; accuracy is not a sufficient statistic for the psychological explanation.",
+          jobtalk: "This is the measurement problem behind adaptive training: the next teaching action depends on the hidden reason for the error pattern.",
+          postdoc: "This was the motivating use case: if we want adaptive training, we need a model that distinguishes error mechanisms during the task.",
+          lab: "This is the intuition slide: same accuracy, totally different interpretation."
+        },
+        figure: "assets/vignette.png",
+        notes: "Use the dermoscopy example when useful, but do not let the whole project sound domain-specific. The general claim is about perceptual expertise in multidimensional classification."
+      },
+      {
+        id: "grt_constructs",
+        profiles: ["mathpsych", "psychonomics", "postdoc", "lab"],
+        durations: ["10", "15", "25", "45"],
+        type: "cards",
+        kicker: "GRT vocabulary",
+        title: "What the model separates",
+        cards: [
+          ["Sensitivity", "How well each stimulus dimension is discriminated."],
+          ["Perceptual separability", "Whether one stimulus dimension changes perception of another."],
+          ["Perceptual independence", "Whether dimensions covary within a stimulus."],
+          ["Decisional separability", "Whether response criteria stay fixed across the other dimension."]
+        ],
+        notes: "For Psychonomics, keep this conceptual. For Math Psych, say explicitly that the released estimator assumes DS and reports PI/PS probabilities."
+      },
+      {
+        id: "matrix_identification",
+        profiles: ["mathpsych", "postdoc"],
+        durations: ["10", "15", "25", "45"],
+        optional: "technical",
+        type: "equation",
+        kicker: "Identification",
+        title: "More trials sharpen the matrix; they do not add dimensions",
+        lines: [
+          "4 stimulus rows x 3 free response probabilities = 12 proportions",
+          "Gaussian 2x2 GRT saturated model = 12 identified continuous parameters",
+          "Sensitivity affects marginals; rho lives in residual concordance structure",
+          "Weak rho + sparse trials = information limit, not just optimizer failure"
+        ],
+        notes: "This is for the math psych room and the long lab version. It explains why the recovery asymmetry is expected."
+      },
+      {
+        id: "fitting_bottleneck",
+        profiles: ["mathpsych", "psychonomics", "university", "jobtalk", "postdoc", "lab"],
+        durations: ["5", "10", "15", "25", "45"],
+        type: "problem",
+        kicker: "Bottleneck",
+        title: "The formal model is useful, but fitting is not cheap",
+        textByProfile: {
+          university: "Scientific models can tell us more than a score, but they are often too slow to run inside a live training loop.",
+          psychonomics: "Classic fitting works, but repeated fits for intervals, simulations, and adaptive designs become a practical bottleneck.",
+          mathpsych: "Existing GRT software is valuable; the limitation is repeated numerical search, unstable sparse fits, and costly uncertainty workflows.",
+          jobtalk: "The opportunity is not replacing theory with AI. It is making a trusted formal model fast enough to guide experiments in real time.",
+          postdoc: "This is where the project became a tooling problem: GRT is the right language, but the workflow does not scale to adaptive training.",
+          lab: "The problem was not that GRT was wrong. The problem was that the fitting workflow was too slow and too brittle for what we wanted to do."
+        },
+        stats: [
+          ["point fits", "traditional workflow"],
+          ["many refits", "intervals and simulation sweeps"],
+          ["failure flags", "sparse or flat likelihoods"]
+        ],
+        notes: "Do not criticize mdsdt or grtools. They are the comparison targets because they are established and useful."
+      },
+      {
+        id: "grin_solution",
+        profiles: ["mathpsych", "psychonomics", "university", "jobtalk", "postdoc", "lab"],
+        durations: ["5", "10", "15", "25", "45"],
+        type: "workflow",
+        kicker: "GRIN",
+        title: "Train the inverse once",
+        text: "Simulate many GRT observers, train a network to invert the simulator, then use one forward pass for each new learner.",
+        steps: [
+          ["Prior", "sample GRT representations"],
+          ["Simulator", "generate response matrices"],
+          ["Network", "learn matrix-to-parameter inverse"],
+          ["Posterior", "return uncertainty"],
+          ["Decision", "adapt the next trial or report the fit"]
+        ],
+        notes: "This should be the first moment the neural network appears. Keep it subordinate to the measurement goal."
+      },
+      {
+        id: "outputs",
+        profiles: ["mathpsych", "psychonomics", "jobtalk", "postdoc", "lab"],
+        durations: ["10", "15", "25", "45"],
+        type: "cards",
+        kicker: "What comes out",
+        title: "One pass, three useful objects",
+        cards: [
+          ["Continuous fit", "Posterior mean and covariance for the 12 GRT parameters."],
+          ["Construct probabilities", "Posterior probabilities for PI and separability on each dimension."],
+          ["Diagnostics", "Training-support checks and held-out interval scale correction."],
+          ["Actions", "Precision targets and stopping rules for adaptive designs."]
+        ],
+        notes: "This slide connects package outputs to adaptive training. The point is not only estimation; it is deciding what to do next."
+      },
+      {
+        id: "recovery",
+        profiles: ["mathpsych", "psychonomics", "university", "jobtalk", "postdoc", "lab"],
+        durations: ["5", "10", "15", "25", "45"],
+        type: "figureStats",
+        kicker: "Validation",
+        title: "Recovery follows the information in the design",
+        textByProfile: {
+          university: "The model recovers the visible parts of the representation well and is less certain about subtler structure.",
+          psychonomics: "Sensitivity is recovered strongly; correlations are harder because their signature in the matrix is weaker.",
+          mathpsych: "The recovery split tracks the parameter-family information asymmetry: z parameters are much better identified than within-stimulus rho.",
+          jobtalk: "The validation result is useful because it tells us which learner-state estimates are ready for adaptive use and which need caution.",
+          postdoc: "This was one of the key honesty checks: the network learned the inverse, but the design still has an information boundary.",
+          lab: "Good news and expected bad news: z is strong, rho is harder."
+        },
+        figure: "assets/recovery_grin.png",
+        stats: [["r = 0.91", "marginal sensitivities"], ["r = 0.59", "within-stimulus correlations"], ["24k", "held-out simulated observers"]],
+        notes: "Avoid 'GRIN recovers everything'. The story is disciplined: strong where informative, weaker where the matrix is weak."
+      },
+      {
+        id: "calibration",
+        profiles: ["mathpsych", "psychonomics", "postdoc", "lab"],
+        durations: ["10", "15", "25", "45"],
+        optional: "technical",
+        type: "figureStats",
+        kicker: "Uncertainty",
+        title: "Fast uncertainty still has to be checked",
+        text: "Simulation-based calibration showed family-specific miscalibration; the packages include a held-out scale correction.",
+        figure: "assets/calibration_breakdown.png",
+        stats: [["94.5%", "90% z interval coverage"], ["84.1%", "90% rho interval coverage"], ["opt-in", "held-out scale correction"]],
+        notes: "This protects the project from sounding like black-box confidence. The correction is useful, but still a correction to a Gaussian posterior head."
+      },
+      {
+        id: "comparison",
+        profiles: ["mathpsych", "psychonomics", "postdoc", "lab"],
+        durations: ["10", "15", "25", "45"],
+        type: "figureStats",
+        kicker: "Existing tools",
+        title: "The practical gain is speed plus fewer dropped cases",
+        text: "Against direct Python MLE and established R tools, GRIN is fastest and most useful in the sparse-data region where repeated fitting is hardest.",
+        figure: "assets/comparison_to_r.png",
+        stats: [["0.97 ms", "single-matrix inference"], ["0.38", "GRIN low-trial MAE"], ["1.23", "Python MLE low-trial MAE"]],
+        notes: "For Math Psych, mention complete-case caveat. For Psychonomics, focus on sparse data and no convergence failures."
+      },
+      {
+        id: "design_envelope",
+        profiles: ["mathpsych", "psychonomics", "jobtalk", "postdoc", "lab"],
+        durations: ["10", "15", "25", "45"],
+        optional: "technical",
+        type: "figureStats",
+        kicker: "Design",
+        title: "The estimator can map where the experiment is informative",
+        text: "PI and PS are best recovered in different accuracy regions; a single target accuracy is a compromise, not a law.",
+        figure: "assets/accuracy_stratified.png",
+        stats: [["60-80%", "useful per-dimension range"], ["77.7%", "PI near compromise band"], ["79.3%", "PS near compromise band"]],
+        notes: "This is a bridge to adaptive training: if we know where estimates are informative, we can select trials to live in those regions."
+      },
+      {
+        id: "adaptive_stopping",
+        profiles: ["mathpsych", "psychonomics", "university", "jobtalk", "postdoc", "lab"],
+        durations: ["5", "10", "15", "25", "45"],
+        type: "figureStats",
+        kicker: "Enabled workflow",
+        title: "Inference can move inside the experiment",
+        textByProfile: {
+          university: "Instead of giving everyone the same number of trials, a study can stop when the model says it has enough information.",
+          psychonomics: "GRIN makes precision-based stopping feasible during data collection, not just after the experiment.",
+          mathpsych: "The adaptive stopping result is a proof of workflow: posterior precision can be recomputed cheaply after each block.",
+          jobtalk: "This is the first step toward adaptive training: infer, choose, update, repeat.",
+          postdoc: "This was the payoff that made the method feel bigger than faster fitting.",
+          lab: "This is where it becomes a loop instead of a post-hoc analysis."
+        },
+        figure: "assets/adaptive_stopping.png",
+        stats: [["42", "mean trials per stimulus"], ["160", "fixed-budget comparison"], ["73.5%", "mean saving in simulation"]],
+        notes: "Caveat: this is under the simulation prior and one precision target. Do not generalize beyond that."
+      },
+      {
+        id: "adaptive_training_loop",
+        profiles: ["university", "jobtalk", "postdoc", "lab", "psychonomics"],
+        durations: ["5", "10", "15", "25", "45"],
+        type: "loop",
+        kicker: "Future program",
+        title: "From adaptive stopping to adaptive training",
+        text: "The same loop can choose what the learner should see next: isolate a weak dimension, increase difficulty, or select stimuli that pull the learner toward expert structure.",
+        notes: "This is the broader research arc. Say explicitly that GRIN is not itself the full training system; it is the measurement layer that makes the system plausible."
+      },
+      {
+        id: "real_data",
+        profiles: ["psychonomics", "postdoc", "lab"],
+        durations: ["15", "25", "45"],
+        type: "figureStats",
+        kicker: "Published examples",
+        title: "Real matrices look compatible with familiar GRT fits",
+        text: "On five published example datasets, GRIN's conclusions fall within the range spanned by established tools.",
+        figure: "assets/real_data_spaces.png",
+        stats: [["5", "published datasets"], ["compatibility", "not ground truth"], ["small", "not a benchmark distribution"]],
+        notes: "Do not oversell this. It says the tool behaves sensibly on known examples, not that GRIN adjudicates disagreements."
+      },
+      {
+        id: "ds_issue",
+        profiles: ["mathpsych", "postdoc", "lab"],
+        durations: ["15", "25", "45"],
+        optional: "ds",
+        type: "ds",
+        kicker: "Teaching branch",
+        title: "DS is a design limit, not an estimator bug",
+        text: "A tilted decision bound can be rewritten as a vertical bound after transforming perceptual coordinates. A single confusion matrix cannot distinguish those explanations.",
+        notes: "Use this for teaching, lab meeting, or if a reviewer asks. Do not present it as a discovery. It is known GRT non-identifiability, and GRIN inherits it."
+      },
+      {
+        id: "limits",
+        profiles: ["mathpsych", "psychonomics", "university", "jobtalk", "postdoc", "lab"],
+        durations: ["5", "10", "15", "25", "45"],
+        type: "cards",
+        kicker: "Limits",
+        title: "Fast inference does not create new information",
+        cardsByProfile: {
+          university: [
+            ["Model scope", "GRIN is fast inference for a specific scientific model."],
+            ["Uncertainty", "Some learner states are easier to estimate than others."],
+            ["Training data", "Adaptive systems must be validated for the learners and tasks they will see."],
+            ["Next step", "Use real-time fits to guide training, then test whether training improves expertise."]
+          ],
+          default: [
+            ["DS", "Assumed in the released model; not testable from one matrix."],
+            ["rho", "Weakly identified when correlations are small or data are sparse."],
+            ["Prior", "Construct probabilities are conditional on the training distribution."],
+            ["Posterior family", "A single Gaussian head cannot represent every posterior geometry."]
+          ]
+        },
+        notes: "This slide should sound like scientific discipline, not apology."
+      },
+      {
+        id: "job_future",
+        profiles: ["jobtalk", "postdoc"],
+        durations: ["10", "15", "25", "45"],
+        type: "cards",
+        kicker: "Research program",
+        title: "Adaptive training is the next measurement problem",
+        cards: [
+          ["Estimate learner state", "Use model-based fits during training, not after."],
+          ["Compare to experts", "Define target perceptual structures rather than just target accuracy."],
+          ["Select interventions", "Choose stimuli, difficulty, and feedback based on the current fit."],
+          ["Validate transfer", "Ask whether changing representation improves real expertise."]
+        ],
+        notes: "This is the job-talk bridge. GRIN becomes evidence that you can build and validate the measurement layer for a broader adaptive-training program."
+      },
+      {
+        id: "casual_discussion",
+        profiles: ["lab"],
+        durations: ["25", "45"],
+        type: "table",
+        kicker: "Lab meeting",
+        title: "What belongs where?",
+        rows: [
+          ["Main paper", "GRIN method, validation, comparison, adaptive stopping, honest limits."],
+          ["Supplement/reviewer response", "DS robustness demo, larger lapse/overdispersion addendum if requested."],
+          ["Teaching", "DS non-identifiability and same-accuracy/different-mechanism examples."],
+          ["Next project", "Adaptive training toward expert perceptual representations."]
+        ],
+        notes: "This slide is for discussion, not performance. It helps keep scope under control."
+      },
+      {
+        id: "takeaway",
+        profiles: ["mathpsych", "psychonomics", "university", "jobtalk", "postdoc", "lab"],
+        durations: ["5", "10", "15", "25", "45"],
+        type: "takeaway",
+        kicker: "Takeaway",
+        title: "Cheap inference changes the experiment you can run",
+        textByProfile: {
+          university: "The broader lesson is that AI can accelerate transparent scientific models rather than replace them.",
+          psychonomics: "GRIN makes GRT practical for repeated, uncertainty-aware, and adaptive cognitive workflows.",
+          mathpsych: "The contribution is a validated amortized inference layer for Gaussian GRT, with the model's identifiability limits kept explicit.",
+          jobtalk: "This project is a proof point for my broader agenda: adaptive cognitive measurement grounded in formal models.",
+          postdoc: "This is what the postdoc work produced: a method, a package, a manuscript, and a path toward adaptive expertise training.",
+          lab: "The one-line version: faster GRT fitting becomes a lever for adaptive training, as long as we respect the model limits."
+        },
+        notes: "End with the adaptive-training arc. The method matters because it makes the next experiment possible."
+      }
+    ];
+
+    const profileDefaults = {
+      mathpsych: { duration: "15", technical: true, ds: false },
+      psychonomics: { duration: "10", technical: false, ds: false },
+      university: { duration: "10", technical: false, ds: false },
+      jobtalk: { duration: "10", technical: false, ds: false },
+      postdoc: { duration: "25", technical: true, ds: true },
+      lab: { duration: "25", technical: true, ds: true }
+    };
+
+    const deck = document.getElementById("deck");
+    const profile = document.getElementById("profile");
+    const duration = document.getElementById("duration");
+    const technical = document.getElementById("technical");
+    const ds = document.getElementById("ds");
+    const notesToggle = document.getElementById("notes");
+    const stage = document.getElementById("stage");
+    const prev = document.getElementById("prev");
+    const next = document.getElementById("next");
+    const printButton = document.getElementById("print");
+    const counter = document.getElementById("counter");
+    const progress = document.getElementById("progress");
+    let route = [];
+    let index = 0;
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (ch) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[ch]));
+    }
+
+    function copy(slide, key = "text") {
+      if (slide[key + "ByProfile"] && slide[key + "ByProfile"][profile.value]) return slide[key + "ByProfile"][profile.value];
+      if (slide[key + "ByProfile"] && slide[key + "ByProfile"].default) return slide[key + "ByProfile"].default;
+      return slide[key] || "";
+    }
+
+    function cardsFor(slide) {
+      if (slide.cardsByProfile && slide.cardsByProfile[profile.value]) return slide.cardsByProfile[profile.value];
+      if (slide.cardsByProfile && slide.cardsByProfile.default) return slide.cardsByProfile.default;
+      return slide.cards || [];
+    }
+
+    function statsHtml(stats = []) {
+      return `<div class="grid-3">${stats.map(([value, label]) => `<div class="stat"><strong>${escapeHtml(value)}</strong><span>${escapeHtml(label)}</span></div>`).join("")}</div>`;
+    }
+
+    function cardsHtml(cards = [], klass = "grid-4") {
+      return `<div class="${klass}">${cards.map(([head, body]) => `<div class="card"><strong>${escapeHtml(head)}</strong><span>${escapeHtml(body)}</span></div>`).join("")}</div>`;
+    }
+
+    function renderAdaptive(slide) {
+      return `
+        <section class="slide" data-id="${slide.id}">
+          <div class="grid-2">
+            <div class="stack">
+              <div class="kicker">${escapeHtml(slide.kicker)}</div>
+              <h2>${escapeHtml(slide.title)}</h2>
+              <p class="lede">${escapeHtml(copy(slide))}</p>
+            </div>
+            <div class="svgbox">
+              <svg viewBox="0 0 740 510" role="img" aria-label="Adaptive perceptual training loop">
+                <defs>
+                  <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+                    <path d="M0,0 L9,4.5 L0,9 Z" fill="#6d7377"></path>
+                  </marker>
+                </defs>
+                
+                <circle cx="370" cy="255" r="92" fill="none" stroke="#16191b" stroke-width="1.5"></circle>
+                <text x="370" y="244" text-anchor="middle" fill="#16191b" font-size="26" font-weight="600">learner</text>
+                <text x="370" y="277" text-anchor="middle" fill="#16191b" font-size="21">current representation</text>
+                <g fill="none" stroke-width="1.25">
+                  <rect x="64" y="58" width="196" height="96" rx="0" stroke="#b9b2a2"></rect>
+                  <rect x="480" y="58" width="196" height="96" rx="0" stroke="#b9b2a2"></rect>
+                  <rect x="480" y="356" width="196" height="96" rx="0" stroke="#a8412c"></rect>
+                  <rect x="64" y="356" width="196" height="96" rx="0" stroke="#b9b2a2"></rect>
+                </g>
+                <g fill="#16191b" font-size="22" font-weight="600" text-anchor="middle">
+                  <text x="162" y="99">select stimulus</text>
+                  <text x="578" y="99">observe response</text>
+                  <text x="578" y="397">fit GRIN</text>
+                  <text x="162" y="397">adapt difficulty</text>
+                </g>
+                <g fill="#6d7377" font-size="16" text-anchor="middle">
+                  <text x="162" y="127">target dimension or boundary</text>
+                  <text x="578" y="127">confusion matrix updates</text>
+                  <text x="578" y="425">posterior + construct probabilities</text>
+                  <text x="162" y="425">toward expert structure</text>
+                </g>
+                <path d="M260 106 C330 72 410 72 480 106" fill="none" stroke="#b9b2a2" stroke-width="1.25" marker-end="url(#arrow)"></path>
+                <path d="M578 154 C626 216 626 296 578 356" fill="none" stroke="#b9b2a2" stroke-width="1.25" marker-end="url(#arrow)"></path>
+                <path d="M480 404 C410 438 330 438 260 404" fill="none" stroke="#b9b2a2" stroke-width="1.25" marker-end="url(#arrow)"></path>
+                <path d="M162 356 C114 296 114 216 162 154" fill="none" stroke="#b9b2a2" stroke-width="1.25" marker-end="url(#arrow)"></path>
+              </svg>
+            </div>
+          </div>
+          ${noteHtml(slide)}
+        </section>`;
+    }
+
+    function renderLoop(slide) {
+      return `
+        <section class="slide" data-id="${slide.id}">
+          <div class="grid-2">
+            <div class="stack">
+              <div class="kicker">${escapeHtml(slide.kicker)}</div>
+              <h2>${escapeHtml(slide.title)}</h2>
+              <p class="lede">${escapeHtml(copy(slide))}</p>
+              <div class="callout"><p>Training policy: collect evidence only as long as it changes the next teaching decision.</p></div>
+            </div>
+            <div class="panel">
+              ${cardsHtml([
+                ["Weak dimension", "isolate it or reduce perceptual difficulty"],
+                ["Strong dimension", "increase difficulty or move near the boundary"],
+                ["Non-expert structure", "choose stimuli that should reshape the relation"],
+                ["Uncertain fit", "collect targeted trials before adapting"]
+              ], "grid-2")}
+            </div>
+          </div>
+          ${noteHtml(slide)}
+        </section>`;
+    }
+
+    function renderDs(slide) {
+      return `
+        <section class="slide" data-id="${slide.id}">
+          <div class="grid-2">
+            <div class="stack">
+              <div class="kicker">${escapeHtml(slide.kicker)}</div>
+              <h2>${escapeHtml(slide.title)}</h2>
+              <p class="lede">${escapeHtml(copy(slide))}</p>
+              <div class="panel equation">
+                <div>A2 if X - sY &gt; 0</div>
+                <div>U = X - sY, V = Y</div>
+                <div>Same response probabilities can be expressed with vertical bounds in transformed space.</div>
+              </div>
+            </div>
+            <img class="figure" src="assets/robustness_addendum.png" alt="Robustness addendum showing DS non-identifiability demonstration">
+          </div>
+          ${noteHtml(slide)}
+        </section>`;
+    }
+
+    function noteHtml(slide) {
+      return `<div class="note">${escapeHtml(slide.notes || "")}</div>`;
+    }
+
+    function renderSlide(slide) {
+      if (slide.type === "title") {
+        return `<section class="slide" data-id="${slide.id}">
+          <div class="kicker">${escapeHtml(slide.kicker)} / ${escapeHtml(profileLabels[profile.value])}</div>
+          <h1>${escapeHtml(slide.title)}</h1>
+          <p class="lede">${escapeHtml(slide.lede)}</p>
+          <div class="badge-row">${slide.badges.map((b) => `<span class="badge">${escapeHtml(b)}</span>`).join("")}</div>
+          ${noteHtml(slide)}
+        </section>`;
+      }
+      if (slide.type === "adaptive") return renderAdaptive(slide);
+      if (slide.type === "loop") return renderLoop(slide);
+      if (slide.type === "ds") return renderDs(slide);
+      if (slide.type === "figure") {
+        return `<section class="slide" data-id="${slide.id}">
+          <div class="grid-2">
+            <div class="stack">
+              <div class="kicker">${escapeHtml(slide.kicker)}</div>
+              <h2>${escapeHtml(slide.title)}</h2>
+              <p class="lede">${escapeHtml(copy(slide))}</p>
+            </div>
+            <img class="figure" src="${escapeHtml(slide.figure)}" alt="${escapeHtml(slide.title)}">
+          </div>
+          ${noteHtml(slide)}
+        </section>`;
+      }
+      if (slide.type === "figureStats") {
+        return `<section class="slide" data-id="${slide.id}">
+          <div class="grid-2">
+            <div class="stack">
+              <div class="kicker">${escapeHtml(slide.kicker)}</div>
+              <h2>${escapeHtml(slide.title)}</h2>
+              <p>${escapeHtml(copy(slide))}</p>
+              ${statsHtml(slide.stats)}
+            </div>
+            <img class="figure" src="${escapeHtml(slide.figure)}" alt="${escapeHtml(slide.title)}">
+          </div>
+          ${noteHtml(slide)}
+        </section>`;
+      }
+      if (slide.type === "problem") {
+        return `<section class="slide" data-id="${slide.id}">
+          <div class="grid-2">
+            <div class="stack">
+              <div class="kicker">${escapeHtml(slide.kicker)}</div>
+              <h2>${escapeHtml(slide.title)}</h2>
+              <p class="lede">${escapeHtml(copy(slide))}</p>
+            </div>
+            ${statsHtml(slide.stats)}
+          </div>
+          ${noteHtml(slide)}
+        </section>`;
+      }
+      if (slide.type === "workflow") {
+        return `<section class="slide" data-id="${slide.id}">
+          <div class="kicker">${escapeHtml(slide.kicker)}</div>
+          <h2>${escapeHtml(slide.title)}</h2>
+          <p class="lede wide">${escapeHtml(copy(slide))}</p>
+          <div class="workflow">${slide.steps.map(([head, body]) => `<div class="step"><strong>${escapeHtml(head)}</strong><span>${escapeHtml(body)}</span></div>`).join("")}</div>
+          ${noteHtml(slide)}
+        </section>`;
+      }
+      if (slide.type === "cards") {
+        return `<section class="slide" data-id="${slide.id}">
+          <div class="kicker">${escapeHtml(slide.kicker)}</div>
+          <h2>${escapeHtml(slide.title)}</h2>
+          ${cardsHtml(cardsFor(slide), cardsFor(slide).length === 3 ? "grid-3" : "grid-4")}
+          ${noteHtml(slide)}
+        </section>`;
+      }
+      if (slide.type === "equation") {
+        return `<section class="slide" data-id="${slide.id}">
+          <div class="grid-2">
+            <div class="stack">
+              <div class="kicker">${escapeHtml(slide.kicker)}</div>
+              <h2>${escapeHtml(slide.title)}</h2>
+            </div>
+            <div class="panel equation">${slide.lines.map((line) => `<div>${escapeHtml(line)}</div>`).join("")}</div>
+          </div>
+          ${noteHtml(slide)}
+        </section>`;
+      }
+      if (slide.type === "table") {
+        return `<section class="slide" data-id="${slide.id}">
+          <div class="kicker">${escapeHtml(slide.kicker)}</div>
+          <h2>${escapeHtml(slide.title)}</h2>
+          <table><tbody>${slide.rows.map(([a, b]) => `<tr><th>${escapeHtml(a)}</th><td>${escapeHtml(b)}</td></tr>`).join("")}</tbody></table>
+          ${noteHtml(slide)}
+        </section>`;
+      }
+      if (slide.type === "takeaway") {
+        return `<section class="slide" data-id="${slide.id}">
+          <div class="kicker">${escapeHtml(slide.kicker)}</div>
+          <h2>${escapeHtml(slide.title)}</h2>
+          <p class="lede wide">${escapeHtml(copy(slide))}</p>
+          ${cardsHtml([["Measurement", "Estimate the learner's current perceptual structure."], ["Adaptation", "Choose stimuli based on the estimate."], ["Validation", "Keep the model's limits visible."]], "grid-3")}
+          ${noteHtml(slide)}
+        </section>`;
+      }
+      return "";
+    }
+
+    function slideAllowed(slide) {
+      if (!slide.profiles.includes(profile.value)) return false;
+      if (!slide.durations.includes(duration.value)) return false;
+      if (slide.optional === "technical" && !technical.checked) return false;
+      if (slide.optional === "ds" && !ds.checked) return false;
+      return true;
+    }
+
+    function refreshRoute(keepId = null) {
+      route = slides.filter(slideAllowed);
+      deck.innerHTML = route.map(renderSlide).join("");
+      const rendered = Array.from(deck.querySelectorAll(".slide"));
+      const target = keepId ? route.findIndex((slide) => slide.id === keepId) : index;
+      index = Math.max(0, Math.min(rendered.length - 1, target < 0 ? 0 : target));
+      show(index);
+    }
+
+    function show(i) {
+      const rendered = Array.from(deck.querySelectorAll(".slide"));
+      if (!rendered.length) return;
+      index = Math.max(0, Math.min(rendered.length - 1, i));
+      rendered.forEach((slide, j) => slide.classList.toggle("active", j === index));
+      prev.disabled = index === 0;
+      next.disabled = index === rendered.length - 1;
+      counter.textContent = `${index + 1} / ${rendered.length}`;
+      progress.style.width = `${((index + 1) / rendered.length) * 100}%`;
+    }
+
+    function applyProfileDefaults() {
+      const defaults = profileDefaults[profile.value];
+      duration.value = defaults.duration;
+      technical.checked = defaults.technical;
+      ds.checked = defaults.ds;
+    }
+
+    profile.addEventListener("change", () => {
+      applyProfileDefaults();
+      refreshRoute();
+    });
+    for (const control of [duration, technical, ds]) {
+      control.addEventListener("change", () => {
+        const current = route[index]?.id;
+        refreshRoute(current);
+      });
+    }
+    notesToggle.addEventListener("change", () => document.body.classList.toggle("show-notes", notesToggle.checked));
+    stage.addEventListener("change", () => document.body.classList.toggle("stage", stage.checked));
+    prev.addEventListener("click", () => show(index - 1));
+    next.addEventListener("click", () => show(index + 1));
+    printButton.addEventListener("click", () => window.print());
+
+    window.addEventListener("keydown", (event) => {
+      if (event.target instanceof HTMLSelectElement || event.target instanceof HTMLInputElement) return;
+      if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") {
+        event.preventDefault();
+        show(index + 1);
+      }
+      if (event.key === "ArrowLeft" || event.key === "PageUp") {
+        event.preventDefault();
+        show(index - 1);
+      }
+      if (event.key === "Home") show(0);
+      if (event.key === "End") show(route.length - 1);
+      if (event.key.toLowerCase() === "n") {
+        notesToggle.checked = !notesToggle.checked;
+        document.body.classList.toggle("show-notes", notesToggle.checked);
+      }
+    });
+
+    applyProfileDefaults();
+    refreshRoute();
+  </script>
+</body>
+</html>
