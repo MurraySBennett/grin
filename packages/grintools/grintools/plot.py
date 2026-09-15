@@ -615,7 +615,7 @@ def plot_params_group(results, ids=None, palette=None, title=None, base_size=12)
 
 
 def plot_model_classes(results, ids=None, palette=None, title=None, base_size=12, ax=None):
-    """Bar chart of the inferred GRT model class across many participants."""
+    """Bar chart of componentwise modal structures across many participants."""
     df = tidy(results, ids)
     counts = df["model_class"].value_counts()
     col = _group_colors(1, palette)[0]
@@ -624,7 +624,7 @@ def plot_model_classes(results, ids=None, palette=None, title=None, base_size=12
     for i, v in enumerate(counts.values):
         ax.text(i, v + 0.02 * max(counts.values), str(v), ha="center", color=INK)
     ax.set_ylabel("participants")
-    ax.set_title(f"Inferred model class (n={len(df)})" if title is None else title)
+    ax.set_title(f"Componentwise modal structure (n={len(df)})" if title is None else title)
     plt.setp(ax.get_xticklabels(), rotation=30, ha="right")
     return _style(ax, base_size)
 

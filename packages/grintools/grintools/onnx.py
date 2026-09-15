@@ -84,7 +84,7 @@ class OnnxResult:
             lines.append(f"  {n:7s} = {self.params[i]:+.2f}  +/- {self.std[i]:.2f}"
                          f"   [90% {self.ci_low[i]:+.2f}, {self.ci_high[i]:+.2f}]")
         lines.append("-" * 46)
-        lines.append(f"  most likely structure : {self.model_class}")
+        lines.append(f"  componentwise modal structure : {self.model_class}")
         if not self.calibrated:
             lines.append("  intervals are the network's own; pass calibrated=True for")
             lines.append("  width-corrected intervals (see the package documentation)")
@@ -97,6 +97,16 @@ def _class_label(p_corr, p_sep_a, p_sep_b):
     parts.append("PS(A)" if p_sep_a >= 0.5 else "!PS(A)")
     parts.append("PS(B)" if p_sep_b >= 0.5 else "!PS(B)")
     return " + ".join(parts)
+
+
+def _decision(probability, evidence_tol):
+    """Direction of evidence: 'for', 'against', or 'undecided'."""
+    lower = 0.5 - evidence_tol / 2.0
+    if probability < lower:
+        return "against"
+    if probability > 1.0 - lower:
+        return "for"
+    return "undecided"
 
 
 class GrinOnnx:
@@ -118,6 +128,11 @@ class GrinOnnx:
         constructs = {
             "p_PI": p_pi, "p_sep_A": p_a, "p_sep_B": p_b,
             "p_corr": [float(x) for x in p_corr[0]],       # [PI, RHO1, free]
+            "decision_PI": _decision(p_pi, evidence_tol),
+            "decision_sep_A": _decision(p_a, evidence_tol),
+            "decision_sep_B": _decision(p_b, evidence_tol),
+            # Back-compatible decisiveness flags. These do not encode direction;
+            # prefer decision_* in reporting code.
             "evidence_PI": bool(abs(p_pi - 0.5) > band),
             "evidence_sep_A": bool(abs(p_a - 0.5) > band),
             "evidence_sep_B": bool(abs(p_b - 0.5) > band),
@@ -125,4 +140,4 @@ class GrinOnnx:
         result = OnnxResult(mean[0], std[0], _class_label(p_corr[0], p_a, p_b),
                             calibrated=calibrated)
         return result, constructs
-        
+

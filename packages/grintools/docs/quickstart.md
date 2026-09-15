@@ -83,7 +83,7 @@ GRIN inference (onnx)
   rho_2   = +0.01  +/- 0.17   [90% -0.26, +0.29]
   rho_3   = +0.12  +/- 0.17   [90% -0.15, +0.40]
 ----------------------------------------------
-  most likely structure : PI + PS(A) + PS(B)
+  componentwise modal structure : PI + PS(A) + PS(B)
 ```
 
 Each of the 12 parameters comes back as an estimate with a posterior SD and a
@@ -91,8 +91,9 @@ Each of the 12 parameters comes back as an estimate with a posterior SD and a
 on dimensions A and B (sensitivity, in the identified/standardised space --
 0 is chance, ~2.5+ is excellent discrimination), and `rho_0`..`rho_3` are
 each stimulus's within-trial perceptual correlation between the two
-dimensions. `result.model_class` is grintools' best guess at the underlying
-GRT structure -- here, `"PI + PS(A) + PS(B)"`.
+dimensions. `result.model_class` combines the modal decision from each of the
+three construct heads -- here, `"PI + PS(A) + PS(B)"`. It is a componentwise
+summary, not the mode of a jointly normalised 12-class posterior.
 
 `constructs` carries the probabilities behind that label:
 
@@ -100,13 +101,16 @@ GRT structure -- here, `"PI + PS(A) + PS(B)"`.
 constructs["p_PI"]      # 0.842
 constructs["p_sep_A"]   # 0.948
 constructs["p_sep_B"]   # 0.960
+constructs["decision_PI"]      # "for"
+constructs["decision_sep_A"]   # "for"
+constructs["decision_sep_B"]   # "for"
 ```
 
-`evidence_PI`/`evidence_sep_A`/`evidence_sep_B` flag whether this matrix
-carries enough information to decide that construct at all -- perceptual
-independence in particular is information-limited from a single matrix. A
-probability near 0.5 with `evidence_* = False` means "undecided," not
-"roughly 50/50 chance."
+Use the `decision_*` values for reporting: each is `"for"`, `"against"`, or
+`"undecided"`. The older `evidence_PI`/`evidence_sep_A`/`evidence_sep_B`
+Booleans are retained for compatibility and mean only that the probability is
+outside the undecided band; `True` does not specify a direction. Perceptual
+independence in particular is information-limited from a single matrix.
 
 ### Response bias
 

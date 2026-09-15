@@ -40,6 +40,8 @@ grin-fit = "grintools.cli:main"
 [project.urls]
 Homepage = "https://grin.murraysbennett.com"
 Source = "https://github.com/MurraySBennett/grin"
+Documentation = "https://github.com/MurraySBennett/grin/tree/main/packages/grintools#readme"
+Issues = "https://github.com/MurraySBennett/grin/issues"
 
 [tool.setuptools.packages.find]
 include = ["grintools*"]

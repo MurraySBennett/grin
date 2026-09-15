@@ -186,7 +186,7 @@ sample = [gt.infer(M1), gt.infer(M2), gt.infer(M3)]
 gtplot.tidy(sample)                    # one row per participant: estimates, SDs, constructs
 gtplot.plot_space_group(sample)        # one panel per participant -- the individual-level analysis GRT licenses
 gtplot.plot_params_group(sample)       # per-parameter distribution across the sample
-gtplot.plot_model_classes(sample)      # how many participants landed in each GRT model class
+gtplot.plot_model_classes(sample)      # componentwise modal structures across participants
 gtplot.plot_precision_group(sample)    # posterior SD distribution -- data quality across the sample
 gtplot.plot_bias_group(sample)         # response bias distribution across the sample
 ```

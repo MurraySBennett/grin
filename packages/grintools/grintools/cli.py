@@ -54,8 +54,11 @@ def main(argv=None):
     print("posterior (mean +/- SD):")
     for i, n in enumerate(result.names):
         print(f"    {n:7s} {result.params[i]:+.2f} +/- {result.std[i]:.2f}")
-    print(f"\nconstructs (P holds):  PI={constructs['p_PI']:.2f}"
-          f"  PS_A={constructs['p_sep_A']:.2f}  PS_B={constructs['p_sep_B']:.2f}")
+    print("\nconstructs (probability the construct holds, and the call):")
+    for label, pkey, dkey in (("PI", "p_PI", "decision_PI"),
+                              ("PS_A", "p_sep_A", "decision_sep_A"),
+                              ("PS_B", "p_sep_B", "decision_sep_B")):
+        print(f"    {label:5s} {constructs[pkey]:.2f}  {constructs[dkey]}")
 
     crit = Criterion([Target.precision(params=["zx", "zy"], sd_max=args.sd),
                       Target.probability(args.construct, at_least=args.at_least)],

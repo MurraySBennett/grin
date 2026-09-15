@@ -1,3 +1,4 @@
+include LICENSE
 include grintools/py.typed
 recursive-include grintools/models *.onnx
 recursive-include grintools/models *.json

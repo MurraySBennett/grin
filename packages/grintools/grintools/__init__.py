@@ -36,7 +36,7 @@ def default_model_path():
     return str(resources.files("grintools").joinpath("models", "npe_model.onnx"))
 
 
-def infer(counts, trials=None, model_path=None, calibrated=False):
+def infer(counts, trials=None, model_path=None, calibrated=False, evidence_tol=0.5):
     """Run GRIN on a canonical-order 4x4 (or length-16) count matrix.
 
     Returns (OnnxResult, constructs). `trials` defaults to row sums. Pass model_path
@@ -48,10 +48,11 @@ def infer(counts, trials=None, model_path=None, calibrated=False):
     a known asymmetry -- the sensitivity intervals run wider than nominal and the
     correlation intervals narrower. Point estimates are unchanged either way. The
     correction is estimated under the training prior and may not transfer to observers
-    far outside it, which is why it is opt-in.
+    far outside it, which is why it is opt-in. ``evidence_tol`` controls the width of
+    the undecided band used by the direction-explicit ``decision_*`` outputs.
     """
     path = model_path or default_model_path()
     grin = _SESSION_CACHE.get(path)
     if grin is None:
         grin = _SESSION_CACHE[path] = GrinOnnx(path)
-    return grin(counts, trials, calibrated=calibrated)
+    return grin(counts, trials, evidence_tol=evidence_tol, calibrated=calibrated)
