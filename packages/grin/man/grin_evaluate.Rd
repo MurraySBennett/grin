@@ -24,16 +24,20 @@ Evaluate a stopping criterion against an inference result
 }
 \examples{
 \donttest{
-M <- matrix(c(71, 17,  9,  5,
-              20, 67,  5,  9,
-              13,  6, 63, 20,
-               5, 10, 15, 71), nrow = 4, byrow = TRUE)
-out <- grin_infer(M)
-crit <- grin_criterion(list(
-  grin_target_precision(params = c("zx", "zy"), sd_max = 0.10),
-  grin_target_probability("PS_A", at_least = 0.90)
-), combine = "any")
-decision <- grin_evaluate(crit, out$result, out$constructs)
-print(decision)
+# Inference needs libtorch, which is downloaded on first use and is not
+# present on CRAN's check machines; the guard keeps this example safe there.
+if (torch::torch_is_installed()) {
+  M <- matrix(c(71, 17,  9,  5,
+                20, 67,  5,  9,
+                13,  6, 63, 20,
+                 5, 10, 15, 71), nrow = 4, byrow = TRUE)
+  out <- grin_infer(M)
+  crit <- grin_criterion(list(
+    grin_target_precision(params = c("zx", "zy"), sd_max = 0.10),
+    grin_target_probability("PS_A", at_least = 0.90)
+  ), combine = "any")
+  decision <- grin_evaluate(crit, out$result, out$constructs)
+  print(decision)
+}
 }
 }

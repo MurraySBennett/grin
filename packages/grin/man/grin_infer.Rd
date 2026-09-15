@@ -4,7 +4,13 @@
 \alias{grin_infer}
 \title{Run GRIN inference on a canonical-order confusion matrix}
 \usage{
-grin_infer(counts, trials = NULL, model = NULL, evidence_tol = 0.5)
+grin_infer(
+  counts,
+  trials = NULL,
+  model = NULL,
+  evidence_tol = 0.5,
+  calibrated = FALSE
+)
 }
 \arguments{
 \item{counts}{A canonical-order 4x4 matrix, or a length-16 vector read row-major
@@ -16,13 +22,20 @@ grin_infer(counts, trials = NULL, model = NULL, evidence_tol = 0.5)
 cached automatically if omitted.}
 
 \item{evidence_tol}{Width of the "undecided" band around p = 0.5 for the
-\verb{evidence_*} construct flags (default 0.5).}
+direction-explicit \verb{decision_*} outputs and legacy \verb{evidence_*} decisiveness
+flags (default 0.5).}
+
+\item{calibrated}{If \code{TRUE}, apply the shipped per-family interval correction
+(see the package documentation). Point estimates are unchanged; only the
+posterior SDs and credible intervals are rescaled. Default \code{FALSE}, so
+published results do not depend on the correction being present.}
 }
 \value{
 A \code{grin_inference} object: \verb{$result} (class \code{grin_result}: \verb{$params},
 \verb{$std}, \verb{$ci_low}, \verb{$ci_high}, \verb{$names}, \verb{$model_class}) and \verb{$constructs}
-(\code{p_PI}, \code{p_sep_A}, \code{p_sep_B}, \code{p_corr}, \code{evidence_PI}, \code{evidence_sep_A},
-\code{evidence_sep_B}). Unlike Python's \verb{(result, constructs)} tuple, R returns one
+(\code{p_PI}, \code{p_sep_A}, \code{p_sep_B}, \code{p_corr}, \code{decision_PI}, \code{decision_sep_A},
+\code{decision_sep_B}, and the back-compatible \verb{evidence_*} flags). Unlike Python's
+\verb{(result, constructs)} tuple, R returns one
 object with both as named elements -- there is no tuple-unpacking idiom to
 mirror here.
 }
@@ -33,12 +46,16 @@ with \code{\link[=grin_to_confusion]{grin_to_confusion()}} and pass its \verb{$c
 }
 \examples{
 \donttest{
-M <- matrix(c(71, 17,  9,  5,
-              20, 67,  5,  9,
-              13,  6, 63, 20,
-               5, 10, 15, 71), nrow = 4, byrow = TRUE)
-out <- grin_infer(M)
-print(out$result)
-out$constructs$p_PI
+# Inference needs libtorch, which is downloaded on first use and is not
+# present on CRAN's check machines; the guard keeps this example safe there.
+if (torch::torch_is_installed()) {
+  M <- matrix(c(71, 17,  9,  5,
+                20, 67,  5,  9,
+                13,  6, 63, 20,
+                 5, 10, 15, 71), nrow = 4, byrow = TRUE)
+  out <- grin_infer(M)
+  print(out$result)
+  out$constructs$p_PI
+}
 }
 }

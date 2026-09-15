@@ -31,6 +31,8 @@
 #' \code{\link{.grin_palettes}}. Pass any of these to a \code{palette}
 #' argument, or pass your own character vector of hex colours instead.
 #' @return A character vector of palette names.
+#' @examples
+#' grin_palette_names()
 #' @export
 grin_palette_names <- function() c("mono", names(.grin_palettes))
 
@@ -40,6 +42,8 @@ grin_palette_names <- function() c("mono", names(.grin_palettes))
 #' default `"mono"`), the name of a built-in palette (see
 #' [grin_palette_names()]), or a character vector of hex colours supplied
 #' directly by the caller.
+#' @param palette Palette name, character vector of hex colours, or `NULL`.
+#' @return A character vector of hex colours.
 #' @keywords internal
 .grin_resolve_palette <- function(palette = NULL) {
   if (is.null(palette)) palette <- getOption("grin.palette", "mono")
@@ -57,6 +61,9 @@ grin_palette_names <- function() c("mono", names(.grin_palettes))
 #' single colour, so callers can use the same `scale_*_manual()` machinery
 #' either way and a mono plot never carries a legend that only distinguishes
 #' "black" from "black").
+#' @param n Number of colours required.
+#' @param palette Palette name, character vector of hex colours, or `NULL`.
+#' @return A character vector of `n` hex colours.
 #' @keywords internal
 .grin_group_colors <- function(n, palette = NULL) {
   cols <- .grin_resolve_palette(palette)
@@ -74,6 +81,10 @@ grin_palette_names <- function() c("mono", names(.grin_palettes))
 #' @param base_size Base font size in points, passed to
 #'   `ggplot2::theme_minimal()`. Every `grin_plot_*()` function also takes a
 #'   `base_size` argument that forwards here.
+#' @return A ggplot2 theme object, as returned by `ggplot2::theme()`.
+#' @examples
+#' library(ggplot2)
+#' ggplot(mtcars, aes(wt, mpg)) + geom_point() + theme_grin()
 #' @export
 theme_grin <- function(base_size = 12) {
   ink <- .grin_colors$ink

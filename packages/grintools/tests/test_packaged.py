@@ -35,7 +35,9 @@ def test_infer_returns_a_sane_posterior_and_constructs():
     assert 0.0 <= constructs["p_sep_A"] <= 1.0
     assert 0.0 <= constructs["p_sep_B"] <= 1.0
     assert set(constructs) >= {"p_PI", "p_sep_A", "p_sep_B", "p_corr",
+                               "decision_PI", "decision_sep_A", "decision_sep_B",
                                "evidence_PI", "evidence_sep_A", "evidence_sep_B"}
+    assert constructs["decision_PI"] in {"for", "against", "undecided"}
 
 
 def test_infer_is_deterministic_and_session_cached():

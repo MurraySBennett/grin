@@ -103,6 +103,11 @@ grin_notes.txt
 # R CMD build; source is packages/grin/vignettes/*.Rmd, this is the output)
 packages/grin/doc/
 packages/grin/Meta/
+# R CMD check output. Anchored nowhere on purpose: the check is run from
+# whatever directory holds the built tarball, so *.Rcheck/ lands wherever you
+# happened to be. Also the built tarball itself.
+*.Rcheck/
+grin_*.tar.gz
 full-tree.txt
 tracked-files.txt
 ignored-status.txt

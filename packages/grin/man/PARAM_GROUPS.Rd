@@ -5,12 +5,17 @@
 \alias{PARAM_GROUPS}
 \title{Named parameter groups (1-indexed positions into PARAM_NAMES)}
 \format{
-An object of class \code{list} of length 3.
+A named list of three integer vectors (\code{zx}, \code{zy}, \code{rho}), each
+giving 1-indexed positions into \link{PARAM_NAMES}.
 }
 \usage{
 PARAM_GROUPS
 }
 \description{
 Named parameter groups (1-indexed positions into PARAM_NAMES)
+}
+\examples{
+PARAM_GROUPS$zx
+PARAM_NAMES[PARAM_GROUPS$rho]
 }
 \keyword{datasets}

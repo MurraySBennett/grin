@@ -30,3 +30,8 @@ dimension of \code{\link[=grin_empirical_bias]{grin_empirical_bias()}} computed 
 confusion matrix. Works directly from confusion matrices -- no
 \code{\link[=grin_infer]{grin_infer()}} call needed.
 }
+\examples{
+M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+              13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+grin_plot_empirical_bias_group(list(p1 = M, p2 = M))
+}

@@ -21,6 +21,21 @@ grin_stop_on_precision(
 \item{params}{Character vector of parameter names (\link{PARAM_NAMES}) and/or groups
 (\code{"zx"}, \code{"zy"}, \code{"rho"}), or \code{NULL}/\code{"all"} for every parameter.}
 }
+\value{
+A \code{grin_decision} object, as returned by \code{\link[=grin_evaluate]{grin_evaluate()}}.
+}
 \description{
 Convenience: evaluate a single precision target
+}
+\examples{
+\donttest{
+# Inference needs libtorch, which is downloaded on first use and is not
+# present on CRAN's check machines; the guard keeps this example safe there.
+if (torch::torch_is_installed()) {
+  M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+                13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+  out <- grin_infer(M)
+  grin_stop_on_precision(out$result, sd_max = 0.10, params = "zx")
+}
+}
 }

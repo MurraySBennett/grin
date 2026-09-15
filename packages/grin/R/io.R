@@ -12,6 +12,10 @@
 # read row-major (stimulus-major): position (0-based) k = stim_index*4 + resp_index.
 
 #' Parse one cell label into 0-based (a_level, b_level)
+#' @param label A single cell label, e.g. `"A1B1"` or `"Old/Neg"`.
+#' @param factor_a,factor_b Length-2 character vectors giving each dimension's levels.
+#' @param sep Separator used to split a compound label.
+#' @return A length-2 integer vector of 0-based levels, or `NULL` if unparseable.
 #' @keywords internal
 .parse_cell_label <- function(label, factor_a, factor_b, sep) {
   if (length(label) == 2) {
@@ -44,6 +48,10 @@
 #' Returns list(perm, placement). `perm` is a length-4 index vector into `labels`
 #' such that `labels[perm[c]]` belongs at canonical position c. Raises unless the 4
 #' labels form a complete 2x2 factorial (or are already the canonical tokens).
+#' @param labels The 4 row or column labels, in the order the data has them.
+#' @param factor_a,factor_b Length-2 character vectors giving each dimension's levels.
+#' @param sep Separator used to split compound labels.
+#' @return A list with `perm` (length-4 index vector) and `placement`.
 #' @keywords internal
 .permutation_to_canonical <- function(labels, factor_a, factor_b, sep) {
   tok <- function(x) tolower(paste(x, collapse = sep))
@@ -176,6 +184,10 @@
 #'   treat `data` as long-format trial-level or aggregated data.
 #' @return A `grin_confusion_input` object: `$counts` (4x4 integer matrix), `$trials`
 #'   (length-4 integer), `$placement`, `$warnings`, `$asserted_order`.
+#' @examples
+#' M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+#'               13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+#' grin_to_confusion(M, order = "canonical")
 #' @export
 grin_to_confusion <- function(data, stim_labels = NULL, resp_labels = NULL,
                               factor_a = NULL, factor_b = NULL, order = NULL,
@@ -265,6 +277,10 @@ print.grin_confusion_input <- function(x, ...) {
 #' @param ... Passed on to [grin_to_confusion()] (`stim_labels`, `factor_a`, etc.).
 #' @return Invisibly, a list report (`$ready`, `$errors`, `$warnings`, `$counts`,
 #'   `$trials`, `$placement`, `$asserted_order`).
+#' @examples
+#' M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+#'               13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+#' grin_describe(M, order = "canonical")
 #' @export
 grin_describe <- function(data, printout = TRUE, ...) {
   report <- list(ready = FALSE, errors = character(0), warnings = character(0),

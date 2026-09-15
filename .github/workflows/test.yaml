@@ -1,6 +1,6 @@
 name: Test
 
-# Runs the full test suite on every push/PR. Three independent jobs, because they
+# Runs the full test suite on every push/PR. Four independent jobs, because they
 # have very different dependency footprints and failure modes:
 #   - python-and-web: the research repo's Python unit tests + the JS web-app port,
 #     checked against the same Python package (tests/gen_reference.py etc. import
@@ -14,6 +14,9 @@ name: Test
 #     this way: the core package (test_packaged.py) and, with the [plot] extra
 #     installed, the plotting suite (test_plot.py) -- added 2026-08-13 after an
 #     external review noted the plotting suite had never actually run in CI.
+#   - r-package-cran-conditions: R CMD check --as-cran with libtorch deliberately
+#     ABSENT, which is the environment CRAN actually checks in. Deterministic, and
+#     the job that has to stay green for a CRAN submission to survive.
 #   - r-package: the native-R companion, via devtools::check() (0 errors/warnings
 #     is the bar; a sandbox "unable to verify current time" NOTE is unavoidable and
 #     not a failure). torch::install_torch() downloads libtorch (~500MB); the
@@ -53,7 +56,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -80,6 +83,34 @@ jobs:
           cp packages/grintools/tests/test_plot.py "$RUNNER_TEMP/grintools_smoketest/"
           cd "$RUNNER_TEMP/grintools_smoketest" && pytest test_plot.py -v
         shell: bash
+
+  # CRAN's check machines have no libtorch: the 'torch' package downloads it on
+  # first USE, not at install, and CRAN cannot download during a check. This job
+  # reproduces that exact condition and is the one that must stay green for the
+  # CRAN submission to survive. The r-package job below is the complementary case
+  # (libtorch present, so inference actually runs).
+  #
+  # Kept separate and deterministic on purpose: r-package installs libtorch
+  # best-effort, so when the download fails it silently becomes this check. That
+  # makes "the CRAN path works" an accident of network luck rather than a fact.
+  r-package-cran-conditions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: packages/grin
+          extra-packages: any::rcmdcheck
+      - name: Confirm libtorch is genuinely absent (that is the point of this job)
+        run: |
+          Rscript -e 'if (isTRUE(torch::torch_is_installed())) stop("libtorch present; this job must run without it")'
+        working-directory: packages/grin
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          working-directory: packages/grin
+          args: 'c("--as-cran")'
+          error-on: '"warning"'
 
   r-package:
     runs-on: ubuntu-latest

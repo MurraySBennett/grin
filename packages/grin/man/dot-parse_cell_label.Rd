@@ -6,6 +6,16 @@
 \usage{
 .parse_cell_label(label, factor_a, factor_b, sep)
 }
+\arguments{
+\item{label}{A single cell label, e.g. \code{"A1B1"} or \code{"Old/Neg"}.}
+
+\item{factor_a, factor_b}{Length-2 character vectors giving each dimension's levels.}
+
+\item{sep}{Separator used to split a compound label.}
+}
+\value{
+A length-2 integer vector of 0-based levels, or \code{NULL} if unparseable.
+}
 \description{
 Parse one cell label into 0-based (a_level, b_level)
 }

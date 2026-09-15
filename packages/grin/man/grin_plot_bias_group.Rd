@@ -32,3 +32,15 @@ Group-level companion to \code{\link[=grin_plot_bias]{grin_plot_bias()}}: one bo
 \code{\link[=grin_response_bias]{grin_response_bias()}}, computed per participant from their fitted result.
 For the model-free alternative, see \code{\link[=grin_plot_empirical_bias_group]{grin_plot_empirical_bias_group()}}.
 }
+\examples{
+\donttest{
+# Inference needs libtorch, which is downloaded on first use and is not
+# present on CRAN's check machines; the guard keeps this example safe there.
+if (torch::torch_is_installed()) {
+  M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+                13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+  fits <- list(p1 = grin_infer(M), p2 = grin_infer(M))
+  grin_plot_bias_group(fits)
+}
+}
+}

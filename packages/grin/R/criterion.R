@@ -52,6 +52,10 @@
 #'   (`"zx"`, `"zy"`, `"rho"`), or `NULL`/`"all"` for every parameter.
 #' @param sd_max Stop when every selected parameter's posterior SD is at most this.
 #' @param ci_width_max Stop when every selected parameter's 90% CI width is at most this.
+#' @return A `grin_target` object, to be passed to [grin_criterion()].
+#' @examples
+#' grin_target_precision(params = c("zx", "zy"), sd_max = 0.10)
+#' grin_target_precision(params = "all", ci_width_max = 0.50)
 #' @export
 grin_target_precision <- function(params = NULL, sd_max = NULL, ci_width_max = NULL) {
   if (is.null(sd_max) == is.null(ci_width_max)) {
@@ -68,6 +72,10 @@ grin_target_precision <- function(params = NULL, sd_max = NULL, ci_width_max = N
 #'
 #' @param construct One of `"PI"`, `"PS_A"`, `"PS_B"`, or a `"*_violated"` complement.
 #' @param at_least Probability threshold.
+#' @return A `grin_target` object, to be passed to [grin_criterion()].
+#' @examples
+#' grin_target_probability("PS_A", at_least = 0.90)
+#' grin_target_probability("PI_violated", at_least = 0.95)
 #' @export
 grin_target_probability <- function(construct, at_least) {
   if (!(construct %in% names(.CONSTRUCT_MAP))) {
@@ -119,6 +127,12 @@ grin_target_probability <- function(construct, at_least) {
 #' @param targets A list of `grin_target` objects (see [grin_target_precision()],
 #'   [grin_target_probability()]).
 #' @param combine `"all"` (default, stop only once every target is met) or `"any"`.
+#' @return A `grin_criterion` object, to be passed to [grin_evaluate()].
+#' @examples
+#' grin_criterion(list(
+#'   grin_target_precision(params = c("zx", "zy"), sd_max = 0.10),
+#'   grin_target_probability("PS_A", at_least = 0.90)
+#' ), combine = "any")
 #' @export
 grin_criterion <- function(targets, combine = "all") {
   if (!(combine %in% c("all", "any"))) stop("combine must be 'all' or 'any'", call. = FALSE)
@@ -141,17 +155,21 @@ grin_criterion <- function(targets, combine = "all") {
 #'   cannot decide them -- these will never be met, no matter how much data you add).
 #' @examples
 #' \donttest{
-#' M <- matrix(c(71, 17,  9,  5,
-#'               20, 67,  5,  9,
-#'               13,  6, 63, 20,
-#'                5, 10, 15, 71), nrow = 4, byrow = TRUE)
-#' out <- grin_infer(M)
-#' crit <- grin_criterion(list(
-#'   grin_target_precision(params = c("zx", "zy"), sd_max = 0.10),
-#'   grin_target_probability("PS_A", at_least = 0.90)
-#' ), combine = "any")
-#' decision <- grin_evaluate(crit, out$result, out$constructs)
-#' print(decision)
+#' # Inference needs libtorch, which is downloaded on first use and is not
+#' # present on CRAN's check machines; the guard keeps this example safe there.
+#' if (torch::torch_is_installed()) {
+#'   M <- matrix(c(71, 17,  9,  5,
+#'                 20, 67,  5,  9,
+#'                 13,  6, 63, 20,
+#'                  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+#'   out <- grin_infer(M)
+#'   crit <- grin_criterion(list(
+#'     grin_target_precision(params = c("zx", "zy"), sd_max = 0.10),
+#'     grin_target_probability("PS_A", at_least = 0.90)
+#'   ), combine = "any")
+#'   decision <- grin_evaluate(crit, out$result, out$constructs)
+#'   print(decision)
+#' }
 #' }
 #' @export
 grin_evaluate <- function(criterion, result, constructs = NULL) {
@@ -184,6 +202,18 @@ print.grin_decision <- function(x, ...) {
 #' Convenience: evaluate a single precision target
 #' @inheritParams grin_target_precision
 #' @param result A `grin_result` (e.g. `grin_infer(...)$result`).
+#' @return A `grin_decision` object, as returned by [grin_evaluate()].
+#' @examples
+#' \donttest{
+#' # Inference needs libtorch, which is downloaded on first use and is not
+#' # present on CRAN's check machines; the guard keeps this example safe there.
+#' if (torch::torch_is_installed()) {
+#'   M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+#'                 13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+#'   out <- grin_infer(M)
+#'   grin_stop_on_precision(out$result, sd_max = 0.10, params = "zx")
+#' }
+#' }
 #' @export
 grin_stop_on_precision <- function(result, sd_max = NULL, ci_width_max = NULL, params = NULL) {
   grin_evaluate(grin_criterion(list(grin_target_precision(params = params, sd_max = sd_max,

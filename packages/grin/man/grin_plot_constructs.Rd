@@ -21,7 +21,7 @@ grin_plot_constructs(
 defers to \code{options(grin.palette)}. See \code{\link[=grin_plot_space]{grin_plot_space()}}.}
 
 \item{title}{Plot title. \code{NULL} (default) uses
-\code{"Construct probabilities (<model class>)"}.}
+\code{"Construct probabilities (<componentwise modal structure>)"}.}
 
 \item{base_size}{Base font size in points (default 12).}
 }
@@ -37,9 +37,13 @@ limit is a property of the data, and this plot says so rather than hiding it.
 }
 \examples{
 \donttest{
-M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
-              13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
-out <- grin_infer(M)
-grin_plot_constructs(out$result, out$constructs)
+# Inference needs libtorch, which is downloaded on first use and is not
+# present on CRAN's check machines; the guard keeps this example safe there.
+if (torch::torch_is_installed()) {
+  M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+                13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+  out <- grin_infer(M)
+  grin_plot_constructs(out$result, out$constructs)
+}
 }
 }

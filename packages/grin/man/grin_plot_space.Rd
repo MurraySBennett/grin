@@ -30,7 +30,7 @@ convention).}
 name from \code{\link[=grin_palette_names]{grin_palette_names()}}, or your own vector of hex colours.}
 
 \item{title}{Plot title. \code{NULL} (default) uses
-\code{"Perceptual space (<model class>)"}; pass \code{""} for no title.}
+\code{"Perceptual space (<componentwise modal structure>)"}; pass \code{""} for no title.}
 
 \item{xlab, ylab}{Axis titles. Default to \code{"dimension A (zx)"} /
 \code{"dimension B (zy)"}; pass \code{NULL} to hide an axis title entirely (the
@@ -88,8 +88,12 @@ trials there were happened to look decisive).
 }
 \examples{
 \donttest{
-M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
-              13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
-grin_plot_space(grin_infer(M)$result)
+# Inference needs libtorch, which is downloaded on first use and is not
+# present on CRAN's check machines; the guard keeps this example safe there.
+if (torch::torch_is_installed()) {
+  M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+                13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+  grin_plot_space(grin_infer(M)$result)
+}
 }
 }

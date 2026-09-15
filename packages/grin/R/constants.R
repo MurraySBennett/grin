@@ -7,10 +7,18 @@ CANON_RESP <- c("a1b1", "a1b2", "a2b1", "a2b2")
 #' (`zx_0..zx_3`), four y-sensitivities (`zy_0..zy_3`), four within-stimulus
 #' correlations (`rho_0..rho_3`), one per canonical stimulus (A1B1, A1B2, A2B1,
 #' A2B2, in that order).
+#' @format A character vector of length 12.
+#' @examples
+#' PARAM_NAMES
 #' @export
 PARAM_NAMES <- c(paste0("zx_", 0:3), paste0("zy_", 0:3), paste0("rho_", 0:3))
 
 #' Named parameter groups (1-indexed positions into PARAM_NAMES)
+#' @format A named list of three integer vectors (`zx`, `zy`, `rho`), each
+#'   giving 1-indexed positions into [PARAM_NAMES].
+#' @examples
+#' PARAM_GROUPS$zx
+#' PARAM_NAMES[PARAM_GROUPS$rho]
 #' @export
 PARAM_GROUPS <- list(zx = 1:4, zy = 5:8, rho = 9:12)
 

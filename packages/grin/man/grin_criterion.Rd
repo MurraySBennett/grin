@@ -12,6 +12,15 @@ grin_criterion(targets, combine = "all")
 
 \item{combine}{\code{"all"} (default, stop only once every target is met) or \code{"any"}.}
 }
+\value{
+A \code{grin_criterion} object, to be passed to \code{\link[=grin_evaluate]{grin_evaluate()}}.
+}
 \description{
 Combine stopping targets into a criterion
+}
+\examples{
+grin_criterion(list(
+  grin_target_precision(params = c("zx", "zy"), sd_max = 0.10),
+  grin_target_probability("PS_A", at_least = 0.90)
+), combine = "any")
 }

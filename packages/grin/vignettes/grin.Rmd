@@ -8,10 +8,24 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
+# Every chunk below runs real inference, which needs libtorch. libtorch is
+# downloaded on first use by torch::install_torch() and is absent on CRAN's
+# build machines, so evaluation is conditional: with libtorch the vignette
+# renders in full, without it the code is shown but not run.
+.grin_have_torch <- requireNamespace("torch", quietly = TRUE) &&
+  isTRUE(tryCatch(torch::torch_is_installed(), error = function(e) FALSE))
 knitr::opts_chunk$set(
   collapse = TRUE, comment = "#>",
-  fig.width = 6, fig.height = 4.5, dpi = 110
+  fig.width = 6, fig.height = 4.5, dpi = 110,
+  eval = .grin_have_torch
 )
+```
+
+```{r, echo = FALSE, eval = TRUE, results = "asis"}
+if (!.grin_have_torch) cat(
+  "> **Note.** This vignette was built without libtorch, so the code below is\n",
+  "> shown but not executed. Install it once with `torch::install_torch()` and\n",
+  "> every example here runs as written.\n", sep = "")
 ```
 
 `grin` turns a 2x2 identification confusion matrix into a calibrated
@@ -82,8 +96,8 @@ on dimensions A and B (sensitivity, in the identified/standardised space --
 0 is chance, ~2.5+ is excellent discrimination), and `rho_0`..`rho_3` are
 each stimulus's within-trial perceptual correlation between the two
 dimensions (0 = independent, away from 0 = linked or traded off).
-`out$result$model_class` is GRIN's best guess at the underlying GRT
-structure:
+`out$result$model_class` combines the modal decision from each construct head.
+It is not the mode of a jointly normalised 12-class posterior:
 
 ```{r}
 out$result$model_class
@@ -95,13 +109,15 @@ out$result$model_class
 out$constructs$p_PI
 out$constructs$p_sep_A
 out$constructs$p_sep_B
+out$constructs$decision_PI
+out$constructs$decision_sep_A
+out$constructs$decision_sep_B
 ```
 
-`evidence_PI`/`evidence_sep_A`/`evidence_sep_B` flag whether this matrix
-carries enough information to decide that construct at all -- perceptual
-independence in particular is information-limited from a single matrix. A
-probability near 0.5 with `evidence_* = FALSE` means "undecided," not
-"roughly 50/50 chance."
+Use the `decision_*` values for reporting: each is `"for"`, `"against"`, or
+`"undecided"`. The older `evidence_*` Booleans are retained for compatibility
+and encode decisiveness only, not direction. Perceptual independence in
+particular is information-limited from a single matrix.
 
 ### Response bias
 

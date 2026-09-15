@@ -17,7 +17,8 @@ a sample of participants.}
 \value{
 A data.frame, one row per participant: \code{id}, \code{model_class}, the 12
 parameter estimates (\code{zx_0}...\code{rho_3}), their SDs (\code{zx_0_sd}...\code{rho_3_sd}),
-\code{p_PI}/\code{p_sep_A}/\code{p_sep_B}, \code{evidence_PI}/\code{evidence_sep_A}/\code{evidence_sep_B},
+\code{p_PI}/\code{p_sep_A}/\code{p_sep_B}, direction-explicit \code{decision_PI}/
+\code{decision_sep_A}/\code{decision_sep_B}, and the back-compatible decisiveness flags,
 and \code{x_bias}/\code{y_bias} (the decision-criterion bias of \code{\link[=grin_response_bias]{grin_response_bias()}}).
 }
 \description{
@@ -25,9 +26,13 @@ Tidy one or many GRIN inferences into a data.frame
 }
 \examples{
 \donttest{
-M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
-              13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
-out <- list(p1 = grin_infer(M), p2 = grin_infer(M))
-grin_tidy(out)
+# Inference needs libtorch, which is downloaded on first use and is not
+# present on CRAN's check machines; the guard keeps this example safe there.
+if (torch::torch_is_installed()) {
+  M <- matrix(c(71, 17,  9,  5, 20, 67,  5,  9,
+                13,  6, 63, 20,  5, 10, 15, 71), nrow = 4, byrow = TRUE)
+  out <- list(p1 = grin_infer(M), p2 = grin_infer(M))
+  grin_tidy(out)
+}
 }
 }
