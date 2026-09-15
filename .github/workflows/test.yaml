@@ -95,6 +95,8 @@ jobs:
   # makes "the CRAN path works" an accident of network luck rather than a fact.
   r-package-cran-conditions:
     runs-on: ubuntu-latest
+    env:
+      TORCH_INSTALL: "0"   # never auto-download libtorch in this job
     steps:
       - uses: actions/checkout@v4
       - uses: r-lib/actions/setup-r@v2
@@ -102,9 +104,17 @@ jobs:
         with:
           working-directory: packages/grin
           extra-packages: any::rcmdcheck
-      - name: Confirm libtorch is genuinely absent (that is the point of this job)
+      # Asserting absence is not enough: setup-r-dependencies caches the R library,
+      # and the sibling r-package job installs libtorch INTO that library, so the
+      # restored cache can carry it here. Remove it, then assert. TORCH_INSTALL=0
+      # stops torch re-downloading it during the check.
+      - name: Force libtorch absent (that is the point of this job)
         run: |
-          Rscript -e 'if (isTRUE(torch::torch_is_installed())) stop("libtorch present; this job must run without it")'
+          Rscript -e '
+            lib <- file.path(torch::torch_install_path(), "lib")
+            if (dir.exists(lib)) { unlink(lib, recursive = TRUE); cat("removed cached libtorch at", lib, "\n") }
+            if (isTRUE(torch::torch_is_installed(recheck = TRUE))) stop("libtorch still present after removal")
+            cat("libtorch confirmed absent -- checking as CRAN would\n")'
         working-directory: packages/grin
       # No args override: the action already defaults to c("--no-manual", "--as-cran").
       # Passing just c("--as-cran") re-enables the PDF manual, which needs LaTeX the
