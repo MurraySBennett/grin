@@ -1,0 +1,33 @@
+{
+  "id": "v09",
+  "claim": "data outside the trained envelope (reversed response mapping) is flagged, gradedly with severity, at a controlled false-alarm rate against in-envelope data",
+  "result": {
+    "calibration_n": 6000,
+    "reversal_n_per_severity": 150,
+    "trials_per_stimulus": 300,
+    "seed_in": 5,
+    "seed_reversal": 1,
+    "in_dist_median": 7.4487242908471005,
+    "threshold95": 29.292618774808318,
+    "false_alarm": 0.05,
+    "severity_curve": {
+      "0.25": {
+        "median_deviance": 8.87097725406897,
+        "detection_rate": 0.006666666666666667
+      },
+      "0.5": {
+        "median_deviance": 20.633686099982434,
+        "detection_rate": 0.17333333333333334
+      },
+      "0.75": {
+        "median_deviance": 224.20934507992433,
+        "detection_rate": 1.0
+      },
+      "1.0": {
+        "median_deviance": 960.6326619121357,
+        "detection_rate": 1.0
+      }
+    }
+  },
+  "pass": true
+}
