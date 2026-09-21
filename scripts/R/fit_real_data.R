@@ -35,8 +35,20 @@ if (!have_mdsdt) stop("mdsdt is not installed.  install.packages('mdsdt')")
 if (!have_grtools) message("(!) grtools not installed — mdsdt-only run")
 
 grtools_perm <- c(1, 3, 2, 4)
-N_THIN <- 10
-THIN_LEVELS <- c(200, 100, 50, 25, 12)   # trials per stimulus
+N_THIN <- 30L
+THIN_LEVELS <- c(200L, 150L, 100L, 75L, 50L, 30L, 20L, 12L)  # trials/stimulus
+
+# The hierarchy fits dominate runtime. On Unix-like systems, independent resamples can
+# be fitted in parallel; set GRIN_THIN_CORES=1 for a serial run or override the default.
+# Each job receives its own deterministic data and fit seeds, so results do not depend
+# on worker count or scheduling order.
+THIN_CORES <- suppressWarnings(as.integer(Sys.getenv("GRIN_THIN_CORES", "8")))
+if (is.na(THIN_CORES) || THIN_CORES < 1L || .Platform$OS.type != "unix") THIN_CORES <- 1L
+DATA_SEED <- 20260826L
+FIT_SEED <- 20260902L
+job_seed <- function(base, dataset_id, tps, rep_id) {
+  as.integer(base + dataset_id * 100000L + tps * 100L + rep_id)
+}
 
 extract_grtools_params <- function(hm) {
   bm <- hm$best_model
@@ -123,9 +135,12 @@ row_of <- function(name, n_trials, rep_id, tps, m, g, cmat = NULL) {
 candidates <- c("thomas01a", "thomas01b", "silbert09a", "silbert09b", "silbert12",
                 "thomas15a", "thomas15b")
 rows <- list(); fits <- list(); subs <- list()
-set.seed(20260826)
 
-for (nm in candidates) {
+message(sprintf("thinning design: %d levels x %d resamples; %d fit workers",
+                length(THIN_LEVELS), N_THIN, THIN_CORES))
+
+for (nm_id in seq_along(candidates)) {
+  nm <- candidates[[nm_id]]
   ok <- tryCatch({ data(list = nm, package = "mdsdt", envir = environment()); TRUE },
                  error = function(e) FALSE)
   if (!ok) { message("skip (not found): ", nm); next }
@@ -135,6 +150,7 @@ for (nm in candidates) {
   }
   rows[[nm]] <- c(dataset = nm, as.numeric(t(cmat)))
 
+  set.seed(job_seed(FIT_SEED, nm_id, 0L, 0L))
   m <- fit_mdsdt(cmat); g <- fit_grtools(cmat)
   fits[[nm]] <- row_of(nm, sum(cmat), 0L, NA_real_, m, g, cmat)
   message(sprintf("%-11s n=%5d  mdsdt %-22s (%.1fs)  grtools %-22s (%.1fs, ok=%s)",
@@ -144,15 +160,29 @@ for (nm in candidates) {
   # ---- thinning ------------------------------------------------------------
   props <- sweep(cmat, 1, rowSums(cmat), "/")
   for (tps in THIN_LEVELS) {
-    for (r in seq_len(N_THIN)) {
+    jobs <- lapply(seq_len(N_THIN), function(r) {
+      set.seed(job_seed(DATA_SEED, nm_id, tps, r))
       thin <- t(vapply(1:4, function(s) as.numeric(rmultinom(1, tps, props[s, ])),
                        numeric(4)))
+      list(rep = r, thin = thin, fit_seed = job_seed(FIT_SEED, nm_id, tps, r))
+    })
+
+    fit_one <- function(job) {
+      set.seed(job$fit_seed)
       # n_reps=3 in the thinning arm only: the full-data fits above use grtools' default
       # of 10. Restarts guard against local optima, they are not the object of study here,
-      # and 500 hierarchy fits at the default would dominate the runtime of this script.
-      mm <- fit_mdsdt(thin); gg <- fit_grtools(thin, n_reps = 3)
-      subs[[length(subs) + 1]] <- row_of(nm, sum(thin), r, tps, mm, gg, thin)
+      # and 1,200 hierarchy fits at the default would dominate the script's runtime.
+      mm <- fit_mdsdt(job$thin); gg <- fit_grtools(job$thin, n_reps = 3)
+      row_of(nm, sum(job$thin), job$rep, tps, mm, gg, job$thin)
     }
+
+    level_rows <- if (THIN_CORES > 1L) {
+      parallel::mclapply(jobs, fit_one, mc.cores = min(THIN_CORES, length(jobs)),
+                         mc.preschedule = FALSE, mc.set.seed = FALSE)
+    } else {
+      lapply(jobs, fit_one)
+    }
+    subs <- c(subs, level_rows)
     message(sprintf("   thinned to %3d/stimulus x %d reps", tps, N_THIN))
   }
 }

@@ -54,12 +54,23 @@ def _p_ci_excludes_zero(samples):
     return 2 * np.maximum(below, 1 - below) - 1          # 0 (mass on 0) .. 1 (all one side)
 
 
+def _decision(probability, evidence_tol):
+    """Directional label; legacy evidence_* flags encode decisiveness only."""
+    lower = 0.5 - evidence_tol / 2.0
+    if probability < lower:
+        return "against"
+    if probability > 1.0 - lower:
+        return "for"
+    return "undecided"
+
+
 def model_posterior(model, counts, trials, n_samples=1000, evidence_tol=0.5):
     """
     counts (N,16), trials (N,4). Returns a list of dicts, one per matrix:
-      {p_PI, p_sep_A, p_sep_B, rho_est, rho_ci, evidence_PI, ...}
-    where each p_* is the probability the construct HOLDS, and evidence_* is False
-    when the posterior is too diffuse to decide (flag for "insufficient evidence").
+      {p_PI, p_sep_A, p_sep_B, rho_est, rho_ci, decision_PI, ...}
+    Each p_* is the probability the construct holds. The decision_* values report
+    direction ("for", "against", or "undecided"); retained evidence_* booleans
+    indicate only whether the probability is decisive, not which direction it favours.
     """
     counts = np.asarray(counts); trials = np.asarray(trials)
     post = predict_posterior(model, counts, trials, n_samples=n_samples)
@@ -82,6 +93,9 @@ def model_posterior(model, counts, trials, n_samples=1000, evidence_tol=0.5):
             "p_PI": float(p_pi), "p_sep_A": float(p_sepA), "p_sep_B": float(p_sepB),
             "rho_est": float(rho_mean[k]),
             "rho_ci": [float(np.quantile(rho[:, k], .05)), float(np.quantile(rho[:, k], .95))],
+            "decision_PI": _decision(p_pi, evidence_tol),
+            "decision_sep_A": _decision(p_sepA, evidence_tol),
+            "decision_sep_B": _decision(p_sepB, evidence_tol),
             # evidence is "sufficient" only when the probability is decisive either way
             "evidence_PI": bool(abs(p_pi - 0.5) > (0.5 - evidence_tol / 2)),
             "evidence_sep_A": bool(abs(p_sepA - 0.5) > (0.5 - evidence_tol / 2)),

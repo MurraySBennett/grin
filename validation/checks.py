@@ -160,7 +160,7 @@ def v08_pi_frontier(model=None, **kw):
             "result": out, "pass": True}
 
 
-def _reversed_mapping(n, frac, seed):
+def _reversed_mapping(n, frac, seed, trials_per_stimulus=300):
     """Simulate a participant whose B-dimension response mapping is reversed
     (e.g. a swapped response key, or a confused dimension label) on a `frac`
     fraction of trials. This is not merely an extreme point of the fitted family:
@@ -176,11 +176,13 @@ def _reversed_mapping(n, frac, seed):
     Xo = np.zeros((n, 16), dtype=np.int64)
     for i in range(n):
         for st in range(4):
-            Xo[i, st * 4:(st + 1) * 4] = r.multinomial(300, mix[i, st] / mix[i, st].sum())
-    return Xo, np.full((n, 4), 300)
+            Xo[i, st * 4:(st + 1) * 4] = r.multinomial(
+                trials_per_stimulus, mix[i, st] / mix[i, st].sum())
+    return Xo, np.full((n, 4), trials_per_stimulus)
 
 
-def v09_ood(model=None, **kw):
+def v09_ood(model=None, n_per_class=500, n_reversal=150,
+            trials_per_stimulus=300, seed_in=5, seed_reversal=1, **kw):
     """
     Training-envelope / input-support diagnostic via posterior-mean reconstruction deviance
     (src/inference/ood.py) -- NOT model-family misspecification detection. Read
@@ -202,12 +204,16 @@ def v09_ood(model=None, **kw):
     mapping) to total.
     """
     model = model or _fit_model()
-    Xi, ypi, Xti, _, _ = _dataset(500, trial_range=(300, 300), balanced=True, seed=5)
+    Xi, ypi, Xti, _, _ = _dataset(
+        n_per_class, trial_range=(trials_per_stimulus, trials_per_stimulus),
+        balanced=True, seed=seed_in)
     din = envelope_deviance(model, Xi, Xti); thr = float(np.quantile(din, .95))
 
     severity = {}
     for frac in (0.25, 0.5, 0.75, 1.0):
-        Xo, To = _reversed_mapping(150, frac, seed=1)
+        Xo, To = _reversed_mapping(
+            n_reversal, frac, seed=seed_reversal,
+            trials_per_stimulus=trials_per_stimulus)
         do = envelope_deviance(model, Xo, To)
         severity[str(frac)] = {"median_deviance": float(np.median(do)),
                                 "detection_rate": float((do > thr).mean())}
@@ -217,7 +223,11 @@ def v09_ood(model=None, **kw):
             "claim": "data outside the trained envelope (reversed response mapping) "
                      "is flagged, gradedly with severity, at a controlled "
                      "false-alarm rate against in-envelope data",
-            "result": {"in_dist_median": float(np.median(din)), "threshold95": thr,
+            "result": {"calibration_n": int(len(Xi)),
+                       "reversal_n_per_severity": int(n_reversal),
+                       "trials_per_stimulus": int(trials_per_stimulus),
+                       "seed_in": int(seed_in), "seed_reversal": int(seed_reversal),
+                       "in_dist_median": float(np.median(din)), "threshold95": thr,
                        "false_alarm": false_alarm, "severity_curve": severity},
             "pass": severity["1.0"]["detection_rate"] > 0.95 and false_alarm <= 0.10}
 
@@ -256,4 +266,4 @@ def v11_amortized_comparison(model=None, n_mle=60, **kw):
                                    "sepB": float(np.mean(bb == tb[sub])), "ms": bt * 1e3},
                        "speedup": bt / at},
             "pass": True}
-    
+

@@ -25,14 +25,11 @@ except ImportError:
     import grt_model as gm
 
 
-# NOT a calibrated decision threshold -- a provisional development cutoff, picked by eye
-# on dev-scale data, before the envelope-deviance operating characteristics (false-warning
-# and detection rate across trial-count regime, row imbalance, distance from z_max/r_max,
-# and permutation type) were ever measured on the production model. Do not present this as
-# validated; report the continuous deviance and let the caller decide, or treat the flag
-# below as "worth a second look," not a pass/fail verdict. Revisit once that calibration
-# exists -- the right threshold likely depends on trial count and imbalance, not a constant.
-PROVISIONAL_ENVELOPE_THRESHOLD = 40.0
+# Empirical 95th percentile from 6,000 fresh in-support matrices at 300 trials per
+# stimulus (validation/checks.py:v09; seed 5). This is a warning threshold for
+# resemblance to the training support, not a goodness-of-fit test for Gaussian GRT.
+# Its operating characteristics have not been stratified by trial count or imbalance.
+ENVELOPE_WARNING_THRESHOLD = 29.292618774808318
 
 
 class InferenceResult:
@@ -65,8 +62,8 @@ class InferenceResult:
                          f"   [90% {self.ci_low[i]:+.2f}, {self.ci_high[i]:+.2f}]")
         lines.append("-" * 46)
         lines.append(f"  inferred model : {self.model_class}")
-        flag = ("ok" if self.envelope_deviance < PROVISIONAL_ENVELOPE_THRESHOLD
-                else "CHECK — outside the trained envelope (provisional threshold, uncalibrated)")
+        flag = ("ok" if self.envelope_deviance < ENVELOPE_WARNING_THRESHOLD
+                else "CHECK — unusual relative to calibrated training support")
         lines.append(f"  envelope check : deviance {self.envelope_deviance:.1f}  ({flag})")
         return "\n".join(lines)
 
@@ -112,4 +109,4 @@ def infer(confusion_matrix, trials=None, model=None, n_samples=1000):
     return InferenceResult(post["mean"][0].numpy(), post["std"][0].numpy(),
                            post["ci_low"][0].numpy(), post["ci_high"][0].numpy(),
                            cls, dev, samples)
-    
+

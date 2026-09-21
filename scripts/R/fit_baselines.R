@@ -299,6 +299,16 @@ stopifnot(nrow(res) == nrow(dat)) # guard against the row-explosion bug
 
 dir.create("results/mle_fits", recursive = TRUE, showWarnings = FALSE)
 write_csv(res, "results/mle_fits/baseline_fits.csv")
+write_csv(
+  tibble(
+    r_version = R.version.string,
+    platform = R.version$platform,
+    mdsdt_version = if (have_mdsdt) as.character(packageVersion("mdsdt")) else NA_character_,
+    grtools_version = if (have_grtools) as.character(packageVersion("grtools")) else NA_character_,
+    baseline_seed = BASELINE_SEED
+  ),
+  "results/mle_fits/baseline_environment.csv"
+)
 
 message("\n--- summary (", nrow(res), " matrices) ---")
 if (have_mdsdt) {
@@ -322,4 +332,4 @@ if (have_grtools) {
     "  [n_reps=1, fair vs mdsdt's single-shot calls]"
   )
 }
-message("wrote results/mle_fits/baseline_fits.csv")
+message("wrote results/mle_fits/baseline_fits.csv and baseline_environment.csv")

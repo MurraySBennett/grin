@@ -132,8 +132,15 @@ def main(n_per_class=2000, seed=999, n_samples=400):
     rho_free = ~true_pi
     mae_rho = np.where(rho_free, ae[:, RHO_SL].mean(1), np.nan)
 
+    # Expected per-dimension accuracy is at least .50 under the sign convention, but
+    # finite multinomial samples can produce observed proportions below .50. The
+    # design bands begin at .50, so record that excluded tail explicitly instead of
+    # letting it disappear from the analysis without an audit trail.
+    n_below_half = int(np.sum(acc < ACC_EDGES[0]))
     out = dict(meta=dict(n=int(len(X)), seed=seed, acc_edges=ACC_EDGES,
-                         tps_edges=TPS_EDGES, n_posterior_samples=n_samples),
+                         tps_edges=TPS_EDGES, n_posterior_samples=n_samples,
+                         n_observed_below_half=n_below_half,
+                         observed_below_half_handling="excluded from accuracy bands"),
                by_accuracy=[], by_accuracy_x_trials=[])
 
     print(f"N = {len(X)}   observed accuracy {acc.min():.2f}-{acc.max():.2f}\n")

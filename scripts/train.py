@@ -31,7 +31,7 @@ def main():
     corr = torch.tensor(_corr, dtype=torch.long); sepA = torch.tensor(_sa, dtype=torch.long); sepB = torch.tensor(_sb, dtype=torch.long)
 
     # Computed once (hashes the ~350MB dataset file, so not worth redoing per checkpoint
-    # save); the dynamic best_epoch/best_val_nll fields are merged in at save time below.
+    # save); the dynamic best_epoch/best_val_joint_loss fields are merged in at save time below.
     manifest = build_manifest()
 
     n = feats.shape[0]
@@ -71,7 +71,8 @@ def main():
             best, wait = vloss, 0
             torch.save({"state_dict": model.state_dict(), "hidden": list(HIDDEN_LAYERS),
                         "dropout": DROPOUT, "activation": ACTIVATION, "comparison": True,
-                        "provenance": {**manifest, "best_epoch": epoch, "best_val_nll": best}},
+                        "provenance": {**manifest, "best_epoch": epoch,
+                                       "best_val_joint_loss": best}},
                        MODEL_FILE)
         else:
             wait += 1
@@ -79,10 +80,11 @@ def main():
         train_losses.append(train_loss)
         val_losses.append(vloss)
         lrs.append(opt.param_groups[0]["lr"])
-        print(f"epoch {epoch:3d}  train {train_loss:.4f} val_nll {vloss:.4f}  (best {best:.4f})  lr {lr:.2e}")
+        print(f"epoch {epoch:3d}  train {train_loss:.4f} val_joint {vloss:.4f}  "
+              f"(best {best:.4f})  lr {lr:.2e}")
         if wait >= PATIENCE:
             print("early stopping."); break
-    print(f"done. best val_nll = {best:.4f}  ->  {MODEL_FILE}")
+    print(f"done. best validation joint loss = {best:.4f}  ->  {MODEL_FILE}")
 
     history = pd.DataFrame({
         "epoch": np.arange(len(train_losses)),

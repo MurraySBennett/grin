@@ -391,7 +391,8 @@ function savingSummary() {
   }
 
   html += `<p class="cap" style="margin:.5rem 0 0">One run by one person, so treat it as
-    an illustration rather than an estimate. The simulated figure in the paper is a 73.5% saving at a target of 0.35, over 396 observers.</p></div>`;
+    an illustration rather than an estimate. Precision stopping remains a proof of concept;
+    a calibrated sequential operating rule has not yet been established.</p></div>`;
   return html;
 }
 

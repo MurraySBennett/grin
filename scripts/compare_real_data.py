@@ -22,6 +22,8 @@ Three things are reported, because "does it agree" is only the first of them.
 Writes results/figures/real_data_*.png and results/real_data_comparison.json.
 """
 import json, os, time
+from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import get_context
 import numpy as np
 import pandas as pd
 
@@ -74,6 +76,19 @@ def _python_mle(X, Xt):
             th = np.full(12, np.nan)
         secs.append(1e3 * (time.time() - t0)); out.append(th)
     return np.asarray(out), np.asarray(secs)
+
+
+def _fit_thinned_mle(job):
+    """Fit one thinned matrix in a process worker; return a row index and parameters."""
+    index, counts = job
+    counts = np.asarray(counts, float).reshape(4, 4)
+    try:
+        params = np.asarray(
+            fit_selected(counts, counts.sum(1), criterion="aic")["params"], float
+        )
+        return index, params, None
+    except Exception as exc:
+        return index, np.full(12, np.nan), f"{type(exc).__name__}: {exc}"
 
 
 def _r_params(rf, name, pkg):
@@ -251,13 +266,28 @@ def main():
             # fitted here, on the same matrices, or it would be absent from the
             # thinning comparison for no reason other than which language it lives in
             mp = np.full((len(sub), 12), np.nan)
-            for i in np.where(keep)[0]:
-                try:
-                    mp[i] = np.asarray(
-                        fit_selected(thin[i].reshape(4, 4), tt[list(np.where(keep)[0]).index(i)],
-                                     criterion="aic")["params"], float)
-                except Exception:
-                    pass
+            keep_indices = np.flatnonzero(keep)
+            jobs = [(int(i), thin[i]) for i in keep_indices]
+            workers = max(1, int(os.getenv("GRIN_MLE_WORKERS", "4")))
+            failures = 0
+            if workers == 1:
+                fitted = map(_fit_thinned_mle, jobs)
+            else:
+                pool = ProcessPoolExecutor(max_workers=workers,
+                                           mp_context=get_context("spawn"))
+                fitted = pool.map(_fit_thinned_mle, jobs, chunksize=4)
+            try:
+                for done, (i, params, error) in enumerate(fitted, 1):
+                    mp[i] = params
+                    if error is not None:
+                        failures += 1
+                    if done % 100 == 0 or done == len(jobs):
+                        print(f"  Python MLE thinning: {done}/{len(jobs)} fits")
+            finally:
+                if workers != 1:
+                    pool.shutdown()
+            if failures:
+                print(f"  (!): {failures} thinned Python MLE fits failed")
             for j, nm_ in enumerate(PNAMES):
                 sub[f"python_mle_{nm_}"] = mp[:, j]
             sub["python_mle_ok"] = np.isfinite(mp[:, 0])

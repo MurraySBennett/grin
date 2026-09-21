@@ -5,7 +5,7 @@ def npe_nll(model, x, target_train_space):
 
 
 def joint_loss(model, x, target_train_space, corr_lbl, sepA_lbl, sepB_lbl, w_cls=1.0):
-    """NPE regression NLL + cross-entropy for the three comparison heads (shared encoder)."""
+    """NPE NLL + w_cls times the sum of the three classification cross-entropies."""
     import torch
     import torch.nn.functional as F
     mean, L, cl, al, bl = model.forward_all(x)

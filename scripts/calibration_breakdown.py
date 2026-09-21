@@ -33,7 +33,9 @@ import src.grt_model as gm
 
 OUT_JSON = os.path.join("results", "validation", "calibration_breakdown.json")
 TPS_EDGES = [5, 10, 15, 20, 30, 50, 75, 100, 200, 500]
-LEVELS = [0.5, 0.7, 0.8, 0.9, 0.95]
+LEVELS = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]   # steps of 0.05,
+                                            # keeping the endpoints (0.5, 0.95) the
+                                            # manuscript prose cites
 Z_SL, RHO_SL = slice(0, 8), slice(8, 12)
 
 
@@ -162,7 +164,9 @@ def main(n_per_class=2000, seed=999, n_samples=800):
 # Construct-probability calibration: does a construct reported at p turn out to be
 # true about p of the time? This is distinct from the parameter calibration above and
 # from classification accuracy, which says nothing about whether the stated confidence
-# is warranted. Reported as a reliability curve plus expected calibration error.
+# is warranted. Every component of the three-way correlation head is scored separately;
+# reporting P(PI) alone would leave the shared-versus-free probabilities unevaluated.
+# Results include the bin counts and reliability curve as well as ECE.
 # ---------------------------------------------------------------------------
 def construct_calibration(n_per_class=2000, seed=999, n_bins=10):
     import numpy as np
@@ -176,10 +180,14 @@ def construct_calibration(n_per_class=2000, seed=999, n_bins=10):
     specs = [gm.MODEL_SPECS[l] for l in labels]
     truth = {
         "perceptual independence": np.array([s[0] == "pi" for s in specs]),
+        "one shared correlation":  np.array([s[0] == "rho1" for s in specs]),
+        "separate correlations":   np.array([s[0] == "free" for s in specs]),
         "separability on A":       np.array([bool(s[1]) for s in specs]),
         "separability on B":       np.array([bool(s[2]) for s in specs]),
     }
     probs = {"perceptual independence": ac["p_PI"],
+             "one shared correlation": ac["p_corr"][:, 1],
+             "separate correlations": ac["p_corr"][:, 2],
              "separability on A": ac["p_sep_A"],
              "separability on B": ac["p_sep_B"]}
 

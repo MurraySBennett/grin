@@ -39,23 +39,26 @@ def _band(tps):
     return f"{TPS_EDGES[-2]}-{TPS_EDGES[-1]}"
 
 
-def _summarise(mae_row, mask, label, tps, bands):
-    """MAE on `mask`, plus the band-matched MAE GRIN achieves on the converged matrices."""
+def _summarise(abs_error, mask, label, tps, bands):
+    """Family MAE on `mask`, plus trial-band-matched reference MAE."""
     if mask.sum() == 0:
         return None
-    sub = mae_row[mask]
+    sub = abs_error[mask]
     # band-matched reference: GRIN's own MAE on NON-masked matrices, reweighted to the
     # band composition of the masked set, so sparsity alone cannot explain a gap.
     comp = pd.Series([_band(t) for t in tps[mask]]).value_counts(normalize=True)
-    ref_parts, ref_w = [], []
+    ref_parts = {"z": [], "rho": []}
+    ref_w = []
     for b, w in comp.items():
         other = (~mask) & np.array([_band(t) == b for t in tps])
         if other.sum() >= 5:
-            ref_parts.append(mae_row[other].mean())
+            ref_parts["z"].append(abs_error[other, :8].mean())
+            ref_parts["rho"].append(abs_error[other, 8:].mean())
             ref_w.append(w)
-    ref = float(np.average(ref_parts, weights=ref_w)) if ref_parts else None
+    ref = ({fam: float(np.average(values, weights=ref_w))
+            for fam, values in ref_parts.items()} if ref_w else None)
     return dict(label=label, n=int(mask.sum()),
-                mae=float(sub.mean()), mae_median=float(np.median(sub)),
+                mae_z=float(sub[:, :8].mean()), mae_rho=float(sub[:, 8:].mean()),
                 mae_band_matched_reference=ref,
                 median_tps=float(np.median(tps[mask])),
                 band_composition={str(k): float(v) for k, v in comp.items()})
@@ -77,12 +80,12 @@ def main():
     post = predict_posterior(model, cm, Xt, n_samples=800)
     mean = post["mean"].numpy()
     samples = post["samples"].numpy()
-    mae_row = np.abs(mean - truth).mean(1)                     # per-matrix MAE
+    abs_error = np.abs(mean - truth)
 
     # 90% interval coverage per matrix, pooled over the 12 params
     lo = np.quantile(samples, 0.05, axis=0)
     hi = np.quantile(samples, 0.95, axis=0)
-    cov_row = ((truth >= lo) & (truth <= hi)).mean(1)
+    covered = (truth >= lo) & (truth <= hi)
 
     ok = lambda c: d[c].astype(str).str.upper().isin(["TRUE", "1"]).to_numpy()
     grt_ok, mds_ok = ok("grtools_ok"), ok("mdsdt_ok")
@@ -100,18 +103,23 @@ def main():
                          mdsdt_failure_rate=float((~mds_ok).mean())),
                subsets={}, coverage={})
     for k, m in masks.items():
-        s = _summarise(mae_row, m, k, tps, TPS_EDGES)
+        s = _summarise(abs_error, m, k, tps, TPS_EDGES)
         if s:
-            s["coverage_90"] = float(cov_row[m].mean())
+            s["coverage_90"] = {
+                "z": float(covered[m, :8].mean()),
+                "rho": float(covered[m, 8:].mean()),
+            }
             out["subsets"][k] = s
 
     print()
     for k, s in out["subsets"].items():
         ref = s["mae_band_matched_reference"]
-        refs = f"{ref:.3f}" if ref is not None else "  n/a"
+        refs = (f"z {ref['z']:.3f}, rho {ref['rho']:.3f}" if ref is not None
+                else "n/a")
         print(f"{k:>16}  n={s['n']:>4}  median tps={s['median_tps']:>6.1f}  "
-              f"GRIN MAE {s['mae']:.3f}  (band-matched ref {refs})  "
-              f"90% coverage {s['coverage_90']:.3f}")
+              f"GRIN MAE z {s['mae_z']:.3f}, rho {s['mae_rho']:.3f}  "
+              f"(band-matched ref {refs})  90% coverage "
+              f"z {s['coverage_90']['z']:.3f}, rho {s['coverage_90']['rho']:.3f}")
 
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w") as f:

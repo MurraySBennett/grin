@@ -16,7 +16,10 @@ positive half — instead of each panel normalising that structure away.
 import numpy as np
 import matplotlib.pyplot as plt
 
-from .style import (set_style, BLUE, BLUE_DEEP, ROSE, ROSE_DEEP, INK, MUTE)
+from .style import (set_style, BLUE, BLUE_DEEP, ROSE, ROSE_DEEP, INK, MUTE,
+                    floating_trial_bands)
+
+PRINT_W = 6.5   # \textwidth in GRIN_combined_edited.tex
 
 try:
     from .. import grt_model as gm
@@ -210,7 +213,11 @@ def _grouped_bars(ax, groups, methods, values, errs=None, ylabel="", title="",
     Name retained for backwards compatibility with existing callers.
     """
     x = np.arange(len(groups))
-    w = 0.8 / max(len(methods), 1)
+    # Narrower than the group spacing (1.0) by a good margin: at the old 0.8 span, four
+    # methods' points sprawled most of the way to the NEXT tick's points, reading as an
+    # undifferentiated cloud rather than four small clusters, each obviously "at" its own
+    # x position.
+    w = 0.42 / max(len(methods), 1)
     for i, m in enumerate(methods):
         off = (i - (len(methods) - 1) / 2) * w
         v = np.asarray(values[m], dtype=float)
@@ -238,9 +245,15 @@ def summary_recovery(results, path, trial_bin_names=("low", "mid", "high"),
     results: {method: {"true": (N,12), "pred": (N,12), "trial_bin": (N,), "rho_bin": (N,)}}
              All methods MUST be on the same rows, in the same order.
     """
-    set_style(scale)
+    # Font scale reduced for this row: three \textwidth-tuned panels side by side are
+    # only ~2.1in each, so the coded (full-scale) font sizes look outsized relative to
+    # the plot area rather than merely "12-14pt as printed" -- see docs/figure_sizing.md.
+    row_scale = scale * 0.68
+    set_style(row_scale)
     methods = list(results)
-    fig, ax = plt.subplots(1, 3, figsize=(15.5, 4.9))
+    # Native width close to the manuscript's print width rather than the wide "poster"
+    # figsize this used to carry -- see docs/figure_sizing.md.
+    fig, ax = plt.subplots(1, 3, figsize=(PRINT_W, PRINT_W * 0.36))
 
     fams = {"$z_x$": slice(0, 4), "$z_y$": slice(4, 8), r"$\rho$": slice(8, 12)}
     vals, errs = {}, {}
@@ -250,14 +263,11 @@ def summary_recovery(results, path, trial_bin_names=("low", "mid", "high"),
         vals[m] = [np.nanmean(e[:, sl]) for sl in fams.values()]
         errs[m] = [_boot_ci(np.nanmean(e[:, sl], axis=1))[1:] for sl in fams.values()]
     _grouped_bars(ax[0], list(fams), methods, vals, errs, "MAE",
-                  "Recovery by parameter family", connect=False)
-    ax[0].legend()
+                  "A   By family", connect=False)
+    ax[0].legend(fontsize=8 * row_scale, loc="upper center", bbox_to_anchor=(0.5, -0.20),
+                ncol=2, frameon=False)
 
-    for k, (key, gnames, sl, ylab, title) in enumerate([
-            ("trial_bin", trial_bin_names, slice(0, 12), "MAE (all params)",
-             "Recovery by trial regime"),
-            ("rho_bin", rho_bin_names, slice(8, 12), r"MAE ($\rho$ only)",
-             r"Recovery of $\rho$ by true $|\rho|$")], start=1):
+    def _per_group(key, gnames, sl):
         vals, errs = {}, {}
         for m in methods:
             r = results[m]
@@ -276,11 +286,28 @@ def summary_recovery(results, path, trial_bin_names=("low", "mid", "high"),
             for gi in range(len(gnames)):
                 mu, lo, hi = _boot_ci(per_row[b == gi])
                 vals[m].append(mu); errs[m].append((lo, hi))
-        _grouped_bars(ax[k], list(gnames), methods, vals, errs, ylab, title)
+        return vals, errs
 
-    fig.suptitle("Parameter recovery — method comparison", x=0.02, ha="left",
-                 fontweight="bold", fontsize=15 * scale, color=INK)
-    fig.tight_layout(rect=[0, 0, 1, 0.93])
+    # Panel B (trial count) gets the floating-bar-over-true-numeric-width treatment
+    # (see style.py::floating_trial_bands): "5-10" and "10-15" cover the same width but
+    # a categorical axis drew them the same distance apart as "20-30", which covers
+    # twice the range, and as "100-200", which covers twenty times the range.
+    vals, errs = _per_group("trial_bin", trial_bin_names, slice(0, 12))
+    series = {m: (vals[m], METHOD_COLORS.get(m, MUTE)) for m in methods}
+    floating_trial_bands(ax[1], list(trial_bin_names), series, offset_span=0.16, err=errs)
+    ax[1].set_xlabel("trials per stimulus")
+    ax[1].set_ylabel("MAE (all params)")
+    ax[1].set_ylim(bottom=0)
+    ax[1].set_title("B   By trials")
+
+    # Panel C's groups (PI/weak/mod/strong true |rho|) are categorical, not a numeric
+    # range with a width to show -- floating bars don't apply here, unlike panel B.
+    vals, errs = _per_group("rho_bin", rho_bin_names, slice(8, 12))
+    _grouped_bars(ax[2], list(rho_bin_names), methods, vals, errs, r"MAE ($\rho$ only)",
+                 r"C   $\rho$ by true $|\rho|$")
+
+    # No figure-level title: that goes in the LaTeX caption, not baked into the PNG.
+    fig.subplots_adjust(left=0.06, right=0.99, bottom=0.30, top=0.90, wspace=0.55)
     fig.savefig(path)
     plt.close(fig)
 

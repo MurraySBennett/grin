@@ -154,7 +154,7 @@ print(fit)
   rho_2   = -0.21  +/- 0.40   [90% -0.87, +0.44]
   rho_3   = +0.26  +/- 0.42   [90% -0.43, +0.95]
 ----------------------------------------------
-  most likely structure : free + !PS(A) + PS(B)
+  componentwise modal structure : free + !PS(A) + PS(B)
   intervals are the network&#x27;s own; pass calibrated=True for
   width-corrected intervals (see the package documentation)</pre>
               </div>
@@ -172,26 +172,26 @@ print(fit)
             <h3 class="card-subhead">Read the constructs</h3>
             <div class="io side">
               <div class="codeblock" data-codeblock>
-<pre data-lang="Python"><code>for k, ek in (("p_PI", "evidence_PI"),
-              ("p_sep_A", "evidence_sep_A"),
-              ("p_sep_B", "evidence_sep_B")):
-    print(k, con[k], con[ek])
+<pre data-lang="Python"><code>for k, dk in (("p_PI", "decision_PI"),
+              ("p_sep_A", "decision_sep_A"),
+              ("p_sep_B", "decision_sep_B")):
+    print(k, con[k], con[dk])
 </code></pre>
 <pre data-lang="R" hidden><code>con &lt;- fit$constructs
-con$p_PI;    con$evidence_PI
-con$p_sep_A; con$evidence_sep_A
-con$p_sep_B; con$evidence_sep_B
+con$p_PI;    con$decision_PI
+con$p_sep_A; con$decision_sep_A
+con$p_sep_B; con$decision_sep_B
 </code></pre>
               </div>
               <div class="output">
                 <span class="output-label">console</span>
-                <pre>p_PI      0.024    evidence: True
-p_sep_A   0.292    evidence: False
-p_sep_B   0.550    evidence: False</pre>
+                <pre>p_PI      0.024    decision: against
+p_sep_A   0.292    decision: undecided
+p_sep_B   0.550    decision: undecided</pre>
               </div>
             </div>
             <p>
-              The <code>evidence</code> flag is the useful part. Here independence is
+              The direction-explicit <code>decision</code> is the useful part. Here independence is
               clearly rejected, but neither separability call is far enough from one
               half to report as a finding &mdash; which is the honest answer, not a
               failure.
