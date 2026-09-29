@@ -74,14 +74,36 @@ available if the RT model is shipping as explicitly experimental rather than as 
 release (see "Deciding the RT model's status" below).
 
 ```bash
-python scripts/export_onnx.py       --install --version 1.0.0
-python scripts/export_onnx.py --rt  --install --version 1.0.0
+python scripts/export_onnx.py         --install --version 1.0.0
+python scripts/export_onnx.py --rt    --install --version 1.0.0
+python scripts/export_torchscript.py  --install --version 1.0.0
 ```
 
 Each prints the installed path, the sha256, the manifest transition, and any
 superseded `.onnx` it pruned. The pruning matters: without it every release
 doubles the repo's model payload and the S3 `--delete` sync keeps shipping dead
 files.
+
+**The third line is not optional.** Until 2026-09-29 this section ran only the
+two `export_onnx.py` lines, whose sole install target is `web/assets/models/`.
+The weights vendored by the two distributed packages were copied in by hand, and
+at the v1.0.0 release nobody did: both packages kept serving the 2026-08-12
+pre-release checkpoint for six weeks while the site served v1.0.0 — with the
+release-era `recalibration.json`, which *was* propagated, layered on top, so
+every `calibrated=True` interval they returned was wrong. The only visible
+symptom was a worked example in the manuscript that no user could reproduce.
+
+`export_onnx.py --install` now also writes into `packages/grintools/` and both
+exporters write a `model_provenance.json` beside the weights, recording the
+artefact hash, the version, and the training checkpoint's hash. Both packages
+verify that sidecar when they load a model, and
+`pytest tests/test_runtime_parity.py` asserts that the two packages were built
+from the same checkpoint and that the ONNX and TorchScript graphs agree. Run it
+before tagging:
+
+```bash
+pytest tests/test_runtime_parity.py -v
+```
 
 ### 3. Lab machine — promote the manuscript figures
 

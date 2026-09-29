@@ -14,6 +14,9 @@ reproduce here.
 `result` is compatible with grin_io.Criterion (.params/.std/.ci_low/.ci_high/.names).
 `constructs` matches the keys grin_io's probability targets expect.
 """
+import hashlib
+import json
+import os
 from importlib import resources
 
 import numpy as np
@@ -109,8 +112,48 @@ def _decision(probability, evidence_tol):
     return "undecided"
 
 
+def verify_bundled_model(path):
+    """Check a bundled model against the `model_provenance.json` written beside it.
+
+    Returns the sidecar dict, or None when there is no sidecar -- a user-supplied
+    `model_path` is not covered by one and is not our business to police.
+
+    This exists because of a real failure: between 2026-08-25 and 2026-09-29 the
+    packages shipped the PRE-release checkpoint while the web app served v1.0.0,
+    with the release-era recalibration factors applied on top. Nothing anywhere
+    compared the two, so the only symptom was a worked example in the paper whose
+    numbers no user could reproduce. A mismatch is now loud and immediate.
+    """
+    sidecar_path = os.path.join(os.path.dirname(os.path.abspath(path)),
+                                "model_provenance.json")
+    if not os.path.isfile(sidecar_path):
+        return None
+    with open(sidecar_path, encoding="utf-8") as fh:
+        sidecar = json.load(fh)
+    if sidecar.get("model_file") != os.path.basename(path):
+        return None                                   # sidecar describes a different file
+
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    actual = h.hexdigest()
+    if actual != sidecar.get("sha256"):
+        raise RuntimeError(
+            f"bundled GRIN model does not match its provenance record.\n"
+            f"  file     {path}\n"
+            f"  expected {sidecar.get('sha256')}  (version {sidecar.get('version')})\n"
+            f"  actual   {actual}\n"
+            "Reinstall grintools, or re-run scripts/export_onnx.py --install.")
+    return sidecar
+
+
 class GrinOnnx:
-    def __init__(self, path):
+    def __init__(self, path, verify=True):
+        if verify:
+            self.provenance = verify_bundled_model(path)
+        else:
+            self.provenance = None
         self.session = ort.InferenceSession(path, providers=["CPUExecutionProvider"])
         self.inputs = [i.name for i in self.session.get_inputs()]
         self.outputs = [o.name for o in self.session.get_outputs()]

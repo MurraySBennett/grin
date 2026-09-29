@@ -48,6 +48,17 @@ from release_provenance import PROJECT_ROOT, git_state, sha256_file, utc_now  # 
 
 WEB_MODELS_DIR = os.path.join(PROJECT_ROOT, "web", "assets", "models")
 
+# The distributed packages vendor their own copy of the weights. Until 2026-09-29
+# those copies were made BY HAND and nothing checked them, so v1.0.0 shipped to the
+# web while both packages kept serving the pre-release 2026-08-12 checkpoint for six
+# weeks -- with the release-era recalibration.json layered on top of it, which made
+# every calibrated=True interval wrong. install_to_packages() exists so that copy is
+# never a human step again, and the sidecar it writes is what CI and the packages
+# themselves check at load time.
+PKG_PY_MODELS_DIR = os.path.join(PROJECT_ROOT, "packages", "grintools", "grintools", "models")
+PKG_R_MODELS_DIR = os.path.join(PROJECT_ROOT, "packages", "grin", "inst", "models")
+PROVENANCE_SIDECAR = "model_provenance.json"
+
 # (site model id, exported basename stem, exported_by string for the manifest)
 EXPORT_SPECS = {
     False: ("cm", "npe_model", "scripts/export_onnx.py"),
@@ -125,6 +136,53 @@ RELEASE_NOTE = (
     "artifact_sha256 is computed by scripts/export_onnx.py --install and verified "
     "in .github/workflows/deploy.yaml before the file is allowed to ship."
 )
+
+
+def install_to_packages(exported_path, version, checkpoint_path=None, exported_by=None):
+    """Copy an exported artefact into the package that vendors it and write a
+    `model_provenance.json` sidecar beside it.
+
+    The destination is chosen from the extension: .onnx -> grintools (Python),
+    .pt -> grin (R). Returns the destination path.
+
+    The sidecar is the binding between a package version and the weights inside it.
+    Before it existed, `grin/R/model.R` documented that "the package version pins the
+    model" and nothing enforced it; the packages carried only `__version__`/`Version`,
+    with no way -- at build time, in CI, or at run time -- to tell which checkpoint
+    was actually inside. Both packages now hash their model against this file when
+    they load it.
+    """
+    ext = os.path.splitext(exported_path)[1]
+    dest_dir = {".onnx": PKG_PY_MODELS_DIR, ".pt": PKG_R_MODELS_DIR}.get(ext)
+    if dest_dir is None:
+        raise SystemExit(f"no package vendors a {ext!r} artefact")
+    if not os.path.isdir(dest_dir):
+        raise SystemExit(f"package model directory missing: {dest_dir}")
+
+    dest = os.path.join(dest_dir, os.path.basename(exported_path))
+    shutil.copyfile(exported_path, dest)
+    digest = sha256_file(dest)
+
+    sidecar = {
+        "model_file": os.path.basename(dest),
+        "sha256": digest,
+        "version": version,
+        "source_commit": git_state()["commit"],
+        "exported_utc": utc_now(),
+        "exported_by": exported_by or "scripts/export_onnx.py",
+    }
+    if checkpoint_path and os.path.isfile(checkpoint_path):
+        sidecar["checkpoint_file"] = os.path.relpath(
+            checkpoint_path, PROJECT_ROOT).replace(os.sep, "/")
+        sidecar["checkpoint_sha256"] = sha256_file(checkpoint_path)
+
+    with open(os.path.join(dest_dir, PROVENANCE_SIDECAR), "w", encoding="utf-8") as fh:
+        json.dump(sidecar, fh, indent=2)
+        fh.write("\n")
+
+    print(f"  installed  {os.path.relpath(dest, PROJECT_ROOT)}")
+    print(f"  sha256     {digest}")
+    return dest
 
 
 def install_to_web(rt, exported_path, version, status="release", note=None, prune=True,
@@ -276,6 +334,12 @@ def main(rt=False, version=None, install=False, status="release", note=None, pru
     if install:
         install_to_web(rt, out, version, status=status, note=note, prune=prune,
                        checkpoint_path=ckpt_path)
+        # The RT model is not vendored by either package; only the main one is.
+        if not rt:
+            install_to_packages(out, version, checkpoint_path=ckpt_path,
+                                exported_by="scripts/export_onnx.py --install")
+            print("  note       run scripts/export_torchscript.py --install to match "
+                  "the R package to these weights")
 
 
 if __name__ == "__main__":

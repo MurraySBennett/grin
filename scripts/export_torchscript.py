@@ -24,7 +24,7 @@ def _verify(wrapper, traced, args, atol=1e-6):
         assert torch.allclose(e, t, atol=atol), "traced module diverges from eager wrapper"
 
 
-def main(rt=False):
+def main(rt=False, install=False, version=None):
     if rt:
         from src.inference.predict_rt import load_rt_model
         m = load_rt_model(device="cpu")
@@ -56,9 +56,23 @@ def main(rt=False):
     traced.save(out)
     print(f"exported -> {out}  (traced + verified against eager wrapper)")
 
+    if install:
+        if rt:
+            raise SystemExit("the R package does not vendor the RT model")
+        if not version:
+            raise SystemExit("--install requires --version (e.g. --version 1.0.0)")
+        from scripts.export_onnx import install_to_packages
+        install_to_packages(out, version, checkpoint_path=MODEL_FILE,
+                            exported_by="scripts/export_torchscript.py --install")
+
 
 if __name__ == "__main__":
     import argparse
     ap = argparse.ArgumentParser()
     ap.add_argument("--rt", action="store_true", help="export the RT model instead")
-    main(rt=ap.parse_args().rt)
+    ap.add_argument("--install", action="store_true",
+                    help="also install into packages/grin/inst/models/ and write its "
+                         "model_provenance.json sidecar")
+    ap.add_argument("--version", help="release version recorded in the sidecar, e.g. 1.0.0")
+    a = ap.parse_args()
+    main(rt=a.rt, install=a.install, version=a.version)

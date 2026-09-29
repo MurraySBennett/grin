@@ -28,9 +28,10 @@ Depends:
 Imports:
     torch (>= 0.13.0),
     ggplot2 (>= 3.5.0),
-    rlang
-Suggests:
+    rlang,
     jsonlite,
+    digest
+Suggests:
     testthat (>= 3.0.0),
     knitr,
     rmarkdown,

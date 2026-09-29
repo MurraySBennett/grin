@@ -9,6 +9,30 @@
 
 .grin_cache <- new.env(parent = emptyenv())
 
+# Check the bundled TorchScript against the model_provenance.json written beside it
+# by scripts/export_torchscript.py --install. Mirrors grintools' verify_bundled_model().
+#
+# This exists because of a real failure: between 2026-08-25 and 2026-09-29 both
+# packages shipped the PRE-release checkpoint while the web app served v1.0.0, with
+# the release-era recalibration factors applied on top. Nothing compared them. A
+# user-supplied `path` has no sidecar and is left alone.
+.grin_verify_bundled <- function(path) {
+  sidecar <- file.path(dirname(path), "model_provenance.json")
+  if (!file.exists(sidecar)) return(invisible(NULL))
+  rec <- jsonlite::fromJSON(sidecar)
+  if (!identical(rec$model_file, basename(path))) return(invisible(NULL))
+  actual <- digest::digest(path, algo = "sha256", file = TRUE)
+  if (!identical(actual, rec$sha256)) {
+    stop("bundled GRIN model does not match its provenance record.\n",
+        "  file     ", path, "\n",
+        "  expected ", rec$sha256, "  (version ", rec$version, ")\n",
+        "  actual   ", actual, "\n",
+        "Reinstall the grin package, or re-run ",
+        "scripts/export_torchscript.py --install.", call. = FALSE)
+  }
+  invisible(rec)
+}
+
 .corr_label <- c("PI", "RHO1", "free")
 
 .class_label <- function(p_corr, p_sep_a, p_sep_b) {
@@ -67,6 +91,7 @@ grin_model <- function(path = NULL) {
   if (is.null(path)) path <- grin_default_model_path()
   cached <- .grin_cache[[path]]
   if (!is.null(cached)) return(cached)
+  .grin_verify_bundled(path)
   if (!requireNamespace("torch", quietly = TRUE)) {
     stop("the 'torch' package is required for inference. Install it with:\n",
         "  install.packages('torch'); torch::install_torch()", call. = FALSE)
@@ -110,9 +135,13 @@ print.grin_model <- function(x, ...) {
   function() {
     if (!is.null(cache)) return(cache)
     f <- system.file("extdata", "recalibration.json", package = "grin")
-    cache <<- if (nzchar(f) && requireNamespace("jsonlite", quietly = TRUE)) {
-      jsonlite::fromJSON(f)
-    } else NULL
+    # jsonlite is an Import, not a Suggest: this used to sit behind a
+    # requireNamespace() guard, so a missing package silently disabled the
+    # correction and returned raw intervals under calibrated = TRUE. Silent
+    # degradation of a numerical result is the same failure mode as the stale
+    # checkpoint this package shipped for six weeks -- if the data is not there,
+    # say so (the caller's warning below) rather than quietly changing the answer.
+    cache <<- if (nzchar(f)) jsonlite::fromJSON(f) else NULL
     cache
   }
 })

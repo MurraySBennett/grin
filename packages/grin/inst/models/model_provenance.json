@@ -1,0 +1,10 @@
+{
+  "model_file": "npe_model_ts.pt",
+  "sha256": "3ba9105c5ce54ab1149059c61c68528c52f23b9722429ba87d5d9cedbc3e8552",
+  "version": "1.0.0",
+  "source_commit": "7c466d174262c4fce52dc22c6484a0c952d7e635",
+  "exported_utc": "2026-09-29T14:06:20Z",
+  "exported_by": "scripts/export_torchscript.py --install",
+  "checkpoint_file": "results/models/npe_model.pt",
+  "checkpoint_sha256": "0f9deae1c5623b2403dc30241b09108368422ef1b3f444e92626eababc1f8fc0"
+}

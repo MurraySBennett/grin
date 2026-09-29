@@ -38,7 +38,19 @@ MATS = os.path.join(REAL_DATA_DIR, "real_matrices.csv")
 RFIT = os.path.join(MLE_FITS_DIR, "real_data_fits.csv")
 RSUB = os.path.join(MLE_FITS_DIR, "real_subsample_fits.csv")
 OUT_JSON = os.path.join("results", "real_data_comparison.json")
-AIC_PARSIMONY = 1.0
+# 0.0 = pure likelihood, which is what the released packages return: export_onnx.py
+# bakes a plain softmax over the correlation logits into the graph, so neither
+# grintools nor the R package can apply a complexity prior and neither exposes one.
+#
+# This was 1.0 until 2026-09-29, making the real-data section the ONLY analysis in
+# the manuscript run at a non-zero parsimony -- every other script already used 0.
+# The published probabilities were therefore ones no user of the released software
+# could reproduce. Changing it moves p(PI) for the five observers (thomas01a .002 ->
+# .001, silbert09b .010 -> .003, and the three independence-favouring observers down
+# into or nearer the undecided band) but changes no modal label, so Table 2 in the
+# manuscript is unaffected. If a complexity prior is ever wanted here again, expose
+# it in the packages first -- the paper should report what the software does.
+AIC_PARSIMONY = 0.0
 CM_COLS = [f"cm_{s}{r}" for s in range(4) for r in range(4)]
 PNAMES = ([f"zx_{i}" for i in range(4)] + [f"zy_{i}" for i in range(4)]
           + [f"rho_{i}" for i in range(4)])

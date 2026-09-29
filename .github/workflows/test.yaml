@@ -47,6 +47,17 @@ jobs:
         run: pip install pytest
       - name: Python unit tests (generator, GRT model)
         run: pytest tests/test_grt_model.py tests/test_generator.py -v
+      # Guards the failure of 2026-09-29: both packages shipped the pre-release
+      # checkpoint for six weeks while the web app served v1.0.0, and nothing
+      # compared them. The hash assertions here need no torch and must not be
+      # allowed to degrade to a skip -- a wrong bundled model is a packaging
+      # fault, not an environment one.
+      - name: Install cross-runtime parity dependencies
+        run: |
+          pip install onnxruntime
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Package weights vs. provenance, ONNX vs. TorchScript
+        run: pytest tests/test_runtime_parity.py -v
       - name: JS web-app port vs. the Python reference
         run: bash tests/run_web.sh
 
