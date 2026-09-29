@@ -1,6 +1,6 @@
 Package: grin
 Title: Amortised Inference for General Recognition Theory
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(
     person("Murray S.", "Bennett", email = "murray.bennett92@gmail.com", role = c("aut", "cre")),
     person("Peter D.", "Kvam", role = "aut"),

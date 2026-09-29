@@ -21,7 +21,7 @@ from .io import (to_confusion, describe, empirical_bias, response_bias,
 from .criterion import Criterion, Target, Decision, stop_on_precision
 from .onnx import GrinOnnx, OnnxResult
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 __all__ = ["infer", "to_confusion", "describe", "empirical_bias", "response_bias",
            "ConfusionInput", "Criterion", "Target", "Decision", "stop_on_precision",

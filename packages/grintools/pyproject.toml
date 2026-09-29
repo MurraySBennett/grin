@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "grintools"
-version = "0.1.0"
+version = "0.1.1"
 description = "Amortised, uncertainty-calibrated inference for General Recognition Theory (GRT) from a 2x2 identification confusion matrix -- milliseconds instead of maximum-likelihood fitting, via a neural network trained once on simulated data and shipped as an ONNX graph."
 readme = "README.md"
 requires-python = ">=3.9"
