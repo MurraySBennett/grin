@@ -6,29 +6,22 @@ project: grin
 
 ## Now
 
-The tool is being made releasable ahead of the co-author send. Audit found that
-three public claims were false: `pip install grintools` 404s, there are no git
-tags at all, and `publish.yml` sat outside `.github/workflows/` so it had never
-run -- and would have built the *root* package rather than grintools if it had.
-The `decision_*` API the manuscript documents (`GRIN_manuscript.tex:440,1002`)
-existed only in the working tree. All of that is now fixed and committed. Both
-packages build and test clean; `R CMD check --as-cran` is clean both with libtorch
-absent (CRAN's environment) and present (125 tests, 0 fail, 0 skip), and the
-grintools wheel and sdist both install and infer correctly. Names verified free:
-`grintools` on PyPI, `grin` on CRAN.
-Merged to main and CI is green: 15/15 grintools platform x version jobs
-(Python 3.9-3.13 on Linux/macOS/Windows), and `R CMD check --as-cran` under
-CRAN's own condition (libtorch absent) returns **Status: OK** -- no errors,
-warnings or notes. That also cleared the `grin_infer.Rd` code/documentation
-mismatch that had left Test red on main since 2026-09-06.
-
-Remaining work is the part that needs credentials: register on PyPI, enable
-Zenodo, tag, and submit to CRAN. Runbook is `docs/RELEASE.md` -> "Shipping the
-packages".
+Figure 1's four stimulus images and provenance manifest are tracked locally in
+commit `7941c7c` (2026-09-29), ready to include in the eventual public release.
+The manuscript claim/citation fixes and full editorial review are recorded in
+`../manuscripts/grin/WORK.md` and `docs/GRIN_editorial_review.md` there.
+Release work remains in `docs/RELEASE.md`; no push, tag, release, or submission
+was performed in this editorial pass. The existing vignette-script edit remains.
 
 ## Streams
 
 ### writing
+- [x] 2026-09-29 tracked the four Figure 1 stimulus JPEGs and
+  `data/vignette_stimuli/MANIFEST.json` in local commit `7941c7c`; the private
+  manuscript now cites the exact path. Include these assets in the final release.
+- [ ] next — Reconcile the figure/checkpoint provenance questions in
+  `../manuscripts/grin/docs/GRIN_editorial_review.md` before the co-author draft;
+  this requires existing records, not new analyses.
 - [x] 2026-09-15 fill the final submission metadata: competing interests, preregistration, corresponding-author postal address, archive DOI
 - [ ] now (S) **email Peter and Joe for co-author feedback — ask for their grant numbers** for the Funding declaration, which is still a placeholder
 - [ ] now (S) inspect the rebuilt 50-page PDF visually, then decide whether the DS robustness addendum is supplement / reviewer-response only
