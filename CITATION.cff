@@ -13,7 +13,7 @@ authors:
   - family-names: "Houpt"
     given-names: "Joseph W."
     affiliation: "The University of Texas at San Antonio"
-version: 0.1.0
+version: 0.1.1
 date-released: "2026-09-15"
 url: "https://github.com/MurraySBennett/grin"
 repository-code: "https://github.com/MurraySBennett/grin"
