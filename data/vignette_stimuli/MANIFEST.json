@@ -1,0 +1,30 @@
+{
+  "A1B1_regular_uniform": {
+    "isic_id": "ISIC_0012740",
+    "licence": "CC-0",
+    "attribution": "Anonymous",
+    "diagnosis": null,
+    "source_url": "https://api.isic-archive.com/api/v2/images/ISIC_0012740/"
+  },
+  "A1B2_regular_varied": {
+    "isic_id": "ISIC_0013096",
+    "licence": "CC-0",
+    "attribution": "Anonymous",
+    "diagnosis": null,
+    "source_url": "https://api.isic-archive.com/api/v2/images/ISIC_0013096/"
+  },
+  "A2B1_irregular_uniform": {
+    "isic_id": "ISIC_0000022",
+    "licence": "CC-0",
+    "attribution": "Anonymous",
+    "diagnosis": null,
+    "source_url": "https://api.isic-archive.com/api/v2/images/ISIC_0000022/"
+  },
+  "A2B2_irregular_varied": {
+    "isic_id": "ISIC_0022661",
+    "licence": "CC-0",
+    "attribution": "Anonymous",
+    "diagnosis": null,
+    "source_url": "https://api.isic-archive.com/api/v2/images/ISIC_0022661/"
+  }
+}
