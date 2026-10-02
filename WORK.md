@@ -16,6 +16,15 @@ was performed in this editorial pass. The existing vignette-script edit remains.
 ## Streams
 
 ### writing
+- [x] 2026-10-02 **the within-session learning/dynamics direction is now
+  `~/projects/latent-perceptual-grt`'s**, decided after a status audit, and is the
+  designated next paper ahead of this repo's two other extension tracks (the RT
+  model in `docs/dynamic_grt_rt_design.md`, blocked at gate 2 on a threshold
+  decision; the 3×3 track in `docs/grin_3x3_development.md`, experimental). That
+  project adopts `src/grt_model.py`'s parameterisation, `src/data/rt_dynamic_grt.py`
+  and `bayesflow_port/`; its own `WORK.md` carries the detail. Prompted by Joe
+  Houpt asking whether GRT can track perceptual learning rather than assume a
+  static representation. Nothing to change in this repo or the manuscript.
 - [x] 2026-09-29 tracked the four Figure 1 stimulus JPEGs and
   `data/vignette_stimuli/MANIFEST.json` in local commit `7941c7c`; the private
   manuscript now cites the exact path. Include these assets in the final release.
