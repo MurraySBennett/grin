@@ -1,5 +1,6 @@
 {
   "name": "GRIN",
+  "area": "Research",
   "icon": "grin",
   "start": "python3 -m http.server 8302",
   "url": "http://127.0.0.1:8302/",
