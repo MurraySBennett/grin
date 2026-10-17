@@ -32,6 +32,7 @@ CC-BY. See data/vignette_stimuli/MANIFEST.json for ids, licences and attribution
 """
 import json
 import os
+import textwrap
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -39,7 +40,8 @@ import matplotlib.image as mpimg
 from matplotlib.patches import Ellipse
 
 from src.config import FIGURES_DIR, PROJECT_ROOT
-from src.viz.style import set_style, BLUE, RED, BLUE_DEEP, RED_DEEP, INK, MUTE, CMAP_SEQ
+from src.viz.style import (set_style, BLUE, RED, BLUE_DEEP, RED_DEEP, INK, MUTE,
+                           CMAP_SEQ, CMAP_ERR)
 import src.grt_model as gm
 
 OUT = os.path.join(FIGURES_DIR, "vignette.png")
@@ -76,6 +78,13 @@ YLAB = "perceived colour variation"
 # a correlation only moves the residual concordant/discordant balance -- so the honest
 # figure shows that asymmetry rather than suppressing it.
 PS_SHIFT = 0.7
+# The "Both fail" panel carries a larger shift than the separability-only panel. The
+# reasoning above still holds for a panel whose ONLY failure is separability -- there, a
+# self-diagnosing matrix would undercut the figure's claim. The both-fail panel is making
+# the opposite point: that two failures are present at once and componentwise reporting is
+# what separates them. A shift too small to see leaves that panel looking like the
+# independence panel with extra steps, which is the more costly confusion of the two.
+BOTH_PS_SHIFT = 1.3
 # One shared within-stimulus correlation, the 1rho class of the twelve.
 PI_RHO = 0.60
 DS_TILT = 0.55
@@ -124,7 +133,7 @@ def _case_pi(s):
 def _case_both(s):
     """Both fail at once. Componentwise reporting is what separates this from the two
     single-failure panels; a single twelve-class label would not."""
-    zx = np.array([-s, -s + PS_SHIFT, s, s + PS_SHIFT])
+    zx = np.array([-s, -s + BOTH_PS_SHIFT, s, s + BOTH_PS_SHIFT])
     zy = np.array([-s, s, -s, s])
     return zx, zy, np.full(4, PI_RHO)
 
@@ -138,13 +147,12 @@ def _case_ds(s):
 
 
 CASES = [
-    ("Both constructs hold", _case_baseline, (0.05, 3.5), None,
-     "close distributions"),
+    ("All constructs hold", _case_baseline, (0.05, 3.5), None, None),
     ("Separability fails", _case_ps, (0.05, 3.5), None,
      "border mean shifts with colour"),
     ("Independence fails", _case_pi, (0.05, 3.5), None,
      "one shared correlation"),
-    ("Both fail together", _case_both, (0.05, 3.5), None,
+    ("Both fail", _case_both, (0.05, 3.5), None,
      "shift and correlation at once"),
     ("Decisional separability fails", _case_ds, (0.05, 3.5), DS_TILT,
      "introduced here, not estimated"),
@@ -214,7 +222,14 @@ def _draw_space(ax, zx, zy, rho, tilt=None, axis_labels=False, label_fs=6.5):
 
 
 def _draw_matrix(ax, P, label_fs=7.5, tick_fs=6.5):
-    ax.imshow(P, cmap=CMAP_SEQ, vmin=0, vmax=0.75)
+    # Two ramps on one matrix: correct responses (the diagonal) on the blue ramp,
+    # errors on the rose one. imshow takes a single cmap, so each is drawn as its own
+    # masked layer. Both share vmin/vmax, so a 20% cell reads as the same strength of
+    # its own hue wherever it sits -- hue carries correct-vs-error, lightness carries
+    # magnitude, and the two never trade off against each other.
+    eye = np.eye(4, dtype=bool)
+    ax.imshow(np.ma.masked_where(~eye, P), cmap=CMAP_SEQ, vmin=0, vmax=0.75)
+    ax.imshow(np.ma.masked_where(eye, P), cmap=CMAP_ERR, vmin=0, vmax=0.75)
     for i in range(4):
         for j in range(4):
             ax.text(j, i, f"{100*P[i,j]:.0f}", ha="center", va="center",
@@ -260,8 +275,12 @@ def _draw_case(ax_top, ax_bot, title, sub, a, zx, zy, rho, tilt, P,
     _draw_matrix(ax_bot, P, label_fs=label_fs, tick_fs=tick_fs)
     ax_top.set_title(f"{title}\n", fontsize=title_fs,
                      color=MUTE if dim else INK)
-    ax_top.text(0.5, 1.02, sub, transform=ax_top.transAxes, ha="center",
-                va="bottom", fontsize=sub_fs, color=MUTE, style="italic")
+    # sub is None for the baseline panel, which carries no subtitle. The trailing
+    # newline in the title above holds the same vertical space either way, so the
+    # five panel titles stay on one line.
+    if sub:
+        ax_top.text(0.5, 1.02, sub, transform=ax_top.transAxes, ha="center",
+                    va="bottom", fontsize=sub_fs, color=MUTE, style="italic")
 
 
 def main():
@@ -284,34 +303,15 @@ def main():
     gs_d = gs_d0[0].subgridspec(2, 2, wspace=0.12, hspace=0.30)
     dax = [fig.add_subplot(gs_d[i, j]) for i in range(2) for j in range(2)]
     _draw_design(dax)
-    dax[0].text(0.0, 1.42, "The identification design", transform=dax[0].transAxes,
+    dax[0].text(0.0, 1.42, "Identification Design", transform=dax[0].transAxes,
                 ha="left", va="bottom", fontsize=9.5, color=INK)
     dax[0].text(0.0, 1.26, "four lesions, two features crossed",
                 transform=dax[0].transAxes, ha="left", va="bottom",
                 fontsize=7.5, color=MUTE, style="italic")
 
-    # The design slot has no confusion matrix under it, which leaves the one block of
-    # free space in the figure. A reader meeting GRT here needs to be told how to read a
-    # panel once; saying it in the figure beats saying it in a caption they may not have
-    # to hand, or not at all.
-    key = fig.add_subplot(gs_d0[1]); key.axis("off")
-    key.text(0.0, 1.0, "How to read each observer", transform=key.transAxes,
-             ha="left", va="top", fontsize=8.5, color=INK)
-    key.text(0.0, 0.88,
-             "Above: the perceptual space.\n"
-             "One ellipse per stimulus (1 SD);\n"
-             "dashed lines are the bounds.\n\n"
-             "Below: the confusion matrix it\n"
-             "implies. Rows are stimuli shown,\n"
-             "columns responses made, so the\n"
-             "diagonal is correct.\n\n"
-             "All five observers share one\n"
-             "overall accuracy. The spaces\n"
-             "differ; whether the matrices\n"
-             "reveal which construct failed\n"
-             "is the question.",
-             transform=key.transAxes, ha="left", va="top",
-             fontsize=6.5, color=MUTE, linespacing=1.4)
+    # The lower block of the design slot is left empty. It held a reading key; the split
+    # stays because it is what keeps the stimuli aligned with the perceptual spaces
+    # beside them rather than drifting down a full-height cell.
 
     # slots 1-5: the observers, in reading order
     slots = [(0, 1), (0, 2), (1, 0), (1, 1), (1, 2)]
@@ -330,12 +330,34 @@ def main():
     # TARGET_ACC/ACC_TOL above) -- stating that once for the whole figure is the point;
     # repeating it under every panel was the kind of redundancy that just adds clutter.
     fig.text(0.5, 0.012,
-             f"overall accuracy {100*TARGET_ACC:.0f}% for all five observers",
+             f"Overall accuracy {100*TARGET_ACC:.0f}% for all five observers",
              ha="center", va="bottom", fontsize=9, color=MUTE)
 
     os.makedirs(FIGURES_DIR, exist_ok=True)
     fig.savefig(OUT, dpi=400); plt.close(fig)
     print(f"wrote {OUT}")
+
+    # ---- manuscript: the five observers alone, one row ------------------------
+    # The combined figure above is 6.5 x 8.19 in. The manuscript caps figures at
+    # .55\textheight = 4.95 in, and \textwidth is 6.5 in, so keepaspectratio lets the
+    # HEIGHT bind: it renders at 3.93 x 4.95 in, a 60% downscale, and 9.5 pt labels
+    # reach the page at 5.7 pt. Splitting the design off drops the aspect from 1.26 to
+    # 0.54, under the 0.76 ceiling, so this renders at the full 6.5 in with no downscale.
+    # Pair this with vignette_design.png, which the manuscript places separately.
+    fig = plt.figure(figsize=(PRINT_W, PRINT_W * 0.54))
+    gs = fig.add_gridspec(1, len(fitted), wspace=0.40, left=0.065, right=0.99,
+                          bottom=0.06, top=0.78)
+    for i, (title, sub, a, zx, zy, rho, tilt, P) in enumerate(fitted):
+        g = gs[i].subgridspec(2, 1, height_ratios=[1.05, 1.0], hspace=0.28)
+        _draw_case(fig.add_subplot(g[0]), fig.add_subplot(g[1]),
+                   "\n".join(textwrap.wrap(title, 16)),
+                   "\n".join(textwrap.wrap(sub, 20)) if sub else sub,
+                   a, zx, zy, rho, tilt, P,
+                   title_fs=8.0, sub_fs=6.0, label_fs=6.5, tick_fs=5.5,
+                   axis_labels=(i == 0), dim=title.startswith("Decisional"))
+    p = OUT.replace(".png", "_observers.png")
+    fig.savefig(p, dpi=400); plt.close(fig)
+    print(f"wrote {p}")
 
     # ---- individual: one case, its own space + confusion-matrix pair ----------
     for k, (title, sub, a, zx, zy, rho, tilt, P) in enumerate(fitted):
