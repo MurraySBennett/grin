@@ -119,9 +119,13 @@ Figures are copied to the manuscript by hand; `build.sh` has no sync step. Note
   not** — the prior is 1–1000 (`src/config.py:37`), the generator default used by
   both evaluation scripts is 5–500 (`src/data/generator.py:40`). Fix the manuscript
   sentence, not the code.
-- [ ] next (S) web: `validate.html` is still absent from `components/nav.html` and is
-  called "Validate" in its own `h1`, `learn.html` ×2 and `independence.html`, but
-  "Evidence" on `index.html` ×2, `live.html` and `tutorial-install.html`. Pick one.
+- [x] 2026-10-26 web: gave the Evidence page a nav entry and one name. It was
+  unreachable from `components/nav.html` and went by "Validate" in its own title,
+  `h1` and og:title, `learn.html` ×2 and `independence.html`, but "Evidence" on
+  `index.html` ×2, `live.html` and `tutorial-install.html`. `grin-shell.js:101`
+  already mapped `validate: "evidence"`, so the intended name was settled; the URL
+  stays `validate.html`. Also dropped "& use" from the Learn nav label and pointed
+  `tutorials.html` at Installing GRIN rather than at Learn for installation.
 - [ ] next (M) web accessibility, untouched by the copy review because its extractor
   strips tags: `learn.html` goes h1→h3→h4 with no h2; `validate.html` has one h1 and
   no subheadings; `index.html`, `space-builder.html`, `validate.html`,
