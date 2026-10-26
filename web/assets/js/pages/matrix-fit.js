@@ -168,8 +168,8 @@ Independence and separability in the perception of complex nonspeech sounds.
 <em>Attention, Perception, &amp; Psychophysics</em>, 71(8), 1900\u20131915.
 <a href="https://link.springer.com/article/10.3758/APP.71.8.1900"
    target="_blank" rel="noopener">View paper</a>
-, reproduced from their frequency/duration identification experiment. Values
-transcribed manually; worth a spot check against the original table before citing.`,
+, reproduced from their frequency/duration identification experiment. Values were
+transcribed manually, so check them against the original table before citing.`,
   },
   silbert_PT: {
     label: "Pitch / Timbre, Silbert et al. (2009)",
@@ -188,8 +188,8 @@ Independence and separability in the perception of complex nonspeech sounds.
 <em>Attention, Perception, &amp; Psychophysics</em>, 71(8), 1900\u20131915.
 <a href="https://link.springer.com/article/10.3758/APP.71.8.1900"
    target="_blank" rel="noopener">View paper</a>
-, reproduced from their pitch/timbre identification experiment. Values
-transcribed manually; worth a spot check against the original table before citing.`,
+, reproduced from their pitch/timbre identification experiment. Values were
+transcribed manually, so check them against the original table before citing.`,
   },
 };
 
@@ -409,7 +409,7 @@ function renderValidationSummary(result) {
 function trustNoteHTML() {
   return `<span class="eyebrow">Before interpreting the fit</span>
     <div class="note">
-      <h4>No warnings doesn't mean the model is right</h4>
+      <h4>No warnings does not mean the model is right</h4>
       <p>These checks catch problems with the file, and some data that look unlike GRIN's training examples. They cannot tell whether GRT is the right model. They also cannot spot lapses of attention, drift over a session, a mix of strategies, or people changing how they decide. Read GRIN's probabilities as “if the model and its training assumptions are right”. Be cautious when ranges are wide, when support for the best class is weak, or when GRIN and the MLE fit disagree.</p>
     </div>`;
 }
@@ -553,7 +553,7 @@ ${Object.entries(grin.arch)
   .join("")}
 <div class="note">
   <h4>Self-terminating architectures: ${grin.selfTerminatingProbability.toFixed(2)}</h4>
-  <p>Total probability assigned to the serial and parallel self-terminating models. In this simulator, one randomly selected dimension is processed and the other is guessed; this is not a diagnosis of stable dimension neglect.</p>
+  <p>Total probability assigned to the serial and parallel self-terminating models. In this simulator, one randomly selected dimension is processed and the other is guessed. This is not a diagnosis of stable dimension neglect.</p>
 </div>`;
   } else {
     $("grin-rt-block").innerHTML = "";
@@ -585,7 +585,7 @@ ${Object.entries(grin.arch)
     `<tr><th style="text-align:left">Model</th><th>k</th>
     <th>log L</th><th>BIC</th><th>weight</th><th>G² p</th></tr>${rows}`;
   $("mle-rt-note").textContent = hasRT
-    ? "MLE has no response-time model here, grtools and mdsdt don't fit RT either. This comparison is counts-only by nature."
+    ? "MLE has no response-time model here, grtools and mdsdt do not fit RT either. This comparison is counts-only by nature."
     : "";
 
   // honest agreement check: GRIN posterior mean vs the unconstrained MLE fit
@@ -607,8 +607,8 @@ Largest gap between GRIN's posterior mean and the unconstrained MLE fit is on
 <strong>${worst}</strong>: ${maxDiff.toFixed(3)} (${nSD.toFixed(1)} GRIN posterior SDs).
 ${
   nSD > 2
-    ? "That's a bigger gap than GRIN's own uncertainty would predict, worth a second look, especially if trial counts are low or this matrix is unusual."
-    : "That's well within GRIN's stated uncertainty, which is what you want to see."
+    ? "That is a bigger gap than GRIN's own uncertainty would predict, worth a second look, especially if trial counts are low or this matrix is unusual."
+    : "That is well within GRIN's stated uncertainty, which is what you want to see."
 }
     </p>
   </div>`;

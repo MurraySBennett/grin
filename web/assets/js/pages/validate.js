@@ -274,7 +274,7 @@
   <p>Across large held-out sets the sensitivities cover about 94% and the correlations
   about 84%, so a nominal 90% interval on a within-stimulus correlation behaves more
   like an 84% one. The released packages ship an optional correction for this
-  (<code>calibrated = TRUE</code> in R, <code>calibrated=True</code> in Python); it is
+  (<code>calibrated = TRUE</code> in R, <code>calibrated=True</code> in Python). It is
   off by default and does not change point estimates.</p>
   <p class="cap">Measured live on the batch above, so it will wobble run to run and
   shift as you change the trial count.</p>
@@ -291,7 +291,7 @@
       mdl = await getModel();
     } catch (e) {
       $("status").innerHTML =
-        `<span class="pill bad">Couldn't load the model (${e.message}).</span>`;
+        `<span class="pill bad">Could not load the model (${e.message}).</span>`;
       return;
     }
 

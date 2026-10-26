@@ -114,7 +114,7 @@ function assertSession(session, mf) {
       throw new Error(
         `Model "${mf.id}": the ONNX file expects inputs [${have.join(", ")}] but the ` +
           `manifest declares [${want.join(", ")}]. The manifest and the .onnx are out of ` +
-          `sync — re-run scripts/export_onnx.py.`,
+          `sync. Re-run scripts/export_onnx.py.`,
       );
 }
 

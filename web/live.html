@@ -47,7 +47,7 @@
           <p>
             An ordinary 2&times;2 identification task, run as an experiment rather than
             a widget: set it up here, and the task takes over the screen until you
-            finish or stop. Nothing is simulated except the stimulus &mdash; the
+            finish or stop. Nothing is simulated except the stimulus. The
             responses are yours, and the fit is the same network the R and Python
             packages ship.
           </p>
@@ -63,7 +63,7 @@
           <h3 class="card-subhead">You have a saved session</h3>
           <p id="prev-detail"></p>
           <p class="cap">
-            Stored in this browser only &mdash; the model runs on your machine, so there
+            Stored in this browser only. The model runs on your machine, so there
             is nowhere for it to be sent. Running a new task replaces it.
           </p>
           <div class="row">
@@ -77,8 +77,8 @@
           <div class="row" style="gap: 1.4rem; flex-wrap: wrap; align-items: end">
             <label>Stimulus
               <select id="stim-set">
-                <option value="colour">Colour — saturation × hue</option>
-                <option value="size">Rectangle — width × height</option>
+                <option value="colour">Colour (saturation × hue)</option>
+                <option value="size">Rectangle (width × height)</option>
               </select>
             </label>
             <label>Presentation (ms)
@@ -125,8 +125,8 @@
           <h3 class="card-subhead">What happens</h3>
           <p>
             A welcome screen, then the stimuli and keys, then blocks of trials. Between
-            blocks you see the fit so far &mdash; with every earlier estimate still on
-            the plot, dimmed, so the convergence is visible rather than asserted. The
+            blocks you see the fit so far, with every earlier estimate still on
+            the plot, dimmed, so you can see it converge. The
             task ends when the posterior reaches your precision target or the ceiling is
             hit, whichever comes first, and you can then take the data to the
             <a href="./analyse.html">Analyse</a> page.
@@ -157,12 +157,12 @@
           <h2>An identification task</h2>
           <p>
             You will see one shape at a time. It varies on two features at once, and
-            each feature can be high or low &mdash; so there are four possible stimuli.
+            each feature can be high or low, so there are four possible stimuli.
             Your job is to say which of the four you just saw.
           </p>
           <p>
             Each one appears only briefly and then disappears, and you have a short
-            window to answer. You will make mistakes; that is expected and it is what
+            window to answer. You will make mistakes. That is expected, and it is what
             makes the data informative. Answer as accurately as you can, as quickly as
             you can.
           </p>
@@ -202,7 +202,7 @@
             <aside class="card trial-diag" id="trial-diag" hidden>
               <h3 class="card-subhead">The fit, updating</h3>
               <canvas id="trial-space" style="width: 100%"></canvas>
-              <p class="cap trail-key"><strong>Solid</strong> is the current fit; <strong>dashed</strong> are earlier ones, fading as they age.</p>
+              <p class="cap trail-key"><strong>Solid</strong> is the current fit. <strong>Dashed</strong> lines are earlier fits, fading as they age.</p>
               <div id="trial-constructs"></div>
               <p class="cap" id="trial-status"></p>
               <p class="cap">
@@ -220,7 +220,7 @@
           <div class="results-grid">
             <div>
               <canvas id="break-space" style="width: 100%"></canvas>
-              <p class="cap trail-key"><strong>Solid</strong> is the current fit; <strong>dashed</strong> are earlier ones, fading as they age.</p>
+              <p class="cap trail-key"><strong>Solid</strong> is the current fit. <strong>Dashed</strong> lines are earlier fits, fading as they age.</p>
             </div>
             <div>
               <div id="break-constructs"></div>
@@ -237,7 +237,7 @@
           <div class="results-grid">
             <div>
               <canvas id="results-space" style="width: 100%"></canvas>
-              <p class="cap trail-key"><strong>Solid</strong> is the current fit; <strong>dashed</strong> are earlier ones, fading as they age.</p>
+              <p class="cap trail-key"><strong>Solid</strong> is the current fit. <strong>Dashed</strong> lines are earlier fits, fading as they age.</p>
             </div>
             <div>
               <div id="results-constructs"></div>

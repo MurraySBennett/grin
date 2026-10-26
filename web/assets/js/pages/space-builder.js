@@ -228,7 +228,7 @@
       It is less sure about independence: its best answer there gets
       ${(100 * corrConf).toFixed(0)}%, which pulls the overall support for this class
       down to ${mc.factorizedSupport.toFixed(2)}. (That overall figure is the separate
-      answers multiplied together; it has not been checked as a probability in its own right.)
+      answers multiplied together. It has not been checked as a probability in its own right.)
       ${
         corrConf >= 0.6
           ? "Here the data carry enough to lean one way on the correlation as well."

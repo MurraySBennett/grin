@@ -63,12 +63,12 @@
           <p class="cap">
             Classification accuracy for each construct, measured on 72,000 simulated
             observers. Independence is best identified around 60&ndash;65% per
-            dimension; separability around 80&ndash;85%. At the accuracy that best
+            dimension, and separability around 80&ndash;85%. At the accuracy that best
             serves independence, separability is recovered barely above chance.
           </p>
           <p>
             So there is no single right difficulty. If you need both, the crossing
-            point &mdash; about 75&ndash;80% per dimension, or 60% overall &mdash; is
+            point, at about 75&ndash;80% per dimension or 60% overall, is
             the compromise, and it is where the familiar advice to run near 60% correct
             comes from. Note which scale that number is on: 60% <em>overall</em> is
             about 77% per dimension, and running at 60% <em>per dimension</em> would be
@@ -91,8 +91,8 @@
           <li>
             <h3 class="card-subhead">Run a start-up block and measure where you landed</h3>
             <p>
-              Accuracy read off the matrix, not from the fitted parameters &mdash; it is
-              the thing you can see during a pilot.
+              Accuracy read off the matrix, not from the fitted parameters, because
+              that is what you can see during a pilot.
             </p>
             <div class="codeblock" data-codeblock>
 <pre data-lang="Python"><code>import numpy as np
@@ -130,8 +130,8 @@ message(sprintf("landed at %.0f%% per dimension", 100 * acc))
           <li>
             <h3 class="card-subhead">Adjust the separation and repeat</h3>
             <p>
-              A plain proportional step is enough. The point is not a clever algorithm;
-              it is that you now know which way to move and when to stop.
+              A plain proportional step is enough. The point is not a clever
+              algorithm. It is that you now know which way to move and when to stop.
             </p>
             <div class="codeblock" data-codeblock>
 <pre data-lang="Python"><code>TARGET, TOL, GAIN = 0.77, 0.03, 0.6      # aim at the crossing point
@@ -166,7 +166,7 @@ for (block in 1:6) {
             <p>
               Accuracy measured from a short block is noisy, and steering on noise is
               worse than not steering. At 5&ndash;20 trials per stimulus the standard
-              deviation of an accuracy estimate is about 0.047 &mdash; roughly a third
+              deviation of an accuracy estimate is about 0.047, roughly a third
               of the width of the band you are aiming at. At 50&ndash;200 it falls to
               0.015.
             </p>
@@ -188,7 +188,7 @@ for (block in 1:6) {
           </p>
           <p>
             What it cannot do is manufacture information. If a correlation is weak and
-            the trial budget is small, no placement recovers it &mdash; the model will
+            the trial budget is small, no placement recovers it. The model will
             correctly report a wide interval, and that is the answer.
           </p>
         </section>

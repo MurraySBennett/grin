@@ -114,7 +114,7 @@ export function buildLevelMap(tokens) {
       };
     }
     return {
-      error: `Integer stimulus codes must be 0-3 or 1-4; found ${lo}-${hi}.`,
+      error: `Integer stimulus codes must be 0-3 or 1-4, but found ${lo}-${hi}.`,
     };
   }
 
@@ -137,7 +137,7 @@ export function buildLevelMap(tokens) {
   if (A.length !== 2 || B.length !== 2)
     return {
       error:
-        `Expected exactly 2 levels per dimension; found ${A.length} ` +
+        `Expected exactly 2 levels per dimension, but found ${A.length} ` +
         `on dimension A (${A.join(", ")}) and ${B.length} on dimension B (${B.join(", ")}).`,
     };
 
@@ -391,7 +391,7 @@ export function checkInputs(agg, { hasRT = false, rawRTs = [] } = {}) {
   const [vMin, vMax] = TRAIN_BOUNDS.validatedTrials;
 
   const total = agg.trials.reduce((a, b) => a + b, 0);
-  if (total === 0) errors.push("The matrix is empty — no trials at all.");
+  if (total === 0) errors.push("The matrix is empty. It has no trials at all.");
 
   agg.trials.forEach((n, s) => {
     if (n === 0)
@@ -405,7 +405,7 @@ export function checkInputs(agg, { hasRT = false, rawRTs = [] } = {}) {
     else if (n < tMin || n > tMax)
       warnings.push(
         `Stimulus ${STIMULUS_ORDER[s]} has ${n} trials, outside the ${tMin}-${tMax} ` +
-          `range GRIN was trained on. It is extrapolating here; check the result ` +
+          `range GRIN was trained on. It is extrapolating here, so check the result ` +
           `against another fit.`,
       );
     else if (n < vMin)
@@ -491,7 +491,7 @@ export function templateCSV({ withRT = true } = {}) {
     "# labels like Happy/Male, or integers 0-3. If using, rt are in SECONDS.",
   );
   rows.push(
-    "Participant # and rt are optional; drop rt to use the counts-only model.",
+    "Participant # and rt are optional. Drop rt to use the counts-only model.",
   );
   return rows.join("\n") + "\n";
 }

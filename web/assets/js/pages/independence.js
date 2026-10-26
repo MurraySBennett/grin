@@ -200,7 +200,7 @@
       mdl = await getModel();
     } catch (e) {
       $("statusB").innerHTML =
-        `<span class="pill bad">Couldn't load the model (${e.message}).</span>`;
+        `<span class="pill bad">Could not load the model (${e.message}).</span>`;
       return;
     }
     $("runB").disabled = true;

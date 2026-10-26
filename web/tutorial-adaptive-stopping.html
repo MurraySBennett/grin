@@ -45,7 +45,7 @@
         <section class="card">
           <p>
             A fixed trial budget has to be set in advance, and set for the least
-            precise participant you can imagine &mdash; so everyone else is
+            precise participant you can imagine, so everyone else is
             over-tested. If inference costs a fraction of a millisecond you can
             instead refit between trials and stop each participant when their own
             estimate is precise enough.
@@ -53,7 +53,7 @@
           <p class="cap">
             In simulation this saves about 74% of trials at a target of 0.35 on the
             posterior SD, and the saving grows as the target tightens. Nobody is
-            measured less precisely; the saving comes entirely from the participants
+            measured less precisely. The saving comes entirely from the participants
             who never needed the full budget.
           </p>
           <p>
@@ -181,8 +181,8 @@ while (n &lt; MAX_TRIALS) {
             <h3 class="card-subhead">Always set a ceiling</h3>
             <p>
               Some participants will not reach any given target, because the design
-              does not contain the information &mdash; particularly for the
-              correlations, and particularly at high accuracy. Without a maximum you
+              does not contain the information. This is most likely for the
+              correlations, and at high accuracy. Without a maximum you
               are running an experiment with no defined end.
             </p>
             <p>
@@ -204,8 +204,8 @@ while (n &lt; MAX_TRIALS) {
           <p>
             <strong>Stopping on a construct probability is different from stopping on
             precision.</strong> A probability near one half can mean the data are
-            uninformative, and more trials will fix that &mdash; or that the true
-            answer sits near a boundary, and they will not. A precision target is the
+            uninformative, and more trials will fix that. It can also mean that the
+            true answer sits near a boundary, and more trials will not fix that. A precision target is the
             safer default.
           </p>
         </section>

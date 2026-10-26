@@ -75,17 +75,17 @@
           then decide using two lines: one separates happy from sad, and the
           other separates male from female. Which side of each line your
           impression falls on determines your answer. (GRIN fixes both lines at
-          the origin; see <a href="#separability">decisional separability</a>
+          the origin. See <a href="#separability">decisional separability</a>
           below.)
         </p>
         <p>
           That single picture, four ellipses and a pair of crossed lines, is the
           entire model. Everything else on this site is about estimating
           <em
-            >where the ellipses are located in space and how they're shaped</em
+            >where the ellipses are located in space and how they are shaped</em
           >
           from the responses alone. You can go build one of these spaces in the
-          <a href="./space-builder.html">Space Builder</a> page; it's faster to
+          <a href="./space-builder.html">Space Builder</a> page. It is faster to
           understand by dragging sliders than by reading all of this.
         </p>
 
@@ -145,7 +145,7 @@
             <h4>Perceptual separability (PS)</h4>
             <p>
               A dimension is separable from another if its marginal perceptual
-              distribution doesn't shift with the other dimension's level.
+              distribution does not shift with the other dimension's level.
               Failure of separability is a <em>mean</em> effect, it moves where
               an ellipse is centered.
             </p>
@@ -164,7 +164,7 @@
           <div class="note" style="margin-bottom: 0.6rem">
             <h4>Decisional separability (DS)</h4>
             <p>
-              The decision bound on one dimension doesn't depend on the
+              The decision bound on one dimension does not depend on the
               perceived level of the other. GRIN assumes DS throughout, the
               crossed decision lines are always fixed at the origin, which is
               what makes the 12-parameter model exactly identified from one
@@ -177,8 +177,8 @@
               One specific combination of {independent / one shared ρ / free ρ}
               × {A separable or not} × {B separable or not}, 12 in total.
               "Fitting a model" in the classical sense means picking the best of
-              these 12; GRIN instead returns continuous parameters plus the
-              probability of each structural claim, so you aren't forced to pick
+              these 12. GRIN instead returns continuous parameters plus the
+              probability of each structural claim, so you are not forced to pick
               one.
             </p>
           </div>
@@ -241,7 +241,7 @@
 
         <details>
           <summary>
-            My data don't fit a 2×2 design. Can I still use this?
+            My data do not fit a 2×2 design. Can I still use this?
           </summary>
           <div class="details-body">
             <p style="margin-top: 0">
@@ -283,7 +283,7 @@
               a separate, fixed-prior inference for each participant. A
               hierarchical Stan model estimates population and participant
               effects jointly and lets the data determine the amount of pooling.
-              GRIN is much faster for the model and prior it was trained on;
+              GRIN is much faster for the model and prior it was trained on.
               Stan is slower but can express different priors, hierarchies, and
               model extensions directly.
             </p>
@@ -325,8 +325,8 @@
           <p>
             The decision bounds are fixed at the origin in every model class
             GRIN fits. If your participants use response criteria that shift
-            with the other dimension, GRIN will not detect that, it isn't in the
-            model family.
+            with the other dimension, GRIN will not detect that, because it is
+            not in the model family.
           </p>
         </div>
         <div class="note warn">
@@ -341,7 +341,7 @@
           <h4>A model class winning at 0.4 is not a finding</h4>
           <p>
             GRIN reports a probability alongside every structural claim
-            specifically so you don't have to pretend a narrow plurality is a
+            specifically so you do not have to pretend a narrow plurality is a
             confident conclusion. The Space Builder and Analyse pages both
             raise this directly.
           </p>
@@ -400,7 +400,7 @@
             where your question is answerable</a>.
           </p>
           <p>
-            Or try the <a href="./live.html">live task</a> &mdash; a short
+            Or try the <a href="./live.html">live task</a>, a short
             identification task with the model refitting after every response.
           </p>
         </section>

@@ -60,7 +60,7 @@
           <h3 class="card-subhead">Where things stand</h3>
           <p>
             <code>grintools</code> (Python) and <code>grin</code> (R) are not yet on
-            PyPI and CRAN. Until they are, install from the repository &mdash; the
+            PyPI and CRAN. Until they are, install from the repository. The
             instructions below are the supported route, not a workaround, and they
             install exactly what the paper describes.
           </p>
@@ -93,8 +93,8 @@ print(gt.infer([[83,112,47,11],[38,154,28,33],[15,27,117,94],[6,36,75,136]])[1][
             <h3 class="card-subhead">R</h3>
             <p>
               The R package runs the same weights as a TorchScript graph through
-              <code>torch</code>, so no Python installation is needed on the R side
-              &mdash; but <code>torch</code> itself has a second, separate download.
+              <code>torch</code>, so no Python installation is needed on the R side.
+              However, <code>torch</code> itself has a second, separate download.
             </p>
             <div class="codeblock" data-codeblock>
 <pre data-lang="R"><code>install.packages(c("torch", "remotes", "jsonlite"))
@@ -125,8 +125,8 @@ grin_infer(cm)$constructs$p_PI
               <strong><code>torch::install_torch()</code> can report an error and still
               have succeeded.</strong> Run non-interactively it sometimes ends with
               <code>cannot change value of locked binding for '.torch_can_load'</code>
-              after the download has already completed. Do not trust the exit status
-              &mdash; check with <code>torch::torch_tensor(1)</code> instead. If that
+              after the download has already completed. Do not trust the exit status.
+              Check with <code>torch::torch_tensor(1)</code> instead. If that
               returns a tensor, you are fine.
             </p>
             <p>
@@ -174,7 +174,7 @@ print("calibration available:", cal.calibrated)
             </div>
             <p class="cap">
               If <code>cal.calibrated</code> comes back <code>False</code>, the
-              correction file did not ship with your build; the package still works,
+              correction file did not ship with your build. The package still works,
               and you get the network's own intervals.
             </p>
           </li>

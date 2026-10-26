@@ -933,7 +933,7 @@ export function renderRT(canvas, opts) {
     g.fillStyle = T.mute;
     g.font = "12px Inter, system-ui, sans-serif";
     g.textAlign = "center";
-    g.fillText("No response times yet — run an experiment.", W / 2, H / 2);
+    g.fillText("No response times yet. Run an experiment.", W / 2, H / 2);
     return;
   }
   const maxRT =

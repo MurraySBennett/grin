@@ -295,11 +295,11 @@ async function endBlock() {
   if (nTrials >= cfg().maxTrials) return finish("reached the trial ceiling");
 
   show("break");
-  $("break-title").textContent = `Block ${blockN} complete — ${nTrials} trials so far`;
+  $("break-title").textContent = `Block ${blockN} complete, ${nTrials} trials so far`;
   paintDiagnostics("break", fitted);
   $("break-note").textContent = fitted
     ? "This is where an adaptive design makes its decision: carry on, or stop."
-    : "Not enough data yet for a stable fit — carry on.";
+    : "Not enough data yet for a stable fit. Carry on.";
   phase = "await-space-block";
 }
 
@@ -326,7 +326,7 @@ function finish(why) {
         `<p class="cap">This browser will not let the page store data, so the
          hand-off to Analyse is unavailable. Download the trials instead.</p>`;
     }
-    $("results-title").textContent = `Finished — ${why}`;
+    $("results-title").textContent = `Finished: ${why}`;
     paintDiagnostics("results", fitted);
     const acc = accuracy();
     $("results-detail").innerHTML =
@@ -363,15 +363,15 @@ function savingSummary() {
   };
 
   let html = `<div class="note" style="margin-top: 1rem">
-    <h4 style="margin:0 0 .4rem">You stopped ${saved} trials early &mdash; ${pct}% of the budget you set</h4>
+    <h4 style="margin:0 0 .4rem">You stopped ${saved} trials early, ${pct}% of the budget you set</h4>
     <p style="margin:0 0 .5rem">
       You asked for up to ${c.maxTrials} trials and the posterior reached your precision
       target after ${nTrials}.`;
 
   if (perTrial) {
     html += ` At the ${perTrial.toFixed(2)}&thinsp;s per trial you actually averaged,
-      that is about <strong>${mins(saved)}</strong> of testing not spent &mdash; and
-      that ignores the block breaks those trials would also have needed, so it is on
+      that is about <strong>${mins(saved)}</strong> of testing not spent. That
+      figure ignores the block breaks those trials would also have needed, so it is on
       the low side.`;
   }
   html += `</p>`;
@@ -391,8 +391,8 @@ function savingSummary() {
   }
 
   html += `<p class="cap" style="margin:.5rem 0 0">One run by one person, so treat it as
-    an illustration rather than an estimate. Precision stopping remains a proof of concept;
-    a calibrated sequential operating rule has not yet been established.</p></div>`;
+    an illustration rather than an estimate. Precision stopping remains a proof of concept.
+    A calibrated sequential operating rule has not yet been established.</p></div>`;
   return html;
 }
 
@@ -436,7 +436,7 @@ async function begin() {
     $("start").textContent = "Start";
     $("start").disabled = false;
     $("config-status").innerHTML =
-      `<span class="pill bad">Couldn't load the model (${e.message}).</span>`;
+      `<span class="pill bad">Could not load the model (${e.message}).</span>`;
     return;
   }
   $("start").textContent = "Start";
