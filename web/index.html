@@ -27,11 +27,11 @@
     <title>GRIN - General Recognition Inference Network</title>
     <meta
       name="description"
-      content="GRIN fits General Recognition Theory models to identification data in milliseconds, with calibrated uncertainty. Explore the theory, analyse your own data, and check the tool against the alternatives."
+      content="GRIN is a free tool that fits General Recognition Theory to identification data in your browser. It gives each estimate with a range of likely values, and shows how well it recovers known answers."
     />
     <link rel="canonical" href="https://grin.murraysbennett.com/" />
     <meta property="og:title" content="GRIN - General Recognition Inference Network" />
-    <meta property="og:description" content="GRIN fits General Recognition Theory models to identification data in milliseconds, with calibrated uncertainty. Explore the theory, analyse your own data, and check the tool against the alternatives." />
+    <meta property="og:description" content="GRIN is a free tool that fits General Recognition Theory to identification data in your browser. It gives each estimate with a range of likely values, and shows how well it recovers known answers." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://grin.murraysbennett.com/" />
     <meta property="og:image" content="https://grin.murraysbennett.com/assets/images/og-card.svg" />
@@ -43,9 +43,10 @@
     <header class="site">
       <h1>GRIN</h1>
       <p class="tagline">
-        A fast, free tool for analysing a classic kind of perception experiment.
-        It gives the same kind of answer as the standard method in about a
-        millisecond, and says how sure it is.
+        A free tool for analysing identification experiments in perception
+        research. It estimates the same quantities as the standard method, in
+        milliseconds per participant, and gives a range of likely values for
+        each one.
       </p>
       <div id="nav-placeholder"></div>
     </header>
@@ -58,24 +59,24 @@
           can be happy or sad, and male or female. General Recognition Theory
           (GRT) asks whether the mind keeps those two features apart, or whether
           one affects how we see the other. In a GRT study, people see one item
-          at a time and name both features. GRT works out how the features are
-          represented from the pattern of their mistakes.
+          at a time and name both features. From the pattern of mistakes, GRT
+          estimates how the mind represents the two features.
         </p>
         <p class="lede">
           The standard way to fit GRT (maximum likelihood) searches for the
-          best-fitting answer separately for every participant and every
-          version of the model, and returns one best guess.
+          best-fitting answer separately for every participant and every model
+          class, and returns one best guess.
           <strong
             >GRIN replaces that search with a neural network trained in advance
             on simulated experiments.</strong
           >
-          Given new data, it answers in about a millisecond. For each estimate
+          Given new data, it answers in milliseconds. For each estimate
           it gives a range of likely values, and for each main conclusion it
           gives a probability.
         </p>
         <p class="lede">
           Everything on this site runs <strong>in your browser</strong>. Your
-          experimental data are not uploaded for analysis.
+          data stay on your computer. Nothing is uploaded.
         </p>
       </div>
 
@@ -83,64 +84,68 @@
         <span class="eyebrow">Use GRIN</span>
         <h2>Start with your own data</h2>
         <p>
-          Upload a trial-level CSV or enter a 4×4 confusion matrix. You will get
-          GRIN's parameter and construct estimates beside a classical
-          maximum-likelihood reference, plus the warnings needed to judge how
-          much weight to put on the result.
+          Load a CSV file of trials or counts, paste CSV text, type in a 4×4
+          confusion matrix, or load a published example. GRIN shows its
+          estimates beside a standard maximum-likelihood fit, with warnings
+          that help you judge how much weight to put on the result.
         </p>
         <div class="row">
           <a class="button" href="./analyse.html">Analyse data</a>
-          <a class="button" href="./learn.html">Read the assumptions first</a>
+          <a class="button" href="./learn.html#limitations"
+            >Read the assumptions and limitations</a
+          >
         </div>
       </div>
 
       <div class="section-label">
-        <span class="eyebrow">Learn GRT by seeing it</span>
+        <span class="eyebrow">GRT sans data</span>
       </div>
       <div class="doors">
         <a class="door" href="./explore.html">
           <h3>Explore</h3>
           <p>
-            Interactive pages where you set up a perceptual space with sliders
-            and watch what data it would produce. You don't need any data of
-            your own.
+            Use the sliders to set the perceptual representations of four
+            stimuli to see the answers of a simulated observer.
           </p>
-          <span class="kicker">Open the toolkit →</span>
+          <span class="kicker">Open Explore</span>
         </a>
 
         <a class="door" href="./validate.html">
           <h3>Evidence</h3>
           <p>
-            Manuscript-scale held-out recovery and calibration, plus a smaller
-            live simulation you can run yourself as the trial count falls.
+            How closely GRIN recovers the true values in 24,000 simulated
+            datasets that it was not trained on, and a smaller simulation you
+            can run here with fewer trials.
           </p>
-          <span class="kicker">Check the estimator →</span>
+          <span class="kicker">Check evidence</span>
         </a>
       </div>
 
       <div class="card">
-        <span class="eyebrow">What it does and doesn't do</span>
+        <span class="eyebrow">What GRIN does</span>
         <div class="viz-2">
           <div>
             <h3 class="card-subhead">What GRIN is good at</h3>
             <ul>
               <li>
-                <strong>Speed.</strong> Each participant is a forward pass, so
-                large batches are practical without running a fresh optimiser
-                for every person and candidate model.
+                <strong>Speed.</strong> Each participant requires only a quick
+                pass rather than an entirely new search, so large studies and
+                analyses within an experiment become practical.
               </li>
               <li>
-                <strong>Tested uncertainty.</strong> The network returns an
-                approximate posterior for each parameter and separate
-                probabilities for the structural questions. We check interval
-                coverage on held-out simulations; see
+                <strong>Uncertainty range.</strong> For each estimate GRIN gives
+                a range of likely values, and for each main question a
+                probability. We tested how often these ranges contain the true
+                value in simulated data it was not trained on. The ranges for
+                correlations are too narrow. See
                 <a href="./validate.html">Evidence</a>.
               </li>
               <li>
-                <strong>Small samples.</strong> It can return an estimate where
-                an optimiser may fail to converge. That does not create
-                information: with few trials, expect wide intervals and weak
-                structural conclusions.
+                <strong>Small samples.</strong> It returns an estimate even when
+                the standard method fails to find one. That does not make a small
+                sample more informative. With few trials, expect wide ranges and
+                uncertain conclusions. GRIN was tested on 5 to 500 trials per
+                stimulus.
               </li>
             </ul>
           </div>
@@ -148,21 +153,24 @@
             <h3 class="card-subhead">What it is not</h3>
             <ul>
               <li>
-                <strong>It makes assumptions.</strong> GRIN only knows the
+                <strong>Importantly, GRIN only knows what it was trained on.</strong> GRIN only knows the
                 range of experiments it was trained on. It checks your file and
-                warns about some data that look unlike its training examples. It
+                warns when your data fall outside the range it was trained or tested
+                on. It
                 cannot tell whether GRT is the right model for your data, or
                 catch every case where your data fall outside what it has
                 seen.
               </li>
               <li>
-                <strong>It assumes decisional separability</strong> throughout,
-                and (currently) 2×2 designs only.
+                <strong>It handles 2×2 designs only</strong> (two features, two
+                levels each), and it assumes each decision line is fixed
+                (decisional separability, see
+                <a href="./learn.html#separability">Learn</a>).
               </li>
               <li>
                 <strong>It does not interpret results for you.</strong> A
-                probability near 0.5, or weak support for the best-fitting class
-                of model, means the data do not settle the question.
+                probability near 0.5, or weak support for the best-fitting model
+                class, means the data do not settle the question.
               </li>
             </ul>
           </div>
@@ -170,26 +178,26 @@
       </div>
 
       <div class="card">
-        <span class="eyebrow">Cite / source</span>
+        <span class="eyebrow">Source code and packages</span>
         <p class="flush">
           The paper is in preparation. The simulator, the networks, the
           validation suite, and this site are open source. If you find a case
-          where GRIN breaks, please get in touch — that is the useful kind of
-          bug.
+          where GRIN gives a wrong or strange result, please email me at
+          <a href="mailto:grin@murraysbennett.com">grin@murraysbennett.com</a>.
         </p>
         <div class="row">
-          <a class="button" href="./learn.html">GRT primer</a>
+          <a class="button" href="./learn.html">Learn about GRT</a>
           <a class="button" href="https://github.com/MurraySBennett/grin"
             >Source on GitHub</a
           >
           <a
             class="button"
-            href="https://github.com/MurraySBennett/grin/tree/main/packages/grintools"
+            href="./tutorial-install.html"
             >Python package</a
           >
           <a
             class="button"
-            href="https://github.com/MurraySBennett/grin/tree/main/packages/grin"
+            href="./tutorial-install.html"
             >R package</a
           >
         </div>
