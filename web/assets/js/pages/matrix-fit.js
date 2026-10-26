@@ -17,22 +17,28 @@ import { loadModelCached } from "../grin-model.js";
 
 const $ = (id) => document.getElementById(id);
 
-// Lazy-load display fonts only when a figure palette that needs them is chosen.
-const FIGURE_FONT_HREF =
-  "https://fonts.googleapis.com/css2?family=Rye&family=VT323&family=Kalam:wght@400;700&family=Bungee&family=Orbitron:wght@600&family=Playfair+Display:wght@600&display=swap";
+// The display fonts used by the decorative figure palettes are self-hosted and
+// declared in assets/fonts/fonts.css, so they are no longer fetched from a
+// third party when a palette is chosen. The browser still only downloads a face
+// the first time it is actually used, so this stays lazy; we just have to wait
+// for the face to be ready before drawing, or the first render falls back.
+const FIGURE_FONT_FACES = [
+  '400 1rem "Rye"',
+  '400 1rem "VT323"',
+  '400 1rem "Kalam"',
+  '700 1rem "Kalam"',
+  '400 1rem "Bungee"',
+  '600 1rem "Orbitron"',
+  '600 1rem "Playfair Display"',
+];
 let figureFontsLoading = null;
 function ensureFigureFonts() {
-  if (document.getElementById("grin-figure-fonts")) return Promise.resolve();
   if (figureFontsLoading) return figureFontsLoading;
-  figureFontsLoading = new Promise((resolve) => {
-    const link = document.createElement("link");
-    link.id = "grin-figure-fonts";
-    link.rel = "stylesheet";
-    link.href = FIGURE_FONT_HREF;
-    link.onload = () => resolve();
-    link.onerror = () => resolve();
-    document.head.appendChild(link);
-  });
+  if (!document.fonts?.load) return Promise.resolve();
+  figureFontsLoading = Promise.all(
+    // A missing face must not block the figure, so swallow per-face failures.
+    FIGURE_FONT_FACES.map((f) => document.fonts.load(f).catch(() => {})),
+  ).then(() => {});
   return figureFontsLoading;
 }
 

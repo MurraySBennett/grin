@@ -28,12 +28,7 @@
     <meta property="og:url" content="https://grin.murraysbennett.com/validate.html" />
     <meta property="og:image" content="https://grin.murraysbennett.com/assets/images/og-card.svg" />
     <link rel="icon" href="./assets/images/favicon.svg" type="image/svg+xml" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Press+Start+2P&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="stylesheet" href="./assets/fonts/fonts.css" />
     <link rel="stylesheet" href="./assets/css/grin.css" />
   </head>
   <body data-page="validate">
@@ -68,14 +63,23 @@
           (the eight location parameters) closely matched the true values, with
           a mean recovery correlation of <strong>0.91</strong>. Its estimates of
           each cloud's tilt (the four within-stimulus correlations) matched less
-          well, at <strong>0.59</strong>. The 90% uncertainty ranges contained
-          the true value <strong>92.8%</strong> of the time.
+          well, at <strong>0.59</strong>.
+        </p>
+        <p>
+          The uncertainty ranges are reported separately for the two families,
+          because they are calibrated differently. Ranges stated as 90%
+          contained the true value <strong>94.5%</strong> of the time for the
+          sensitivities and <strong>84.1%</strong> of the time for the
+          correlations. A nominal 90% range on a within-stimulus correlation
+          therefore behaves more like an 84% one. Pooling the two families
+          averages errors that run in opposite directions and gives a figure
+          near 90% that describes neither, so we do not quote one here.
         </p>
         <p class="cap flush-bottom">
-          These are pooled results from the fixed research checkpoint on test
-          matrices spanning 5–500 trials per stimulus. The small live exercise
-          below is for intuition and will vary from run to run; it uses the same
-          browser weights as Analyse.
+          These results come from the fixed research checkpoint reported in the
+          paper, on test matrices spanning 5–500 trials per stimulus. The small
+          live exercise below is for intuition and will vary from run to run; it
+          uses the same browser weights as Analyse.
         </p>
       </div>
 
@@ -172,8 +176,11 @@
               maximum-likelihood fit shows the same pattern;
               <a href="./independence.html">An independence problem</a>
               explains why. With fewer trials per stimulus the points spread
-              out, but the calibration curve should stay near the diagonal. That
-              is because the estimates become less certain and say so.
+              out, because the estimates become less certain and say so. In the
+              calibration panel, expect the sensitivity curve to track the
+              diagonal and the correlation curve to sit below it: those ranges
+              are too narrow, which is the miscalibration the figures above
+              report.
             </p>
           </div>
         </section>

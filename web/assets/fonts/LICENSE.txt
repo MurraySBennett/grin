@@ -1,0 +1,41 @@
+Self-hosted webfonts
+====================
+
+Every font in this directory is licensed under the SIL Open Font License,
+Version 1.1. The full licence text is at https://openfontlicense.org and is
+distributed with each family's upstream source, linked below.
+
+The .woff2 files here are the unmodified Latin (and, for the two interface
+families, Latin-Extended) subsets served by Google Fonts, retrieved on
+2026-10-26 and vendored so that no page on this site contacts a third party.
+The @font-face rules in fonts.css reproduce the upstream subset boundaries and
+unicode-range values verbatim, so rendering is unchanged.
+
+Interface families
+------------------
+  Inter               Copyright (c) 2016 The Inter Project Authors
+                      https://github.com/rsms/inter
+                      (variable font; one file covers weights 400-700)
+
+  Press Start 2P      Copyright (c) 2012 Cody "CodeMan38" Boisclair
+                      https://github.com/CodeMan38/Press-Start-2P
+
+Figure display families (optional decorative palettes on Analyse)
+-----------------------------------------------------------------
+  Bungee              Copyright (c) 2015 David Jonathan Ross
+                      https://github.com/djrrb/bungee
+
+  Kalam               Copyright (c) 2014 Indian Type Foundry
+                      https://github.com/itfoundry/kalam
+
+  Orbitron            Copyright (c) 2009 Matt McInerney
+                      https://github.com/theleagueof/orbitron
+
+  Playfair Display    Copyright (c) 2010 Claus Eggers Soerensen
+                      https://github.com/clauseggers/Playfair-Display
+
+  Rye                 Copyright (c) 2012 Steve Matteson
+                      https://fonts.google.com/specimen/Rye
+
+  VT323               Copyright (c) 2011 Peter Hull
+                      https://github.com/phoikoi/VT323

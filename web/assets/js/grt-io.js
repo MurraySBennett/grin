@@ -29,13 +29,26 @@ import { STIMULUS_ORDER } from "./grt-core.js";
 export const QUANTILES = [0.1, 0.3, 0.5, 0.7, 0.9];
 export const N_Q = QUANTILES.length;
 
-/** Intended release bounds from the current configuration. The legacy browser
- * checkpoints predate provenance manifests, so these are provisional until the
- * release artifacts are retrained/exported with embedded provenance. */
+/** Bounds from the released configuration.
+ *
+ * Two different ranges matter and they are not the same, which is why both are
+ * recorded here. `trialsPerStimulus` is the TRAINING prior (src/config.py
+ * TRIAL_RANGE): outside it the network is extrapolating. `validatedTrials` is
+ * the range the held-out evaluation actually covered (the trial_range default
+ * in src/data/generator.py, inherited by scripts/evaluate.py and
+ * scripts/calibration_breakdown.py). Between 1 and 5 trials a fit is inside the
+ * training prior but outside anything we have measured, so it warrants a
+ * warning even though it is not extrapolation.
+ *
+ * The browser ONNX is byte-identical to the one the Python package ships
+ * (artifact_sha256 in assets/models/cm/manifest.json), so its provenance is
+ * verified; this flag used to read false while the package copies were stale.
+ */
 export const TRAIN_BOUNDS = {
   trialsPerStimulus: [1, 1000], // config.TRIAL_RANGE
+  validatedTrials: [5, 500], // generator.py trial_range, as evaluated
   rtSeconds: [0.1, 10.0], // generator clips to this
-  checkpointProvenanceVerified: false,
+  checkpointProvenanceVerified: true,
 };
 
 // --------------------------------------------------------------------------- //
@@ -375,6 +388,7 @@ export function checkInputs(agg, { hasRT = false, rawRTs = [] } = {}) {
     warnings = [],
     notes = [];
   const [tMin, tMax] = TRAIN_BOUNDS.trialsPerStimulus;
+  const [vMin, vMax] = TRAIN_BOUNDS.validatedTrials;
 
   const total = agg.trials.reduce((a, b) => a + b, 0);
   if (total === 0) errors.push("The matrix is empty — no trials at all.");
@@ -384,13 +398,28 @@ export function checkInputs(agg, { hasRT = false, rawRTs = [] } = {}) {
       errors.push(
         `Stimulus ${STIMULUS_ORDER[s]} has no trials. GRIN needs all four stimuli.`,
       );
-    else if (n < tMin)
-      warnings.push(`Stimulus ${STIMULUS_ORDER[s]} has only ${n} trial(s).`);
-    else if (n > tMax)
+    // Order matters: test the training prior first, because falling outside it
+    // is the more serious problem. Note that tMin is 1, so no positive count is
+    // ever below the prior -- the low-side risk is the validated range, not the
+    // prior, and checking only `n < tMin` here used to make this branch dead.
+    else if (n < tMin || n > tMax)
       warnings.push(
-        `Stimulus ${STIMULUS_ORDER[s]} has ${n} trials, above the intended release ` +
-          `range of ${tMax}. The legacy browser checkpoint's exact bounds cannot be ` +
-          `verified; check the result against another fit.`,
+        `Stimulus ${STIMULUS_ORDER[s]} has ${n} trials, outside the ${tMin}-${tMax} ` +
+          `range GRIN was trained on. It is extrapolating here; check the result ` +
+          `against another fit.`,
+      );
+    else if (n < vMin)
+      warnings.push(
+        `Stimulus ${STIMULUS_ORDER[s]} has only ${n} trial(s). That is within the ` +
+          `training range but below the ${vMin}-${vMax} range the published ` +
+          `validation covered, so the stated uncertainty has not been checked this ` +
+          `low. Expect wide intervals and treat the structural conclusions as weak.`,
+      );
+    else if (n > vMax)
+      warnings.push(
+        `Stimulus ${STIMULUS_ORDER[s]} has ${n} trials, above the ${vMin}-${vMax} ` +
+          `range the published validation covered. The estimate should be sound, ` +
+          `but its interval width has not been checked this high.`,
       );
   });
 
