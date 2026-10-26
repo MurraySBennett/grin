@@ -491,7 +491,7 @@ export function templateCSV({ withRT = true } = {}) {
     "# labels like Happy/Male, or integers 0-3. If using, rt are in SECONDS.",
   );
   rows.push(
-    "Participant # and rt are optional. Drop rt to use the counts-only model.",
+    "# participant and rt are optional. Drop rt to use the counts-only model.",
   );
   return rows.join("\n") + "\n";
 }
