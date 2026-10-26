@@ -50,17 +50,15 @@
       <div class="plain" style="margin-bottom: 1.25rem">
         <span class="eyebrow">The one hard piece</span>
         <p>
-          GRIN recovers a General Recognition Theory representation (mostly)
-          well. The challenging part is knowing whether two dimensions are
-          perceptually independent, which is to say whether the within-stimulus
-          correlation is zero. Here, we walk through why, using the same
-          machinery as the rest of the site, and what it suggests for your study
-          design. Everything here points to the difficulty being a feature of
-          the data and the task rather than any particular way of fitting, so it
-          is worth understanding rather than working around.
-          <a href="./validate.html">Validate</a> shows the recovery and
-          calibration that hold across the rest of the representation and this
-          page explores when and why you should be careful.
+          GRIN recovers most of a General Recognition Theory model well. The
+          hard part is telling whether two features are perceptually
+          independent, that is, whether a cloud is tilted at all (whether the
+          within-stimulus correlation is zero). This page uses the same tools as
+          the rest of the site to show why, and what it means for designing a
+          study. Our results suggest the difficulty comes from the data and the
+          task, not from any particular fitting method.
+          <a href="./validate.html">Validate</a> covers how well the rest of the
+          model is recovered.
         </p>
       </div>
 
@@ -69,8 +67,9 @@
         <p class="cap" style="margin-top: 0">
           On the left, the two dimensions are independent and on the right they
           carry a correlation you set. The perceptual pictures are clearly
-          different, but the confusion matrices they produce (below) are almost
-          the same, which is the whole problem.
+          different, but the tables of answers they produce (below) are almost
+          identical. When the data look the same, no method can tell the two
+          spaces apart.
         </p>
 
         <div class="row" style="gap: 1.5rem; flex-wrap: wrap">
@@ -186,16 +185,14 @@
 
       <!-- ============================ Section 3 ============================ -->
       <div class="card">
-        <span class="eyebrow">3. Why response times can't help</span>
+        <span class="eyebrow">3. Response times help only a little</span>
         <p style="margin: 0">
-          It is tempting to hope that adding response times pins down the
-          correlation the counts cannot. Our results suggest they mostly do not,
-          and the reason is collinearity. As the correlation changes it moves
-          accuracy and response time together, so the timing carries little
-          information about the correlation beyond what accuracy already
-          reported. Adding the full response-time model helps, but modestly The short
-          version is that timing sharpens the architecture question far more
-          than it sharpens the correlation.
+          You might expect response times to fill the gap. Our results suggest
+          they mostly do not. When the tilt changes, accuracy and response time
+          change together, so timing adds little beyond what accuracy already
+          shows. The full response-time model helps, but only modestly. Timing
+          is far more useful for the question of how the features are processed
+          (the processing architecture) than for the correlation.
         </p>
       </div>
 
@@ -203,12 +200,10 @@
       <div class="card">
         <span class="eyebrow">4. What this suggests</span>
         <p>
-          Based on our own results, recovering the perceptual correlation from a
-          single identification matrix looks like a hard problem, and the
-          difficulty appears to sit in the data and the task rather than in any
-          particular estimator. We would expect approaches built on the same
-          measurements to meet the same wall, so we read this as a feature of
-          the setup, not a shortcoming of one method.
+          Based on our results, estimating the correlation from a single table of
+          answers is hard, and the difficulty seems to lie in the data and the
+          task rather than in any one method. We would expect other methods that
+          use the same data to struggle in the same way.
         </p>
         <p>
           Given that, a few directions seem reasonable to us. Treat the

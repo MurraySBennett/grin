@@ -57,9 +57,10 @@
             packages ship.
           </p>
           <p class="cap">
-            Fitting a GRT model by numerical optimisation takes seconds, so it can only
-            happen once a session is over. Here it takes a fraction of a millisecond, so
-            the design can make a decision at every block break.
+            Fitting a GRT model the standard way, by numerical optimisation, takes
+            seconds per fit, so it is normally run after testing ends. GRIN takes a
+            fraction of a millisecond, so the experiment can check its estimate at
+            every block break and decide whether to stop.
           </p>
         </section>
 
@@ -110,11 +111,10 @@
           <label class="row" style="margin-top: 0.9rem">
             <input type="checkbox" id="live-diag" />
             <span>Show the fit during trials
-              <span class="cap">Off by default, and off is the honest setting: a
-              plot updating beside a 200 ms stimulus competes for attention, and showing
-              a participant their own fit mid-task is performance feedback that changes
-              behaviour. The fit is shown at every block break regardless. Turn this on
-              only to watch the mechanism.</span>
+              <span class="cap">Off by default, and best left off. A moving plot next
+              to a 200 ms stimulus is distracting, and seeing your own results during
+              the task can change how you respond. The fit is always shown at each
+              block break. Turn this on only if you want to watch how it works.</span>
             </span>
           </label>
 
@@ -178,10 +178,11 @@
         <div class="screen" id="screen-instructions">
           <h2>The four stimuli, and your keys</h2>
           <p>
-            These are the four. The keys are arranged to match: the top row
-            (<kbd>E</kbd> <kbd>I</kbd>) is the high level of the first feature, the
-            bottom row (<kbd>F</kbd> <kbd>J</kbd>) the low level; the left pair is the
-            low level of the second feature and the right pair the high level.
+            The keys match the layout of the stimuli. Top row
+            (<kbd>E</kbd>, <kbd>I</kbd>): first feature high. Bottom row
+            (<kbd>F</kbd>, <kbd>J</kbd>): first feature low. Left keys
+            (<kbd>E</kbd>, <kbd>F</kbd>): second feature low. Right keys
+            (<kbd>I</kbd>, <kbd>J</kbd>): second feature high.
           </p>
           <div id="instr-legend" class="legend-grid"></div>
           <p class="cap" style="margin-top: 0.9rem">

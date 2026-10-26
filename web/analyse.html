@@ -117,12 +117,13 @@
           <hr class="hr" />
           <span class="eyebrow">Format</span>
           <p class="cap" style="margin-top: 0">
-            One row per <strong>trial</strong>: <code>stimulus</code>,
-            <code>response</code> (as <code>A1B1</code>-style codes, your own
-            labels like <code>Happy/Male</code>, or 0–3), optional
-            <code>participant</code>. A <code>rt</code> column is accepted but
-            ignored: the response-time model is withdrawn pending validation of its
-            replacement, so inference here is counts-only.
+            Your file needs one row per <strong>trial</strong>, with a
+            <code>stimulus</code> column and a <code>response</code> column.
+            Codes can be <code>A1B1</code>-style, your own labels such as
+            <code>Happy/Male</code>, or the numbers 0–3. A
+            <code>participant</code> column is optional. Response times (an
+            <code>rt</code> column) are ignored for now: the response-time model
+            has been withdrawn until its replacement is validated.
           </p>
           <div class="row">
             <button class="ghost" id="dl-template-cm">Template (counts)</button>

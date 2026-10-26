@@ -70,15 +70,18 @@
 
         <h3 style="font-size: 0.75rem; color: var(--steel)">2. The model</h3>
         <p>
-          General Recognition Theory (GRT, Ashby &amp; Townsend, 1986) says that
-          because perception is noisy, each stimulus doesn't map to a single
-          point in the mind, but instead maps to a
-          <strong>bivariate normal distribution</strong>
-          over a two-dimensional perceptual space. The two decision axes are
-          lines through that space (GRIN fixes them at the origin, see
-          <a href="#separability">decisional separability</a> below). Your
-          response as to which category you saw is determined by which side of
-          each line your percept fell on.
+          General Recognition Theory (GRT; Ashby &amp; Townsend, 1986) starts
+          from the fact that perception is noisy: the same face does not look
+          exactly the same every time. So instead of a single point in the
+          mind, each face is represented as a cloud of possible impressions (a
+          <strong>bivariate normal distribution</strong>). The cloud is spread
+          over two directions, one for expression and one for sex. Each time
+          you see the face, your impression is one point from that cloud. You
+          then decide using two lines: one separates happy from sad, and the
+          other separates male from female. Which side of each line your
+          impression falls on determines your answer. (GRIN fixes both lines at
+          the origin; see <a href="#separability">decisional separability</a>
+          below.)
         </p>
         <p>
           That single picture, four ellipses and a pair of crossed lines, is the
@@ -95,21 +98,20 @@
           3. The two questions we typically ask with GRT
         </h3>
         <p>
-          <strong id="separability">Perceptual separability.</strong> Does one
-          dimension's perceived value depend on the level of the
-          <em>other</em> dimension? If a face looks a little happier just
-          because it's male, expression is not separable from sex, the ellipses
-          shift sideways as you cross the other dimension.
+          <strong id="separability">Perceptual separability.</strong> Does how
+          happy a face looks depend on whether it is male or female? If male
+          faces look a little happier just because they are male, expression is
+          not separable from sex. In the picture, the clouds shift.
         </p>
         <p>
-          <strong id="independence">Perceptual independence.</strong> On a
-          single trial, does noise on one dimension travel with noise on the
-          other? If an unusually happy-looking sample also tends to look
-          unusually male, the dimensions are correlated on that trial and the
-          ellipses tilt.
+          <strong id="independence">Perceptual independence.</strong> For any
+          one face, are the random ups and downs in the two impressions linked?
+          Suppose that whenever a face happens to look extra happy, it also
+          tends to look extra male. Then the two impressions are correlated, and
+          that face's cloud tilts.
         </p>
         <p>
-          These are independent questions. A space can be separable but
+          These are two separate questions. A space can be separable but
           correlated, non-separable but uncorrelated, or any combination.
         </p>
 
@@ -117,18 +119,18 @@
           4. The confusion matrix
         </h3>
         <p>
-          A 4×4 confusion matrix has 12 free numbers (4 rows, each summing to 1,
-          so 3 free probabilities per row). GRIN's representation has exactly 12
-          identified parameters, 4 per-stimulus x-locations, 4 y-locations, 4
-          correlations. 12 parameters and 12 free numbers makes a
-          <em>single</em> matrix enough to estimate the whole space (but we must
-          pin the decision bounds to align with their axes). Traditionally this
-          fit is done by numerical maximum likelihood, one optimiser run per
-          participant per candidate model. GRIN replaces that optimiser with a
-          network that we have trained offline on many simulated
-          experiments so that inference becomes a single forward pass through
-          that trained network. See <a href="./validate.html">Validate</a> for
-          how it holds up.
+          Each row of the 4×4 table gives the proportion of each answer to one
+          face, so it adds up to 1 and only 3 of its 4 numbers are free to vary.
+          That gives 12 free numbers in total. GRIN's model also has 12 numbers
+          to estimate: where each of the four clouds sits left–right (4), where
+          it sits up–down (4), and how much it tilts (4). With 12 numbers in and
+          12 out, a <em>single</em> table is just enough to pin down the whole
+          picture, as long as the decision lines stay fixed in place. The usual
+          method finds those 12 numbers with a step-by-step search (maximum
+          likelihood), run once per participant for each version of the model.
+          GRIN instead uses a network trained in advance on many simulated
+          experiments, so it gets the answer in one quick calculation. See
+          <a href="./validate.html">Validate</a> for how well that works.
         </p>
       </div>
 

@@ -48,8 +48,9 @@
     <header class="site">
       <h1>GRIN</h1>
       <p class="tagline">
-        General Recognition Inference Network: fit GRT models to identification
-        data in milliseconds, with uncertainty that has been tested.
+        A fast, free tool for analysing a classic kind of perception experiment.
+        It gives the same kind of answer as the standard method in about a
+        millisecond, and says how sure it is.
       </p>
       <div id="nav-placeholder"></div>
     </header>
@@ -58,23 +59,24 @@
       <div class="card">
         <span class="eyebrow">What this is</span>
         <p class="lede">
-          General Recognition Theory asks a precise question: when someone
-          identifies a stimulus that varies on two dimensions, are those
-          dimensions processed
-          <em>independently</em>? GRT answers it by treating each stimulus as a
-          bivariate distribution in a perceptual space, and reading the shape of
-          that space out of a confusion matrix.
+          Some things we see differ in two ways at once. A face, for example,
+          can be happy or sad, and male or female. General Recognition Theory
+          (GRT) asks whether the mind keeps those two features apart, or whether
+          one affects how we see the other. In a GRT study, people see one item
+          at a time and name both features. GRT works out how the features are
+          represented from the pattern of their mistakes.
         </p>
         <p class="lede">
-          Maximum likelihood approaches this by running an optimiser for each
-          participant and each candidate model, and returns a point estimate.
+          The standard way to fit GRT (maximum likelihood) searches for the
+          best-fitting answer separately for every participant and every
+          version of the model, and returns one best guess.
           <strong
-            >GRIN replaces the optimiser with a neural network trained on
-            simulated experiments.</strong
+            >GRIN replaces that search with a neural network trained in advance
+            on simulated experiments.</strong
           >
-          Inference becomes a single forward pass, about a millisecond, and
-          returns a posterior over parameter estimates and model
-          classifications, not just a point.
+          Given new data, it answers in about a millisecond. For each estimate
+          it gives a range of likely values, and for each main conclusion it
+          gives a probability.
         </p>
         <p class="lede">
           Everything on this site runs <strong>in your browser</strong>. Your
@@ -104,9 +106,9 @@
         <a class="door" href="./explore.html">
           <h3>Explore</h3>
           <p>
-            Space Builder, the independence problem, and research previews for
-            response times and repeated fitting — interactive pages that share
-            the same in-browser model as Analyse.
+            Interactive pages where you set up a perceptual space with sliders
+            and watch what data it would produce. You don't need any data of
+            your own.
           </p>
           <span class="kicker">Open the toolkit →</span>
         </a>
@@ -151,20 +153,21 @@
             <h3 class="card-subhead">What it is not</h3>
             <ul>
               <li>
-                <strong>It is not assumption-free.</strong> GRIN is amortised
-                over a fixed simulation prior. The app catches malformed inputs
-                and some obvious training-envelope problems; it cannot prove
-                that GRT generated your data or detect every kind of
-                extrapolation.
+                <strong>It makes assumptions.</strong> GRIN only knows the
+                range of experiments it was trained on. It checks your file and
+                warns about some data that look unlike its training examples. It
+                cannot tell whether GRT is the right model for your data, or
+                catch every case where your data fall outside what it has
+                seen.
               </li>
               <li>
                 <strong>It assumes decisional separability</strong> throughout,
                 and (currently) 2×2 designs only.
               </li>
               <li>
-                <strong>It is not a replacement for thinking.</strong> A
-                construct probability near 0.5 or weak factorized class support
-                is not a conclusive finding.
+                <strong>It does not interpret results for you.</strong> A
+                probability near 0.5, or weak support for the best-fitting class
+                of model, means the data do not settle the question.
               </li>
             </ul>
           </div>

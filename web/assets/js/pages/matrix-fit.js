@@ -403,8 +403,8 @@ function renderValidationSummary(result) {
 function trustNoteHTML() {
   return `<span class="eyebrow">Before interpreting the fit</span>
     <div class="note">
-      <h4>No warning does not mean “the model must be right”</h4>
-      <p>These checks catch file problems and some observable departures from the training regime. They cannot show that GRT generated the data, or diagnose lapses, drift, mixtures, or changing response criteria. Read GRIN's probabilities as conditional on its model and training prior; pay attention to wide intervals, weak factorized support, and disagreement with the MLE reference.</p>
+      <h4>No warnings doesn't mean the model is right</h4>
+      <p>These checks catch problems with the file, and some data that look unlike GRIN's training examples. They cannot tell whether GRT is the right model. They also cannot spot lapses of attention, drift over a session, a mix of strategies, or people changing how they decide. Read GRIN's probabilities as “if the model and its training assumptions are right”. Be cautious when ranges are wide, when support for the best class is weak, or when GRIN and the MLE fit disagree.</p>
     </div>`;
 }
 
@@ -532,11 +532,11 @@ function renderParticipant(id) {
   $("grin-verdict").innerHTML =
     `<div class="note ${mc.factorizedSupport >= 0.5 ? "" : "warn"}">
     <h4>Best-supported class: <code>${mc.name}</code> <span class="cap">(${Core.modelLabel(mc.name)})</span></h4>
-    <p>Factorized support ${mc.factorizedSupport.toFixed(2)}.${
+    <p>Support for this class: ${mc.factorizedSupport.toFixed(2)}.${
 mc.factorizedSupport < 0.5
-  ? " Not decisive, treat the structural conclusion as tentative."
+  ? " This is below 0.5, so treat the conclusion as tentative."
   : ""
-    } This is the product of three marginal outputs, not a separately calibrated joint probability.</p>
+    } (This is GRIN's three separate probabilities multiplied together. It has not been checked as a probability in its own right.)</p>
   </div>`;
 
   if (hasRT && grin.archBest) {

@@ -224,15 +224,15 @@
   <div class="note ${sepConf >= 0.75 ? "" : "warn"}">
     <h4>Best-supported class: <code>${mc.name}</code></h4>
     <p>
-      The separability structure is identified with confidence ${(100 * sepConf).toFixed(0)}%.
-      Whether the dimensions are independent is the information-limited part: its
-      best option sits at ${(100 * corrConf).toFixed(0)}%, which is what holds the
-      factorized class support down to ${mc.factorizedSupport.toFixed(2)}. That product is
-      a compact summary of three marginal heads, not a calibrated joint probability.
+      GRIN is ${(100 * sepConf).toFixed(0)}% sure about separability.
+      It is less sure about independence: its best answer there gets
+      ${(100 * corrConf).toFixed(0)}%, which pulls the overall support for this class
+      down to ${mc.factorizedSupport.toFixed(2)}. (That overall figure is the separate
+      answers multiplied together; it has not been checked as a probability in its own right.)
       ${
         corrConf >= 0.6
           ? "Here the data carry enough to lean one way on the correlation as well."
-          : "That is expected. Whether rho is zero leaves only a faint trace in a single matrix, and adding trials moves it slowly, so the separable / not-separable reading is the firm result here."
+          : "This is expected. Whether the tilt is zero leaves only a faint mark on the table of answers, and more trials help only slowly. The separability result is the firm one here."
       }
     </p>
   </div>`;

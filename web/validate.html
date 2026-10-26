@@ -47,10 +47,10 @@
       <div class="plain" style="margin-bottom: 1.25rem">
         <span class="eyebrow">What this page is for</span>
         <p>
-          Everywhere else on this site works with a single dataset. This page
-          asks if GRIN can <strong>recover</strong> the true representation from
-          many simulated participants, and do its uncertainty intervals
-          <strong>mean what they say</strong>?
+          The rest of the site analyses one dataset at a time. This page asks
+          two questions across many simulated participants: does GRIN
+          <strong>recover</strong> the true values, and are its uncertainty
+          ranges <strong>the right width</strong>?
         </p>
         <p style="margin-bottom: 0">
           Because the data are simulated, the true answer is known for every
@@ -63,11 +63,13 @@
       <div class="card">
         <span class="eyebrow">The manuscript-scale check</span>
         <p>
-          On <strong>24,000 held-out simulated matrices</strong>, mean recovery
-          correlations were <strong>0.91</strong> for the eight location
-          parameters and <strong>0.59</strong> for the four within-stimulus
-          correlations. The nominal 90% marginal intervals covered the truth
-          <strong>92.8%</strong> of the time.
+          We tested GRIN on <strong>24,000 simulated datasets</strong> that it
+          had not seen during training. Its estimates of where each cloud sits
+          (the eight location parameters) closely matched the true values, with
+          a mean recovery correlation of <strong>0.91</strong>. Its estimates of
+          each cloud's tilt (the four within-stimulus correlations) matched less
+          well, at <strong>0.59</strong>. The 90% uncertainty ranges contained
+          the true value <strong>92.8%</strong> of the time.
         </p>
         <p class="cap flush-bottom">
           These are pooled results from the fixed research checkpoint on test
@@ -164,15 +166,14 @@
           <div class="card">
             <span class="eyebrow">How to read this</span>
             <p style="margin: 0">
-              The sensitivities land tightly on the diagonal. The correlations
-              are looser, because a weak within-stimulus correlation leaves only
-              a faint trace in a single confusion matrix. That is a limit of
-              what the data carry rather than of the estimator, and a
-              maximum-likelihood fit shows the same split.
-              <a href="./independence.html">An independence problem</a> walks
-              through why. As you lower the trials per stimulus the points
-              spread out, but the calibration curve should stay near the
-              diagonal: the estimates get less certain and report it.
+              The location estimates (sensitivities) sit close to the diagonal. The
+              tilt estimates (correlations) scatter more, because a weak tilt
+              barely changes the table of answers. The standard
+              maximum-likelihood fit shows the same pattern;
+              <a href="./independence.html">An independence problem</a>
+              explains why. With fewer trials per stimulus the points spread
+              out, but the calibration curve should stay near the diagonal. That
+              is because the estimates become less certain and say so.
             </p>
           </div>
         </section>
