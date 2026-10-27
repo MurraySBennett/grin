@@ -1460,6 +1460,11 @@ kbd {
   overflow: auto;
 }
 .overlay[hidden] { display: none; }
+/* Live task: keyboard only, so say so on touch or narrow screens. */
+.keyboard-note { display: none; }
+@media (hover: none) and (pointer: coarse), (max-width: 40rem) {
+  .keyboard-note { display: block; margin-bottom: 1.1rem; }
+}
 .overlay-bar {
   display: flex;
   align-items: center;

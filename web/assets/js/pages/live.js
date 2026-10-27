@@ -299,7 +299,7 @@ async function endBlock() {
   paintDiagnostics("break", fitted);
   $("break-note").textContent = fitted
     ? "This is where an adaptive design makes its decision: carry on, or stop."
-    : "Not enough data yet for a stable fit. Carry on.";
+    : "GRIN needs at least 3 trials of each stimulus before it can fit. Carry on.";
   phase = "await-space-block";
 }
 
@@ -328,15 +328,46 @@ function finish(why) {
     }
     $("results-title").textContent = `Finished: ${why}`;
     paintDiagnostics("results", fitted);
+    paintRanges(fitted);
     const acc = accuracy();
     $("results-detail").innerHTML =
-      `<p>${nTrials} scored trials over ${blockN} block${blockN === 1 ? "" : "s"}` +
+      `<p>${nTrials} scored trial${nTrials === 1 ? "" : "s"}` +
+      (blockN ? ` over ${blockN} complete block${blockN === 1 ? "" : "s"}` : "") +
       (nTimeouts ? `, plus ${nTimeouts} discarded for missing the deadline` : "") +
-      `. Per-dimension accuracy ${Math.round(100 * acc)}%.</p>` +
-      `<p class="cap">Every earlier fit is still on the plot, dimmed. The estimate
-       settling as trials accumulate is the thing a fixed trial budget cannot see.</p>` +
-      savingSummary();
+      (acc === null ? "." : `. Per-dimension accuracy ${Math.round(100 * acc)}%.`) + `</p>` +
+      (fitted
+        ? `<p class="cap">Every earlier fit is still on the plot, dimmed. The estimate
+       settling as trials accumulate is the thing a fixed trial budget cannot see.</p>`
+        : `<p class="cap">There is no fit to show. GRIN needs at least 3 trials of
+       each stimulus.</p>`) +
+      savingSummary(why);
   });
+}
+
+/**
+ * The 12 parameter estimates with uncorrected 90% ranges from the network's
+ * posterior, drawn the same way as on Analyse.
+ */
+function paintRanges(fitted) {
+  const el = $("results-ranges");
+  if (!el) return;
+  const note = $("ranges-note");
+  if (note) note.hidden = !fitted;
+  if (!fitted) { el.innerHTML = ""; return; }
+  const set = SETS[cfg().set];
+  const up = (w) => w.charAt(0).toUpperCase() + w.slice(1);
+  const labels = [
+    ...STIM.map((s) => `${up(set.dimA)} sensitivity, ${s.name}`),
+    ...STIM.map((s) => `${up(set.dimB)} sensitivity, ${s.name}`),
+    ...STIM.map((s) => `Correlation, ${s.name}`),
+  ];
+  const { out } = fitted;
+  el.innerHTML =
+    `<h3 class="card-subhead">The estimates</h3>
+     <p class="cap">Each stimulus is named by its ${set.dimA} and then its
+     ${set.dimB}. Bars show 90% ranges. Numbers show the estimate &plusmn; 1 SD.</p>` +
+    labels.map((l, i) =>
+      Plot.estRow(l, out.mean[i], out.std[i], i < 8 ? [-3, 3] : [-1, 1])).join("");
 }
 
 /**
@@ -347,10 +378,16 @@ function finish(why) {
  * the inter-trial gap. It EXCLUDES the block breaks that the remaining trials would
  * also have needed, which makes the estimate conservative rather than flattering.
  */
-function savingSummary() {
+function savingSummary(why) {
   const c = cfg();
   const saved = Math.max(0, c.maxTrials - nTrials);
   if (saved === 0) return "";
+  if (why !== "precision target reached") {
+    return `<div class="note" style="margin-top: 1rem">
+      <h4 style="margin:0 0 .4rem">You stopped after ${nTrials} of the ${c.maxTrials} trials you set</h4>
+      <p class="cap" style="margin:0">You ended the task yourself, so this run says
+      nothing about how much the stopping rule saves.</p></div>`;
+  }
 
   const elapsedS = taskStartedAt ? (performance.now() - taskStartedAt) / 1000 : 0;
   const perTrial = nTrials > 0 && elapsedS > 0 ? elapsedS / nTrials : null;
@@ -369,7 +406,7 @@ function savingSummary() {
       target after ${nTrials}.`;
 
   if (perTrial) {
-    html += ` At the ${perTrial.toFixed(2)}&thinsp;s per trial you actually averaged,
+    html += ` At the ${perTrial.toFixed(2)} seconds per trial you actually averaged,
       that is about <strong>${mins(saved)}</strong> of testing not spent. That
       figure ignores the block breaks those trials would also have needed, so it is on
       the low side.`;
@@ -428,18 +465,20 @@ function downloadCSV() {
 // --------------------------------------------------------------------------- //
 async function begin() {
   $("start").disabled = true;
-  $("start").textContent = "Loading model…";
+  $("start").textContent = "Loading the network…";
   try {
     if (!model) model = await loadModelCached("./assets/models/cm",
-      (m) => { $("start").textContent = m || "Loading…"; });
+      (m) => {
+        $("start").textContent = (m || "Loading…").replace("model weights", "network");
+      });
   } catch (e) {
-    $("start").textContent = "Start";
+    $("start").textContent = "Start the task";
     $("start").disabled = false;
     $("config-status").innerHTML =
-      `<span class="pill bad">Could not load the model (${e.message}).</span>`;
+      `<span class="pill bad">Could not load the network (${e.message}).</span>`;
     return;
   }
-  $("start").textContent = "Start";
+  $("start").textContent = "Start the task";
   $("start").disabled = false;
   reset();
   openOverlay();

@@ -19,11 +19,11 @@
     <title>Live task - GRIN</title>
     <meta
       name="description"
-      content="Do a short identification task and watch the GRT model fit update between your trials, including the stopping rule the packages expose."
+      content="Do a short identification task, watch the GRT model refit at each block break, and see a simple precision stopping rule like the one the packages provide."
     />
     <link rel="canonical" href="https://grin.murraysbennett.com/live.html" />
     <meta property="og:title" content="Live task - GRIN" />
-    <meta property="og:description" content="Do a short identification task and watch the GRT model fit update between your trials, including the stopping rule the packages expose." />
+    <meta property="og:description" content="Do a short identification task, watch the GRT model refit at each block break, and see a simple precision stopping rule like the one the packages provide." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://grin.murraysbennett.com/live.html" />
     <meta property="og:image" content="https://grin.murraysbennett.com/assets/images/og-card.svg" />
@@ -35,27 +35,33 @@
     <header class="site">
       <h1>Live task</h1>
       <p class="tagline">
-        Do the task yourself. Watch the fit update after every response.
+        Do the task yourself. By default the GRT model is refitted at each block
+        break, and the task stops when the estimate is precise enough.
       </p>
       <div id="nav-placeholder"></div>
     </header>
 
     <main class="container">
       <div class="note" id="module-error" hidden></div>
+      <div class="note warn keyboard-note" id="keyboard-note">
+        This task needs a keyboard. Please use a computer.
+      </div>
       <div class="stack">
         <section class="card">
           <p>
-            An ordinary 2&times;2 identification task, run as an experiment rather than
-            a widget: set it up here, and the task takes over the screen until you
-            finish or stop. Nothing is simulated except the stimulus. The
-            responses are yours, and the fit is the same network the R and Python
+            An ordinary 2&times;2 identification task, run as a short experiment:
+            set it up here, and the task fills the screen until you finish or
+            stop. The stimuli are generated on screen with a little random
+            variation each trial. The fit uses the same network the R and Python
             packages ship.
           </p>
           <p class="cap">
-            Fitting a GRT model the standard way, by numerical optimisation, takes
-            seconds per fit, so it is normally run after testing ends. GRIN takes a
-            fraction of a millisecond, so the experiment can check its estimate at
-            every block break and decide whether to stop.
+            Maximum likelihood gives only best-fitting values. To know how
+            uncertain they are, the model must be refitted hundreds of times on
+            resampled data. GRIN returns the estimate and its uncertainty together
+            in less than half a millisecond, so an experiment can check how
+            precise its estimate is after any trial and stop as soon as it is
+            precise enough.
           </p>
         </section>
 
@@ -81,11 +87,11 @@
                 <option value="size">Rectangle (width × height)</option>
               </select>
             </label>
-            <label>Presentation (ms)
+            <label>Presentation time (milliseconds)
               <input type="range" id="stim-ms" min="80" max="500" step="20" value="200" />
               <span class="num" id="stim-ms-val">200</span>
             </label>
-            <label>Deadline (ms)
+            <label>Response deadline (milliseconds)
               <input type="range" id="deadline-ms" min="600" max="2500" step="100" value="1000" />
               <span class="num" id="deadline-ms-val">1000</span>
             </label>
@@ -93,9 +99,10 @@
               <input type="range" id="block-n" min="8" max="64" step="8" value="32" />
               <span class="num" id="block-n-val">32</span>
             </label>
-            <label>Stop at posterior SD
-              <input type="range" id="sd-target" min="0.15" max="0.60" step="0.01" value="0.35" />
-              <span class="num" id="sd-target-val">0.35</span>
+            <label>Stop when the average posterior SD falls to
+              <input type="range" id="sd-target" min="0.15" max="0.60" step="0.01" value="0.40" />
+              <span class="num" id="sd-target-val">0.40</span>
+              <span class="cap" style="display: block; font-weight: 400">The average across all 12 parameters.</span>
             </label>
             <label>Trial ceiling
               <input type="range" id="max-trials" min="64" max="512" step="32" value="256" />
@@ -107,7 +114,7 @@
             <input type="checkbox" id="live-diag" />
             <span>Show the fit during trials
               <span class="cap">Off by default, and best left off. A moving plot next
-              to a 200 ms stimulus is distracting, and seeing your own results during
+              to a 200 millisecond stimulus is distracting, and seeing your own results during
               the task can change how you respond. The fit is always shown at each
               block break. Turn this on only if you want to watch how it works.</span>
             </span>
@@ -125,8 +132,8 @@
           <h3 class="card-subhead">What happens</h3>
           <p>
             A welcome screen, then the stimuli and keys, then blocks of trials. Between
-            blocks you see the fit so far, with every earlier estimate on the
-            plot so that you can see convergence over time. The
+            blocks you see the fit so far, with earlier estimates on the plot
+            so that you can see convergence over time. The
             task ends when the posterior reaches your precision target or the ceiling is
             hit, whichever comes first, and you can then take the data to the
             <a href="./analyse.html">Analyse</a> page.
@@ -245,17 +252,18 @@
               <div id="results-detail"></div>
             </div>
           </div>
+          <div id="results-ranges" style="margin-top: 1.2rem"></div>
+          <p class="cap" id="ranges-note">
+            These 90% ranges have not been corrected, as on Analyse. For the
+            correlations they run too narrow: a range stated as 90% holds the true
+            value about 84% of the time. The <a href="./validate.html">Evidence</a>
+            page shows this directly.
+          </p>
           <div class="row" style="margin-top: 1.2rem; flex-wrap: wrap">
             <button class="button" id="results-analyse">Open this in Analyse</button>
             <button class="ghost" id="results-download">Download the trials (CSV)</button>
             <button class="ghost" id="results-close">Close</button>
           </div>
-          <p class="cap">
-            These ranges have not been corrected. For the correlations they run
-            too narrow: a range stated as 90% holds the true value about 84% of
-            the time. The <a href="./validate.html">Evidence</a> page shows this
-            directly.
-          </p>
         </div>
       </div>
     </div>
