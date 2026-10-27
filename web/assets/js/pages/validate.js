@@ -9,7 +9,7 @@
   async function getModel() {
     const status = (msg) => {
       const el = $("status") || $("run-status") || $("fit-status");
-      if (el && msg) el.textContent = msg;
+      if (el && msg) el.textContent = msg.replace("model weights", "network");
     };
     if (!model) model = await loadModelCached("./assets/models/cm", status);
     return model;
@@ -18,17 +18,22 @@
   let batch = null;
 
   // --- sampling a random, in-range true representation ---------------------
-  // Uses the same builder the Space Builder uses, with randomised controls, so
-  // the truth always lands inside the range the network was trained on.
+  // Uses the same builder the Space Builder uses, with randomised controls.
+  // Sensitivities stay within 2.7 of zero (training used up to 3). The spread is
+  // capped so that every stimulus correlation, rho plus or minus the spread,
+  // stays within 0.9, the edge of the training range. The builder itself only
+  // clamps at 0.95, so the cap has to be applied here.
   function sampleTruth(rng) {
     const U = (lo, hi) => lo + (hi - lo) * rng.uniform();
+    const rho = rng.uniform() < 0.3 ? 0 : U(-0.85, 0.85);
+    const maxSpread = Math.min(0.35, 0.9 - Math.abs(rho));
     return Sim.buildRepresentation({
       mA: U(0.3, 2.2),
       mB: U(0.3, 2.2),
-      rho: rng.uniform() < 0.3 ? 0 : U(-0.85, 0.85),
+      rho,
       dA: rng.uniform() < 0.4 ? 0 : U(-1.0, 1.0),
       dB: rng.uniform() < 0.4 ? 0 : U(-1.0, 1.0),
-      rhoSpread: rng.uniform() < 0.5 ? 0 : U(0, 0.35),
+      rhoSpread: rng.uniform() < 0.5 ? 0 : U(0, maxSpread),
     });
   }
 
@@ -227,14 +232,31 @@
 
     const rS = pearson(batch.sensTrue, batch.sensRec);
     const rC = pearson(batch.corrTrue, batch.corrRec);
+    const r2 = (r) => (Number.isFinite(r) ? r.toFixed(2) : "not available");
+    const rTxtS = `r &asymp; <strong>${r2(rS)}</strong>`;
+    const rTxtC = `r &asymp; <strong>${r2(rC)}</strong>`;
+    let recText;
+    if (!Number.isFinite(rS) || !Number.isFinite(rC)) {
+      recText = `Sensitivities: ${rTxtS}. Correlations: ${rTxtC}. The batch is too
+  uniform to compare the two.`;
+    } else if (rS - rC > 0.05) {
+      recText = `Sensitivities were recovered more closely (${rTxtS}) than
+  correlations (${rTxtC}). A weak within-stimulus correlation leaves only a faint
+  trace in one table of answers, so it is harder to pin down. The gap seems to come
+  from the data rather than the method.`;
+    } else if (rC - rS > 0.05) {
+      recText = `In this run correlations (${rTxtC}) were recovered more closely than
+  sensitivities (${rTxtS}). This is unusual, and is most likely chance in a small
+  batch.`;
+    } else {
+      recText = `In this run sensitivities (${rTxtS}) and correlations (${rTxtC}) were
+  recovered about equally well. Across larger batches the correlations are usually
+  recovered less closely.`;
+    }
     $("rec-summary").innerHTML = `
 <div class="note">
-  <h4>Recovery over ${batch.M} participants at ${batch.n} trials/stimulus</h4>
-  <p>Sensitivities recover closely (r &asymp; <strong>${rS.toFixed(2)}</strong>).
-  Correlations are recovered less sharply (r &asymp; <strong>${rC.toFixed(2)}</strong>) , 
-  a weak within-stimulus correlation leaves only a faint trace in one confusion
-  matrix, so it is genuinely harder to pin down. This split is a property of the
-  data rather than the method.</p>
+  <h4>Recovery over ${batch.M} participants at ${batch.n} trials per stimulus</h4>
+  <p>${recText}</p>
 </div>`;
 
     const levels = [0.5, 0.7, 0.8, 0.9, 0.95];
@@ -271,13 +293,13 @@
   Here the sensitivity intervals came out ${verdict(sens90)} and the correlation
   intervals ${verdict(corr90)}. Averaging the two would give a number close to 90%
   that describes neither.</p>
-  <p>Across large held-out sets the sensitivities cover about 94% and the correlations
+  <p>Across large held-out sets the sensitivities cover about 94.6% and the correlations
   about 84%, so a nominal 90% interval on a within-stimulus correlation behaves more
   like an 84% one. The released packages ship an optional correction for this
   (<code>calibrated = TRUE</code> in R, <code>calibrated=True</code> in Python). It is
   off by default and does not change point estimates.</p>
-  <p class="cap">Measured live on the batch above, so it will wobble run to run and
-  shift as you change the trial count.</p>
+  <p class="cap">Measured on the batch above, so it varies from run to run and with
+  the trial count.</p>
 </div>`;
   }
 
@@ -291,7 +313,7 @@
       mdl = await getModel();
     } catch (e) {
       $("status").innerHTML =
-        `<span class="pill bad">Could not load the model (${e.message}).</span>`;
+        `<span class="pill bad">Could not load the network (${e.message}).</span>`;
       return;
     }
 
@@ -343,7 +365,7 @@
     renderAll();
     $("run").disabled = false;
     $("status").innerHTML =
-      `<span class="pill ok">${M} participants &times; ${n} trials/stimulus.</span>`;
+      `<span class="pill ok">${M} participants &times; ${n} trials per stimulus.</span>`;
   }
 
   $("n").addEventListener(
