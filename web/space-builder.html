@@ -19,11 +19,11 @@
     <title>Space Builder - GRIN</title>
     <meta
       name="description"
-      content="Build a GRT perceptual space, watch the confusion matrix it can produce, run a virtual experiment, and see whether the model can find its way back."
+      content="Set up a perceptual space, see the answers it produces, and test whether GRIN can recover it."
     />
     <link rel="canonical" href="https://grin.murraysbennett.com/space-builder.html" />
     <meta property="og:title" content="Space Builder - GRIN" />
-    <meta property="og:description" content="Build a GRT perceptual space, watch the confusion matrix it can produce, run a virtual experiment, and see whether the model can find its way back." />
+    <meta property="og:description" content="Set up a perceptual space, see the answers it produces, and test whether GRIN can recover it." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://grin.murraysbennett.com/space-builder.html" />
     <meta property="og:image" content="https://grin.murraysbennett.com/assets/images/og-card.svg" />
@@ -35,19 +35,18 @@
     <header class="site">
       <h1>Space Builder</h1>
       <p class="tagline">
-        Build a perceptual space. See the data it produces. Find out if we can
-        recover it.
+        Set up a perceptual space, see the answers it produces, and test whether
+        GRIN can recover it.
       </p>
       <div id="nav-placeholder"></div>
     </header>
 
     <main class="container">
       <div class="plain" style="margin-bottom: 1.25rem">
-        <span class="eyebrow">In plain English</span>
         <p>
           Imagine identifying a face as <em>happy or sad</em> and
           <em>male or female</em> at the same time. GRT says each face is
-          represented in a two-dimensional "perceptual space" as a cloud rather
+          represented in a two-dimensional perceptual space as a cloud rather
           than a single point, because perception is noisy. Each time you see
           the face, your impression is one point from that cloud. Your answer
           depends on which side of each line that point falls.
@@ -69,29 +68,29 @@
           <span class="eyebrow">1. Build the space</span>
 
           <label
-            >Sensitivity of dimension A
-            <span class="val" id="v-mA">1.00</span></label
+            >Distance between levels on A (d′)
+            <span class="val" id="v-mA">2.00</span></label
           >
           <input
             type="range"
             id="mA"
-            min="0.0"
-            max="2.5"
-            step="0.1"
-            value="1.0"
+            min="0"
+            max="5"
+            step="0.2"
+            value="2"
           />
 
           <label
-            >Sensitivity of dimension B
-            <span class="val" id="v-mB">1.40</span></label
+            >Distance between levels on B (d′)
+            <span class="val" id="v-mB">2.00</span></label
           >
           <input
             type="range"
             id="mB"
-            min="0.0"
-            max="2.5"
-            step="0.1"
-            value="1.0"
+            min="0"
+            max="5"
+            step="0.2"
+            value="2"
           />
 
           <label
@@ -124,7 +123,8 @@
               />
               <p class="cap" style="margin-top: 0.2rem">
                 How much A's perceived value shifts depending on the
-                <em>level of B</em>. Non-zero ⇒ A is not separable from B.
+                <em>level of B</em>. Any value other than zero means A is not
+                separable from B.
               </p>
 
               <label
@@ -153,20 +153,18 @@
                 value="0"
               />
               <p class="cap" style="margin-top: 0.2rem">
-                Gives the two "matched" stimuli a different correlation from the
-                other two. Non-zero ⇒ a single ρ cannot describe the whole space.
+                Adds this amount to the correlation for A1/B1 and A2/B2, and
+                subtracts it from the correlation for A1/B2 and A2/B1. Any value
+                other than zero means one correlation cannot describe the whole
+                space.
               </p>
 
               <hr class="hr" />
               <p class="cap" style="margin-top: 0">
-                <strong
-                  >The sliders above move a matched PAIR of stimuli
-                  together</strong
-                >. In real data, separability often fails more messily:
-                <strong>one specific stimulus</strong> reads oddly, not a
-                coordinated pair. This moves just one:
+                The sliders above move stimuli in pairs, but separability can
+                often fail in real data with a single stimulus.
               </p>
-              <label>Which stimulus wanders?</label>
+              <label>Stimulus to move</label>
               <select id="nudgeStim">
                 <option value="0">A1 / B1</option>
                 <option value="1">A1 / B2</option>
@@ -174,7 +172,7 @@
                 <option value="3">A2 / B2</option>
               </select>
               <label
-                >Δx for that stimulus only
+                >Shift on A
                 <span class="val" id="v-nudgeX">0.00</span></label
               >
               <input
@@ -186,7 +184,7 @@
                 value="0"
               />
               <label
-                >Δy for that stimulus only
+                >Shift on B
                 <span class="val" id="v-nudgeY">0.00</span></label
               >
               <input
@@ -199,7 +197,7 @@
               />
               <div class="row">
                 <button id="nudge-reset" class="ghost wide">
-                  Reset all nudges
+                  Reset all shifts
                 </button>
               </div>
               <p class="cap" id="nudge-summary" style="margin-top: 0.4rem"></p>
@@ -241,6 +239,11 @@
             step="10"
             value="100"
           />
+          <p class="cap" id="n-warn" style="margin-top: 0.2rem" hidden>
+            GRIN was trained on up to 1,000 trials per stimulus, but its accuracy
+            was only checked up to 500. Treat results above 500 as a look beyond
+            the tested range.
+          </p>
           <div class="row">
             <button id="run" class="wide">Run the experiment</button>
           </div>
@@ -265,16 +268,16 @@
                 <p class="cap" style="margin-top: 0">
                   Each ellipse is one stimulus: a 1-SD contour of where it lands
                   in perceptual space on a given trial. The dashed cross is the
-                  decision bound, you respond by asking which quadrant you fell
-                  into.
+                  decision bound. Your response depends on the quadrant your
+                  impression falls in.
                 </p>
                 <p class="cap">
-                  <strong>Read the marginals.</strong> Each dimension's two
+                  Read the marginals. Each dimension's two
                   curves of the same colour are the same level of that
                   dimension, paired with the two different levels of the
                   <em>other</em> one (solid vs dotted). If they sit on top of
                   each other, that dimension is separable.
-                  <strong>If they pull apart, it is not.</strong>
+                  If they pull apart, it is not.
                 </p>
                 <div id="truth"></div>
               </div>
@@ -298,48 +301,49 @@
           </div>
 
           <div class="card" id="recovery-card" hidden>
-            <span class="eyebrow">3. Could anyone have recovered it?</span>
+            <span class="eyebrow">3. What GRIN recovered</span>
             <div class="viz-2">
               <div>
                 <canvas id="space2" width="565" height="565"></canvas>
                 <div class="legend" id="legend2"></div>
                 <p class="cap">
-                  Solid = the space you built.
-                  <strong>Dashed = what was recovered</strong> from the noisy
-                  data alone. The gap between them is the error, and it is
-                  <em>supposed</em> to shrink as you raise the trial count.
+                  Solid ellipses show the space you built. Dashed ellipses show
+                  what GRIN recovered from the simulated data alone. The gap is
+                  the error. It should shrink as the trial count rises.
                 </p>
               </div>
               <div>
                 <span class="eyebrow" style="font-size: 0.55rem"
-                  >Recovered parameters (90% intervals)</span
+                  >Recovered parameters</span
                 >
+                <p class="cap" style="margin-top: 0.2rem">
+                  Bars show 90% intervals. Numbers show the estimate ± 1 SD.
+                </p>
                 <div id="ests"></div>
                 <span
                   class="eyebrow"
                   style="font-size: 0.55rem; margin-top: 1rem"
-                  >Structural conclusions</span
+                  >Primary conclusions</span
                 >
                 <div id="constructs"></div>
                 <div id="verdict"></div>
               </div>
             </div>
-            <details>
+            <details id="what-happened">
               <summary>What just happened?</summary>
               <div class="details-body">
                 <p style="font-size: 0.88rem; margin-top: 0">
-                  We drew <span id="ntrials-echo">100</span> trials per stimulus
-                  from your space, producing a noisy confusion matrix, a
-                  simulated experiment. Then we handed
-                  <em>only that matrix</em> to the model, which had never seen
-                  your sliders, and asked it to reconstruct the space.
+                  GRIN drew <span id="ntrials-echo">100</span> trials per
+                  stimulus from your space. This produced a noisy confusion
+                  matrix, which is a simulated experiment. GRIN then gave only
+                  that matrix to the network, which had never seen your
+                  sliders, and asked it to reconstruct the space.
                 </p>
                 <p style="font-size: 0.88rem">
                   Try this: set the trial count to 10 and run it a few times.
-                  The estimates jump around, and
-                  <strong>the ranges get wider</strong>. That is what should
-                  happen: a good method <em>tells you</em> when it is
-                  unsure.
+                  The estimates jump around, and the ranges get wider. That is
+                  what should happen: a good method reports more uncertainty
+                  when it has less data.
                 </p>
               </div>
             </details>

@@ -2,13 +2,20 @@
     import * as Sim from "../grt-sim.js";
     import { loadModelCached } from "../grin-model.js";
     import { cmAccuracy } from "../grt-plot.js";
-    import { forwardProbabilities } from "../grt-core.js";
+    import {
+      forwardProbabilities,
+      modelWords,
+      STIMULUS_ORDER,
+    } from "../grt-core.js";
 
     const $ = (id) => document.getElementById(id);
     const SLIDERS = ["mA", "mB", "rho", "dA", "dB", "rhoSpread", "n"];
+    // mA and mB sliders are in d′, the distance between the two levels of a
+    // dimension. The model places the levels at ±d′/2 around the bound at 0,
+    // so readControls halves them before they reach buildRepresentation.
     const DEFAULTS = {
-      mA: 1.5,
-      mB: 1.5,
+      mA: 2,
+      mB: 2,
       rho: 0,
       dA: 0,
       dB: 0,
@@ -31,32 +38,68 @@
       return model;
     }
 
-    function readControls() {
+    /** Raw slider values, in display units (d′ for mA and mB). */
+    function readSliders() {
       const o = {};
       for (const k of SLIDERS) o[k] = parseFloat($(k).value);
       return o;
     }
+
+    /** Slider values in model units: mA and mB are half of d′. */
+    function readControls() {
+      const o = readSliders();
+      o.mA = o.mA / 2;
+      o.mB = o.mB / 2;
+      return o;
+    }
+
+    // GRIN was trained on 1 to 1,000 trials per stimulus but tested on 5 to 500.
+    const TESTED_MAX_TRIALS = 500;
+    // Below this separability support the verdict does not call that result firm.
+    // Matches the threshold the verdict box already used for its warning style.
+    const FIRM_SEPARABILITY = 0.75;
 
     /** The actual representation on screen: sliders + the independent nudges. */
     function currentRep() {
       return Sim.buildRepresentation({ ...readControls(), nudge });
     }
 
+    /** Parameter labels in the same form as the Analyse page. */
+    function paramLabels(L) {
+      const named =
+        L.a1 !== "A1" || L.a2 !== "A2" || L.b1 !== "B1" || L.b2 !== "B2";
+      const stim = (i) => (named ? Plot.stimLabel(L, i) : STIMULUS_ORDER[i]);
+      const dimA = L.aName && L.aName !== "Dimension A" ? L.aName : "A";
+      const dimB = L.bName && L.bName !== "Dimension B" ? L.bName : "B";
+      const out = [];
+      for (let i = 0; i < 4; i++) out.push(`${dimA} sensitivity, ${stim(i)}`);
+      for (let i = 0; i < 4; i++) out.push(`${dimB} sensitivity, ${stim(i)}`);
+      for (let i = 0; i < 4; i++) out.push(`Correlation, ${stim(i)}`);
+      return out;
+    }
+
+    function escapeHTML(str) {
+      return String(str).replace(
+        /[&<>"']/g,
+        (ch) =>
+          ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+            ch
+          ],
+      );
+    }
+
     function nudgeSummary() {
       const active = [0, 1, 2, 3].filter(
         (i) => nudge.x[i] !== 0 || nudge.y[i] !== 0,
       );
-      if (!active.length) return "No stimuli nudged.";
+      if (!active.length) return "No single stimulus moved.";
       const names = ["A1/B1", "A1/B2", "A2/B1", "A2/B2"];
-      return (
-        "Nudged: " +
-        active
-          .map(
-            (i) =>
-              `${names[i]} (Δx ${nudge.x[i].toFixed(2)}, Δy ${nudge.y[i].toFixed(2)})`,
-          )
-          .join("; ")
-      );
+      return active
+        .map(
+          (i) =>
+            `${names[i]} moved ${nudge.x[i].toFixed(2)} on A and ${nudge.y[i].toFixed(2)} on B.`,
+        )
+        .join(" ");
     }
 
     function labels() {
@@ -79,10 +122,11 @@
      * the user's results.
      */
     function draw(invalidate = true) {
-      const c = readControls();
+      const c = readSliders();
       for (const k of SLIDERS)
         $("v-" + k) &&
           ($("v-" + k).textContent = k === "n" ? c[k] : c[k].toFixed(2));
+      $("n-warn").hidden = !(c.n > TESTED_MAX_TRIALS);
       $("nudge-summary").textContent = nudgeSummary();
 
       const rep = currentRep();
@@ -121,9 +165,9 @@
       $("truth").innerHTML = `
   <p class="cap" style="margin-bottom:.35rem"><strong>Ground truth for this space:</strong></p>
   <div class="row" style="margin-top:0">
-    ${pill(t.psA, "A separable", "A NOT separable")}
-    ${pill(t.psB, "B separable", "B NOT separable")}
-    ${pill(t.pi, "independent", t.rho1 ? "correlated (one ρ)" : "correlated (ρ varies)")}
+    ${pill(t.psA, "A separable", "A not separable")}
+    ${pill(t.psB, "B separable", "B not separable")}
+    ${pill(t.pi, "independent", t.rho1 ? "one shared correlation" : "correlation varies by stimulus")}
   </div>`;
 
       // any change to the space invalidates the previous run
@@ -151,9 +195,9 @@
         r.map((v) => v / Math.max(1, data.trials[i])),
       );
       Plot.renderCM($("cm"), props, L, { counts: data.counts });
-      $("cm-cap").innerHTML =
-        `Observed from <strong>${n} trials per stimulus</strong> (counts in small type). ` +
-        `Noisy, which is the point.`;
+      $("cm-cap").textContent =
+        `Observed from ${n} trials per stimulus, with counts in small type. ` +
+        `These counts include sampling noise.`;
 
       // recovered space
       const stimuli = [0, 1, 2, 3].map((i) => ({
@@ -170,13 +214,13 @@
       Plot.buildLegend($("legend2"), L, { predictedLabel: "recovered" });
 
       // estimates with intervals, against the truth
-      const names = m.paramNames;
+      const names = paramLabels(L);
       const truth = [...rep.zx, ...rep.zy, ...rep.rho];
       let html = "";
       for (let i = 0; i < 12; i++) {
         const range = i < 8 ? [-3, 3] : [-1, 1];
         html += Plot.estRow(
-          `${names[i]} <span style="color:var(--mute-soft)">(true ${truth[i].toFixed(2)})</span>`,
+          `${escapeHTML(names[i])} <span style="color:var(--mute-soft)">(true value ${truth[i].toFixed(2)})</span>`,
           res.mean[i],
           res.std[i],
           range,
@@ -186,25 +230,17 @@
 
       // structural conclusions vs ground truth
       const t = Sim.trueAssumptions(rep);
+      const yn = (b) => (b ? "yes" : "no");
       $("constructs").innerHTML =
+        Plot.pbar(`A separable. True answer: ${yn(t.psA)}`, res.sep.A) +
+        Plot.pbar(`B separable. True answer: ${yn(t.psB)}`, res.sep.B) +
+        Plot.pbar(`Independent. True answer: ${yn(t.pi)}`, res.corr.pi) +
         Plot.pbar(
-          `A is separable <em>(truly ${t.psA ? "yes" : "no"})</em>`,
-          res.sep.A,
-        ) +
-        Plot.pbar(
-          `B is separable <em>(truly ${t.psB ? "yes" : "no"})</em>`,
-          res.sep.B,
-        ) +
-        Plot.pbar(
-          `Independent (ρ = 0) <em>(truly ${t.pi ? "yes" : "no"})</em>`,
-          res.corr.pi,
-        ) +
-        Plot.pbar(
-          `One shared ρ <em>(truly ${t.rho1 && !t.pi ? "yes" : "no"})</em>`,
+          `One shared correlation. True answer: ${yn(t.rho1 && !t.pi)}`,
           res.corr.rho1,
         ) +
         Plot.pbar(
-          `ρ varies by stimulus <em>(truly ${!t.rho1 ? "yes" : "no"})</em>`,
+          `Correlation varies by stimulus. True answer: ${yn(!t.rho1)}`,
           res.corr.free,
         );
 
@@ -220,26 +256,36 @@
         Math.max(res.sep.B, 1 - res.sep.B),
       );
       const corrConf = Math.max(res.corr.pi, res.corr.rho1, res.corr.free);
-      $("verdict").innerHTML = `
-  <div class="note ${sepConf >= 0.75 ? "" : "warn"}">
-    <h4>Best-supported class: <code>${mc.name}</code></h4>
-    <p>
-      GRIN is ${(100 * sepConf).toFixed(0)}% sure about separability.
-      It is less sure about independence: its best answer there gets
-      ${(100 * corrConf).toFixed(0)}%, which pulls the overall support for this class
-      down to ${mc.factorizedSupport.toFixed(2)}. (That overall figure is the separate
-      answers multiplied together. It has not been checked as a probability in its own right.)
-      ${
+      // Compare the value as shown, so a displayed 0.75 is never called weak.
+      const sepFirm = +sepConf.toFixed(2) >= FIRM_SEPARABILITY;
+      const corrNote =
         corrConf >= 0.6
           ? "Here the data carry enough to lean one way on the correlation as well."
-          : "This is expected. Whether the tilt is zero leaves only a faint mark on the table of answers, and more trials help only slowly. The separability result is the firm one here."
-      }
+          : "Lower support for the correlation is expected. Whether the tilt is zero leaves only a faint mark on the table of answers, and more trials help only slowly.";
+      const sepNote = sepFirm
+        ? corrConf >= 0.6
+          ? ""
+          : " The separability result is the firm one here."
+        : corrConf >= 0.6
+          ? " The separability answer is not firm, so treat this class as tentative."
+          : " The separability answer is not firm either, so treat this class as tentative.";
+      $("verdict").innerHTML = `
+  <div class="note ${sepFirm ? "" : "warn"}">
+    <h4>Best-supported model class: ${escapeHTML(modelWords(mc.name))}</h4>
+    <p>
+      Support for the separability answer is ${sepConf.toFixed(2)}.
+      Support for the best correlation answer is ${corrConf.toFixed(2)}.
+      Together they give this class an overall support of ${mc.factorizedSupport.toFixed(2)}.
+      That overall figure is the separate answers multiplied together. It has not
+      been checked as a probability in its own right.
+      ${corrNote}${sepNote}
     </p>
   </div>`;
 
       $("ntrials-echo").textContent = n;
       $("recovery-card").hidden = false;
-      $("status").textContent = `Done in ${res.ms.toFixed(1)} ms.`;
+      $("what-happened").open = true;
+      $("status").textContent = `Done in ${res.ms.toFixed(1)} milliseconds.`;
       $("recovery-card").scrollIntoView({
         behavior: "smooth",
         block: "nearest",
@@ -307,8 +353,9 @@
         r.map((v) => v / Math.max(1, data.trials[i])),
       );
       Plot.renderCM($("cm"), props, L, { counts: data.counts });
-      $("cm-cap").innerHTML =
-        `Observed from <strong>${n} trials per stimulus</strong> (counts in small type). Noisy.`;
+      $("cm-cap").textContent =
+        `Observed from ${n} trials per stimulus, with counts in small type. ` +
+        `These counts include sampling noise.`;
       Plot.renderSpace($("space2"), {
         stimuli: [0, 1, 2, 3].map((i) => ({
           zx: rep.zx[i],
