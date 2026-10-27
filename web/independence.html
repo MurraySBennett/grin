@@ -64,33 +64,35 @@
           spaces apart. Both spaces use d′ = 2.4 on each dimension.
         </p>
 
-        <div class="row" style="gap: 1.5rem; flex-wrap: wrap">
-          <label style="flex: 1; min-width: 150px"
-            >Correlation ρ <span class="val" id="v-rhoA">0.50</span></label
-          >
-          <label style="flex: 1; min-width: 150px"
-            >Trials per stimulus <span class="val" id="v-nA">100</span></label
-          >
-        </div>
-        <div class="row" style="gap: 1.5rem; flex-wrap: wrap">
-          <input
-            style="flex: 1; min-width: 150px"
-            type="range"
-            id="rhoA"
-            min="0"
-            max="0.9"
-            step="0.05"
-            value="0.5"
-          />
-          <input
-            style="flex: 1; min-width: 150px"
-            type="range"
-            id="nA"
-            min="10"
-            max="500"
-            step="10"
-            value="100"
-          />
+        <div class="row" style="gap: 1.5rem; flex-wrap: wrap; align-items: flex-start">
+          <div style="flex: 1; min-width: 150px">
+            <label for="rhoA"
+              >Correlation ρ <span class="val" id="v-rhoA">0.50</span></label
+            >
+            <input
+              style="width: 100%"
+              type="range"
+              id="rhoA"
+              min="0"
+              max="0.9"
+              step="0.05"
+              value="0.5"
+            />
+          </div>
+          <div style="flex: 1; min-width: 150px">
+            <label for="nA"
+              >Trials per stimulus <span class="val" id="v-nA">100</span></label
+            >
+            <input
+              style="width: 100%"
+              type="range"
+              id="nA"
+              min="10"
+              max="500"
+              step="10"
+              value="100"
+            />
+          </div>
         </div>
 
         <div class="viz-2" style="margin-top: 1rem">
