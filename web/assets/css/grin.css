@@ -53,6 +53,7 @@ body {
   color: var(--ink);
   font-family:
     "Inter",
+    "GRIN Arrows Sans",
     system-ui,
     -apple-system,
     "Segoe UI",
@@ -120,7 +121,7 @@ h1,
 h2,
 h3,
 summary {
-  font-family: "Press Start 2P", cursive;
+  font-family: "Press Start 2P", "GRIN Arrows Pixel", cursive;
 }
 a {
   color: var(--slate-deep);
@@ -159,7 +160,7 @@ header.site h1 {
   text-shadow: 0.1875rem 0.1875rem 0 rgba(0, 0, 0, 0.2);
 }
 header.site .tagline {
-  font-family: "Inter", sans-serif;
+  font-family: "Inter", "GRIN Arrows Sans", sans-serif;
   font-size: 0.85rem;
   margin: 0.5rem auto 0;
   max-width: 46rem;
@@ -179,7 +180,7 @@ header.site .tagline {
   border-radius: 0.45rem;
   background: var(--ice);
   color: var(--slate);
-  font-family: "Inter", sans-serif;
+  font-family: "Inter", "GRIN Arrows Sans", sans-serif;
   font-size: 0.72rem;
   font-weight: 700;
   text-decoration: none;
@@ -210,7 +211,7 @@ nav.site > ul {
 nav.site a {
   color: var(--ice);
   text-decoration: none;
-  font-family: "Press Start 2P", cursive;
+  font-family: "Press Start 2P", "GRIN Arrows Pixel", cursive;
   font-size: 0.6rem;
   padding: 0.5rem 0.75rem;
   border: 0.12rem solid var(--ice);
@@ -282,7 +283,7 @@ nav.site ul.nav-sub a.active {
   background: var(--rose);
 }
 .nav-badge {
-  font-family: "Inter", sans-serif;
+  font-family: "Inter", "GRIN Arrows Sans", sans-serif;
   font-size: 0.65rem;
   font-weight: 700;
   text-transform: lowercase;
@@ -371,7 +372,7 @@ footer.site .fine {
 
 /* Section titles: retro font */
 .eyebrow {
-  font-family: "Press Start 2P", cursive;
+  font-family: "Press Start 2P", "GRIN Arrows Pixel", cursive;
   font-size: 0.6rem;
   letter-spacing: 0.03em;
   color: var(--slate-deep);
@@ -467,7 +468,7 @@ button,
   border: 2px solid var(--slate-dark);
   border-radius: var(--radius-sm);
   padding: 0.5rem 0.9rem;
-  font-family: "Press Start 2P", cursive;
+  font-family: "Press Start 2P", "GRIN Arrows Pixel", cursive;
   font-size: 0.6rem;
   line-height: 1.5;
   text-decoration: none;
@@ -597,7 +598,7 @@ table.cm th {
   color: var(--mute);
   font-weight: 600;
   font-size: 0.66rem;
-  font-family: "Inter", sans-serif;
+  font-family: "Inter", "GRIN Arrows Sans", sans-serif;
   padding: 0.3rem;
 }
 table.cm td {
@@ -727,7 +728,7 @@ table.grid td input {
 /* pills / badges */
 .pill {
   display: inline-block;
-  font-family: "Press Start 2P", cursive;
+  font-family: "Press Start 2P", "GRIN Arrows Pixel", cursive;
   font-size: 0.5rem;
   padding: 0.3rem 0.5rem;
   border-radius: 0.25rem;
@@ -780,7 +781,7 @@ table.grid td input {
   margin-bottom: 0;
 }
 .note h4 {
-  font-family: "Inter", sans-serif;
+  font-family: "Inter", "GRIN Arrows Sans", sans-serif;
   margin: 0 0 0.35rem;
   font-size: 0.9rem;
 }
@@ -896,7 +897,7 @@ summary:hover {
 .door .kicker {
   display: block;
   margin-top: 0.7rem;
-  font-family: "Press Start 2P", cursive;
+  font-family: "Press Start 2P", "GRIN Arrows Pixel", cursive;
   font-size: 0.5rem;
   color: var(--slate-deep);
 }

@@ -57,6 +57,37 @@
     U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
+/* --------------------------------------------------------- GRIN arrows ---
+ * Neither Press Start 2P nor the Inter subsets above include U+2190 (left
+ * arrow) or U+2192 (right arrow), and Press Start 2P has no U+25B6 (the
+ * details marker). The browser then fell back to whatever "cursive" maps to
+ * on the visitor's system, which on some systems drew a dot instead of an
+ * arrow. These two tiny faces supply just those glyphs. They sit second in
+ * the font stacks in grin.css, so every other character still comes from
+ * Press Start 2P or Inter.
+ *
+ * GRIN Arrows Pixel: drawn on Press Start 2P's 125-unit pixel grid and cap
+ * band. GRIN Arrows Sans: Inter's own up arrow, rotated. Both OFL 1.1.
+ * Rebuild with scripts/build_arrow_fonts.py.
+ */
+@font-face {
+  font-family: "GRIN Arrows Pixel";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("./grin-arrows-pixel.woff2") format("woff2");
+  unicode-range: U+2190, U+2192, U+25B6;
+}
+
+@font-face {
+  font-family: "GRIN Arrows Sans";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: block;
+  src: url("./grin-arrows-sans.woff2") format("woff2");
+  unicode-range: U+2190, U+2192;
+}
+
 /* ----------------------------------------------- figure display fonts ---
  * Used only by the optional decorative figure palettes on Analyse. These
  * were lazily fetched from fonts.gstatic.com at the moment a palette was

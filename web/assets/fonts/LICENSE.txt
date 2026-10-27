@@ -20,6 +20,18 @@ Interface families
   Press Start 2P      Copyright (c) 2012 Cody "CodeMan38" Boisclair
                       https://github.com/CodeMan38/Press-Start-2P
 
+Arrow fallbacks (made for this site)
+------------------------------------
+  GRIN Arrows Pixel   Left and right arrows and a right-pointing triangle,
+                      drawn on the Press Start 2P pixel grid. Contains no
+                      Press Start 2P outlines.
+
+  GRIN Arrows Sans    Left and right arrows rotated from Inter's up arrow.
+                      Copyright (c) 2016 The Inter Project Authors
+
+  Both are built by scripts/build_arrow_fonts.py and released under the
+  SIL Open Font License 1.1.
+
 Figure display families (optional decorative palettes on Analyse)
 -----------------------------------------------------------------
   Bungee              Copyright (c) 2015 David Jonathan Ross
