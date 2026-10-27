@@ -16,14 +16,14 @@
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>An independence problem - GRIN</title>
+    <title>The imprecision in identifying independence - GRIN</title>
     <meta
       name="description"
-      content="We have found that accurately identifying whether two perceptual dimensions are independent is... particular. This page shows why and what it suggests for study design."
+      content="Why perceptual independence is hard to identify from identification data, and what it suggests for study design."
     />
     <link rel="canonical" href="https://grin.murraysbennett.com/independence.html" />
-    <meta property="og:title" content="An independence problem - GRIN" />
-    <meta property="og:description" content="Why identifying perceptual independence is hard, what it means for study design, and how GRIN surfaces the uncertainty." />
+    <meta property="og:title" content="The imprecision in identifying independence - GRIN" />
+    <meta property="og:description" content="Why perceptual independence is hard to identify from identification data, and what it suggests for study design." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://grin.murraysbennett.com/independence.html" />
     <meta property="og:image" content="https://grin.murraysbennett.com/assets/images/og-card.svg" />
@@ -33,22 +33,19 @@
   </head>
   <body data-page="independence">
     <header class="site">
-      <h1>An independence problem</h1>
+      <h1>The imprecision in identifying independence</h1>
       <p class="tagline">
-        Identifying within-stimulus correlation can be hard. Here is why, and
-        what to do about it.
+        Designing a study given the limited information in a confusion matrix
       </p>
       <div id="nav-placeholder"></div>
     </header>
 
     <main class="container">
       <div class="plain" style="margin-bottom: 1.25rem">
-        <span class="eyebrow">The one hard piece</span>
         <p>
-          GRIN recovers most of a General Recognition Theory model well. The
-          hard part is telling whether two features are perceptually
-          independent, that is, whether a cloud is tilted at all (whether the
-          within-stimulus correlation is zero). This page uses the same tools as
+          It is difficult to tell whether two features are perceptually
+          independent (when the within-stimulus correlation is zero). This page
+          uses the same tools as
           the rest of the site to show why, and what it means for designing a
           study. Our results suggest the difficulty comes from the data and the
           task, not from any particular fitting method.
@@ -64,12 +61,12 @@
           carry a correlation you set. The perceptual pictures are clearly
           different, but the tables of answers they produce (below) are almost
           identical. When the data look the same, no method can tell the two
-          spaces apart.
+          spaces apart. Both spaces use d′ = 2.4 on each dimension.
         </p>
 
         <div class="row" style="gap: 1.5rem; flex-wrap: wrap">
           <label style="flex: 1; min-width: 150px"
-            >Correlation ρ <span class="val" id="v-rhoA">0.40</span></label
+            >Correlation ρ <span class="val" id="v-rhoA">0.50</span></label
           >
           <label style="flex: 1; min-width: 150px"
             >Trials per stimulus <span class="val" id="v-nA">100</span></label
@@ -111,7 +108,7 @@
           </div>
           <div>
             <table class="cm" id="cm-corr"></table>
-            <p class="cap" style="text-align: center">Correlated</p>
+            <p class="cap" style="text-align: center" id="cm-corr-cap">Correlated (ρ = 0.50)</p>
           </div>
         </div>
         <div id="compare-note"></div>
@@ -120,12 +117,13 @@
       <!-- ============================ Section 2 ============================ -->
       <div class="tool">
         <aside class="panel sticky">
-          <span class="eyebrow">2. Examine the PI frontier</span>
+          <span class="eyebrow">2. How often GRIN detects a correlation</span>
           <p class="cap" style="margin-top: 0">
-            Simulate many participants across the full range of true
-            correlations, fit each with GRIN, and record how often it reports a
-            correlation at all. The result is the recovery frontier for
-            independence.
+            Simulate many participants with true correlations between −0.9 and
+            0.9, fit each with GRIN, and record how often it reports a
+            correlation. Each dimension has a one in two chance of not being
+            separable, as in GRIN's training. Sensitivity ranges from d′ 1.2 to
+            4.0.
           </p>
           <label
             >Trials per stimulus <span class="val" id="v-nB">150</span></label
@@ -138,20 +136,25 @@
             step="10"
             value="150"
           />
+          <p class="cap" id="nB-warn" style="margin-top: 0.2rem" hidden>
+            GRIN was trained on up to 1,000 trials per stimulus, but its accuracy
+            was only checked up to 500. Treat results above 500 as a look beyond
+            the tested range.
+          </p>
           <label
             >Simulated participants
-            <span class="val" id="v-mB">300</span></label
+            <span class="val" id="v-mB">100</span></label
           >
           <input
             type="range"
             id="mB"
-            min="10"
-            max="600"
-            step="50"
-            value="300"
+            min="5"
+            max="200"
+            step="5"
+            value="100"
           />
           <hr class="hr" />
-          <div class="row"><button id="runB" class="wide">Run</button></div>
+          <div class="row"><button id="runB" class="wide">Run the simulation</button></div>
           <div class="track" style="height: 0.5rem; margin-top: 0.6rem">
             <div
               class="fill"
@@ -159,7 +162,9 @@
               style="width: 0%; transition: width 0.1s linear"
             ></div>
           </div>
-          <p class="status" id="statusB">Set the batch and run.</p>
+          <p class="status" id="statusB">
+            Choose the trial count and number of participants, then run.
+          </p>
         </aside>
 
         <section>
@@ -167,11 +172,13 @@
             <span class="eyebrow">The recovery frontier for independence</span>
             <canvas id="frontier" width="560" height="320"></canvas>
             <p class="cap" style="margin-top: 0.3rem">
-              How often GRIN reports a correlation, against the true |ρ|. Near
-              zero it should stay low, correctly calling the dimensions
-              independent. It climbs only as the correlation grows. The stretch
-              in between, where real but weak correlations are missed, is the
-              recovery frontier for independence.
+              How often GRIN reports a correlation, against the size of the true
+              correlation, |ρ|. A correlation of −0.5 and one of 0.5 fall at the
+              same point. Near zero the curve should stay low, which means GRIN
+              correctly calls the dimensions independent. It should rise as the
+              correlation grows. The stretch in between, where real but weak
+              correlations are missed, is the recovery frontier for
+              independence.
             </p>
             <div id="frontier-note"></div>
           </div>
@@ -180,14 +187,19 @@
 
       <!-- ============================ Section 3 ============================ -->
       <div class="card">
-        <span class="eyebrow">3. Response times help only a little</span>
+        <span class="eyebrow"
+          >3. Response times add a little information about the correlation</span
+        >
         <p style="margin: 0">
-          You might expect response times to fill the gap. Our results suggest
-          they mostly do not. When the tilt changes, accuracy and response time
-          change together, so timing adds little beyond what accuracy already
-          shows. The full response-time model helps, but only modestly. Timing
-          is far more useful for the question of how the features are processed
-          (the processing architecture) than for the correlation.
+          You might expect response times to fill the gap. When the tilt
+          changes, accuracy and response time change together, so timing adds
+          little beyond what accuracy already shows. In 1,800 simulated
+          participants, the response-time network chose the correct
+          correlation class about 55% of the time, against about 46% for the
+          network that uses only the table of answers. Response times are far
+          more useful for identifying how the features are processed (the
+          processing architecture), which the response-time network got right
+          about 85% of the time, where chance is 20%.
         </p>
       </div>
 
@@ -195,8 +207,7 @@
       <div class="card">
         <span class="eyebrow">4. What this suggests</span>
         <p>
-          Based on our results, estimating the correlation from a single table of
-          answers is hard, and the difficulty seems to lie in the data and the
+          Estimating the correlation from a single table of answers is hard, and the difficulty seems to lie in the data and the
           task rather than in any one method. We would expect other methods that
           use the same data to struggle in the same way.
         </p>
@@ -212,19 +223,36 @@
           data you collect more than the method you fit. Asking participants for
           confidence ratings, or having them respond to the two dimensions
           separately or in sequence rather than as one joint response, could add
-          information a single joint matrix does not carry. These are directions
-          our work points toward rather than settled prescriptions, and you are
-          welcome and encouraged to be the one to test that.
+          information a single joint matrix does not carry. These are potential
+          directions, and we would welcome tests of them.
         </p>
         <p style="margin-bottom: 0">
           Finally, methods designed to bring in extra information are worth
           reaching for where they apply. Approaches that pool across
-          participants, such as GRT-wIND, can recover structure no single matrix
-          holds, and where that kind of design or data is available it is the
+          participants, such as GRT-wIND (Soto et al., 2015), can recover
+          group-level structure that a single participant's matrix cannot, and
+          where that kind of design or data is available it is the
           better tool for the job. None of this counts against maximum
           likelihood or the existing GRT software. On the parts of the model
-          that are identified, they and GRIN land in the same place.
+          that are identified, maximum likelihood, the existing GRT software and
+          GRIN give similar estimates.
         </p>
+        <div class="note" style="margin-top: 1rem">
+          <h4>Reference</h4>
+          <p style="margin-bottom: 0">
+            Soto, F. A., Vucovich, L., Musgrave, R., &amp; Ashby, F. G. (2015).
+            General recognition theory with individual differences: A new method
+            for examining perceptual and decisional interactions with an
+            application to face perception. <em>Psychonomic Bulletin &amp;
+            Review</em>, 22(1), 88–111.
+            <a
+              href="https://doi.org/10.3758/s13423-014-0661-y"
+              target="_blank"
+              rel="noopener"
+              >View paper</a
+            >
+          </p>
+        </div>
       </div>
     </main>
 

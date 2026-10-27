@@ -359,6 +359,14 @@ footer.site .fine {
   position: sticky;
   top: 6.5rem;
 }
+/* Once the panel stacks above the results, a sticky panel would stay pinned
+   over them, and the absolutely positioned estimate markers in the results
+   would paint through it. Kept after the base rule so it wins. */
+@media (max-width: 62rem) {
+  .panel.sticky {
+    position: static;
+  }
+}
 
 /* content card */
 .card {
