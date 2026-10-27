@@ -199,6 +199,9 @@ recognition theory: A tutorial and new R package (<em>grtools</em>).
     doi: "10.3389/fpsyg.2017.00696",
     note: "Data are the simulated example in Table 1 (emotion and gender of faces).",
   },
+  // Both Silbert et al. (2009) matrices match the mdsdt R package (v1.2) exactly:
+  // silbert_FD is silbert09a (Experiment 1, Observer 3) and silbert_PT is
+  // silbert09b (Experiment 2, Observer 7).
   silbert_FD: {
     label: "Frequency / Duration, Silbert et al. (2009)",
     matrix: [
@@ -215,8 +218,9 @@ recognition theory: A tutorial and new R package (<em>grtools</em>).
 Independence and separability in the perception of complex nonspeech sounds.
 <em>Attention, Perception, &amp; Psychophysics</em>, 71(8), 1900\u20131915.`,
     doi: "10.3758/APP.71.8.1900",
-    note: "Reproduced from their frequency/duration identification experiment. Values were " +
-      "transcribed manually, so check them against the original table before citing.",
+    note: "Real data from one listener (Observer 3, Experiment 1) identifying noise sounds " +
+      "that varied in frequency range and duration. Counts are from the mdsdt R package, " +
+      "where Noah Silbert supplied them.",
   },
   silbert_PT: {
     label: "Pitch / Timbre, Silbert et al. (2009)",
@@ -234,8 +238,9 @@ Independence and separability in the perception of complex nonspeech sounds.
 Independence and separability in the perception of complex nonspeech sounds.
 <em>Attention, Perception, &amp; Psychophysics</em>, 71(8), 1900\u20131915.`,
     doi: "10.3758/APP.71.8.1900",
-    note: "Reproduced from their pitch/timbre identification experiment. Values were " +
-      "transcribed manually, so check them against the original table before citing.",
+    note: "Real data from one listener (Observer 7, Experiment 2) identifying harmonic tones " +
+      "that varied in pitch and timbre. Counts are from the mdsdt R package, where Noah " +
+      "Silbert supplied them.",
   },
   // The next three come from the mdsdt R package (CRAN archive, v1.2, data/*.rda),
   // which stores rows and columns in the order aa, ab, ba, bb, matching
