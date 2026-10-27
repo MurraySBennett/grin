@@ -78,7 +78,4 @@ say(all(abs(ci_cal[9:12] / ci_raw[9:12] - EXPECT_RHO) < TOL),
     "credible intervals rebuilt consistently with the scaled SDs")
 
 cat("\n", if (ok) "ALL CHECKS PASSED" else "SOME CHECKS FAILED", "\n", sep = "")
-cat("\nNote: if jsonlite is NOT installed, grin_infer(calibrated = TRUE) should warn\n")
-cat("and return raw intervals rather than error. Test that separately by removing\n")
-cat("jsonlite from the library path, or trust the tests in tests/testthat/.\n")
 quit(status = if (ok) 0L else 1L)
