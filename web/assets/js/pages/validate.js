@@ -285,13 +285,18 @@
     const corr90 = coverageAt(batch.corrTrue, batch.corrRec, batch.corrStd, 0.9);
     const pct = (x) => `${(100 * x).toFixed(0)}%`;
     const verdict = (x) =>
-      x > 0.915 ? "wider than nominal" : x < 0.885 ? "narrower than nominal" : "on target";
+      x > 0.915 ? "wider than nominal" : x < 0.885 ? "narrower than nominal" : "close to nominal";
+    const vS = verdict(sens90),
+      vC = verdict(corr90);
+    const verdictText =
+      vS === vC
+        ? `Here both sets of ranges came out ${vS}.`
+        : `Here the sensitivity ranges came out ${vS} and the correlation ranges ${vC}.`;
     $("calib-headline").innerHTML = `
 <div class="note">
   <h4>90% intervals: sensitivities ${pct(sens90)}, correlations ${pct(corr90)}</h4>
   <p>The two families are calibrated differently, so they are reported separately.
-  Here the sensitivity intervals came out ${verdict(sens90)} and the correlation
-  intervals ${verdict(corr90)}. Averaging the two would give a number close to 90%
+  ${verdictText} Averaging the two would give a number close to 90%
   that describes neither.</p>
   <p>Across large held-out sets the sensitivities cover about 94.6% and the correlations
   about 84%, so a nominal 90% interval on a within-stimulus correlation behaves more

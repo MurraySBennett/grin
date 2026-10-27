@@ -19,7 +19,7 @@
     <title>Learn - GRIN</title>
     <meta
       name="description"
-      content="A primer on General Recognition Theory, a glossary of terms,  and a statement of GRIN's limitations."
+      content="A primer on General Recognition Theory, a glossary of terms, and a statement of GRIN's limitations."
     />
     <link rel="canonical" href="https://grin.murraysbennett.com/learn.html" />
     <meta property="og:title" content="Learn - GRIN" />
@@ -75,7 +75,7 @@
           then decide using two lines: one separates happy from sad, and the
           other separates male from female. Which side of each line your
           impression falls on determines your answer. (GRIN fixes both lines at
-          the origin. See <a href="#separability">decisional separability</a>
+          the origin. See <a href="#decisional-separability">decisional separability</a>
           below.)
         </p>
         <p>
@@ -119,8 +119,10 @@
           That gives 12 free numbers in total. GRIN's model also has 12 numbers
           to estimate: where each of the four clouds sits left–right (4), where
           it sits up–down (4), and how much it tilts (4). With 12 numbers in and
-          12 out, a <em>single</em> table is just enough to pin down the whole
-          picture, as long as the decision lines stay fixed in place. The usual
+          12 out, a <em>single</em> table is just enough for the model to fit it
+          exactly, as long as the decision lines stay fixed in place. That also
+          means the table alone cannot show the model is wrong, and the
+          correlations are much harder to pin down than the positions. The usual
           method finds those 12 numbers with a step-by-step search (maximum
           likelihood), run once per participant for each version of the model.
           GRIN instead uses a network trained in advance on many simulated
@@ -145,9 +147,10 @@
             <h4>Perceptual separability (PS)</h4>
             <p>
               A dimension is separable from another if its marginal perceptual
-              distribution does not shift with the other dimension's level.
-              Failure of separability is a <em>mean</em> effect, it moves where
-              an ellipse is centered.
+              distribution does not shift with the other dimension's level. In
+              GRIN's model every cloud has the same spread, so a failure of
+              separability is a <em>mean</em> effect. It moves where an ellipse
+              is centred.
             </p>
           </div>
           <div class="note" style="margin-bottom: 0.6rem">
@@ -155,54 +158,32 @@
             <p>
               Zero correlation between the two dimensions' perceptual noise,
               <em>within a single stimulus</em>. Failure of independence is a
-              <em>correlation</em> effect, it tilts an ellipse. GRIN's model
+              <em>correlation</em> effect. It tilts an ellipse. GRIN's model
               classes distinguish exact independence (PI), one shared
               correlation across all four stimuli (RHO1), and a fully free
               correlation per stimulus.
             </p>
           </div>
-          <div class="note" style="margin-bottom: 0.6rem">
+          <div class="note" id="decisional-separability" style="margin-bottom: 0.6rem">
             <h4>Decisional separability (DS)</h4>
             <p>
               The decision bound on one dimension does not depend on the
-              perceived level of the other. GRIN assumes DS throughout, the
+              perceived level of the other. GRIN assumes DS throughout. The
               crossed decision lines are always fixed at the origin, which is
-              what makes the 12-parameter model exactly identified from one
-              matrix. Relaxing DS is future scope, not present behaviour.
+              why the 12-parameter model has exactly as many parameters as the
+              table has free numbers.
             </p>
           </div>
           <div class="note" style="margin-bottom: 0.6rem">
             <h4>Model class</h4>
             <p>
-              One specific combination of {independent / one shared ρ / free ρ}
-              × {A separable or not} × {B separable or not}, 12 in total.
+              One combination of three correlation patterns (independent, one
+              shared ρ, or a free ρ for each stimulus), times whether A is
+              separable, times whether B is separable, 12 in total.
               "Fitting a model" in the classical sense means picking the best of
               these 12. GRIN instead returns continuous parameters plus the
               probability of each structural claim, so you are not forced to pick
               one.
-            </p>
-          </div>
-          <div class="note" style="margin-bottom: 0.6rem">
-            <h4>Systems Factorial Technology (SFT)</h4>
-            <p>
-              SFT carries the architecture side of the +RT model. We can ask if
-              a two-dimensional decision is made serially or in parallel, and
-              does it stop as soon as one dimension is settled (self-terminating) or
-              wait for both (exhaustive)? Five architectures in total (the 4
-              serial/parallel × exhaustive/self-terminating combinations,
-              plus coactive, where evidence for both dimensions pools into a
-              single accumulator).
-            </p>
-          </div>
-          <div class="note" style="margin-bottom: 0.6rem">
-            <h4>Simplified ballistic accumulator</h4>
-            <p>
-              The exploratory RT simulator gives each dimension a noisy drift
-              rate and a ballistic finishing time, then combines the two times
-              under five processing architectures. It is <em>not</em> a full
-              Linear Ballistic Accumulator: the GRT sample determines the
-              response, there is no random starting point, and response
-              accumulators do not race within a dimension.
             </p>
           </div>
           <div class="note" style="margin-bottom: 0">
@@ -223,12 +204,12 @@
 
         <details open>
           <summary>
-            Why not just always fit the free/free/free "ds" model and skip model
-            selection?
+            Why not just always fit the unconstrained model, with every value
+            free, and skip model selection?
           </summary>
           <div class="details-body">
             <p style="margin-top: 0">
-              You can, and GRIN's "MLE, full model" column on the Analyse page
+              You can, and the "MLE, full model" column on the Analyse page
               does exactly that, for comparison. But the constrained classes
               exist because separability and independence are the scientific
               questions usually being asked. Reporting only the unconstrained
@@ -256,21 +237,6 @@
             </p>
           </div>
         </details>
-
-        <!-- <details>
-          <summary>Why does GRIN assume decisional separability?</summary>
-          <div class="details-body">
-            <p style="margin-top: 0">
-              Because it's what makes the model exactly identified from a single
-              confusion matrix. Relax it and you add free decision-bound
-              parameters that trade off against the perceptual parameters
-              without more data to separate them, you would need multiple
-              matrices per participant (e.g. across bias conditions) to identify
-              a DS-violating model, which is a different, harder problem than
-              the one GRIN solves.
-            </p>
-          </div>
-        </details> -->
 
         <details>
           <summary>
@@ -312,12 +278,13 @@
         <div class="note warn">
           <h4>Amortised over a fixed prior</h4>
           <p>
-            GRIN was trained on data simulated from a specific range of
-            sensitivities, correlations, and trial counts (see the manifest
-            shipped with each model). <a href="./analyse.html">Analyse</a>
-            checks matrix shape, trial counts, accuracy, and RT units where it
-            can. Those are useful input checks, not proof that a dataset falls
-            inside the latent training distribution or that GRT generated it.
+            GRIN was trained on sensitivities up to 3 either side of zero,
+            correlations from −0.9 to 0.9, and 1 to 1000 trials per stimulus.
+            It was tested from 5 to 500 trials per stimulus.
+            <a href="./analyse.html">Analyse</a> checks matrix shape, trial
+            counts, and accuracy where it can. Those are useful input checks,
+            not proof that a dataset falls inside the training distribution or
+            that GRT generated it.
           </p>
         </div>
         <div class="note warn">
@@ -326,7 +293,9 @@
             The decision bounds are fixed at the origin in every model class
             GRIN fits. If your participants use response criteria that shift
             with the other dimension, GRIN will not detect that, because it is
-            not in the model family.
+            not in the model family. No method could detect it from one table
+            either. Every such shift produces exactly the same table as some
+            space in which the criteria do not shift.
           </p>
         </div>
         <div class="note warn">
@@ -342,19 +311,9 @@
           <p>
             GRIN reports a probability alongside every structural claim
             specifically so you do not have to pretend a narrow plurality is a
-            confident conclusion. The Space Builder and Analyse pages both
-            raise this directly.
-          </p>
-        </div>
-        <div class="note warn">
-          <h4>The RT model adds assumptions</h4>
-          <p>
-            The +RT page is an exploratory proof of concept built around a
-            simplified ballistic timing model. It does not implement the full
-            LBA choice race, and the checkpoint is not distributed with the
-            released packages. Its architecture and timing-parameter outputs
-            should be read as demonstrations of this particular simulator, not
-            as a validated general-purpose RT analysis.
+            confident conclusion. The Space Builder and Analyse pages show any
+            probability below 0.6 dimmed, as a sign that the answer is not
+            firm.
           </p>
         </div>
       </div>
@@ -367,44 +326,28 @@
             independence. <em>Psychological Review, 93</em>(2), 154–179.
           </li>
           <li>
-            Townsend, J. T., &amp; Nozawa, G. (1995). Spatio-temporal properties
-            of elementary perception: An investigation of parallel, serial, and
-            coactive theories.
-            <em>Journal of Mathematical Psychology, 39</em>(4), 321–359.
-          </li>
-          <li>
-            Townsend, J. T., Houpt, J. W., &amp; Silbert, N. H. (2012). General
-            recognition theory extended to include response times: Predictions
-            for a class of parallel systems.
-            <em>Journal of Mathematical Psychology, 56</em>(6), 476–494.
-          </li>
-          <li>
-            Brown, S. D., &amp; Heathcote, A. (2008). The simplest complete
-            model of choice response time: Linear ballistic accumulation.
-            <em>Cognitive Psychology, 57</em>(3), 153–178.
-          </li>
-          <li>
             <code>grtools</code> (R) and <code>mdsdt</code> (R), the
             maximum-likelihood implementations GRIN is validated against.
           </li>
         </ul>
-
-        <section class="card">
-          <h3 class="card-subhead">Now do something with it</h3>
-          <p>
-            The <a href="./tutorials.html">tutorials</a> are complete walkthroughs in
-            Python and R: <a href="./tutorial-existing-data.html">analysing data you already
-            have</a>, <a href="./tutorial-adaptive-stopping.html">stopping a task when the
-            estimate is precise enough</a>, and
-            <a href="./tutorial-stimulus-levels.html">steering stimulus levels into the range
-            where your question is answerable</a>.
-          </p>
-          <p>
-            Or try the <a href="./live.html">live task</a>, a short
-            identification task with the model refitting after every response.
-          </p>
-        </section>
       </div>
+
+      <section class="card">
+        <h3 class="card-subhead">Now do something with it</h3>
+        <p>
+          The <a href="./tutorials.html">tutorials</a> are complete walkthroughs in
+          Python and R: <a href="./tutorial-existing-data.html">analysing data you already
+          have</a>, <a href="./tutorial-adaptive-stopping.html">stopping a task when the
+          estimate is precise enough</a>, and
+          <a href="./tutorial-stimulus-levels.html">steering stimulus levels into the range
+          where your question is answerable</a>.
+        </p>
+        <p>
+          Or try the <a href="./live.html">live task</a>, a short
+          identification task. By default the GRT model is refitted at each
+          block break.
+        </p>
+      </section>
     </main>
 
     <div id="footer-placeholder"></div>
