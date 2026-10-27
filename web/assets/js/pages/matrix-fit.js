@@ -173,6 +173,12 @@ $("use-manual").addEventListener("click", () => {
 // attached, so "different methods land on the same answer" is checkable
 // against a real result rather than only simulated ones.
 // --------------------------------------------------------------------------- //
+const THOMAS_2001 = `Thomas, R. D. (2001). Characterizing perceptual interactions in face
+identification using multidimensional signal detection theory. In M. J. Wenger
+&amp; J. T. Townsend (Eds.), <em>Computational, geometric, and process
+perspectives on facial cognition: Contexts and challenges</em>
+(pp. 193\u2013227). Lawrence Erlbaum Associates.`;
+
 const EXAMPLES = {
   soto: {
     label: "Emotion / Gender, Soto et al. (2017)",
@@ -231,6 +237,68 @@ Independence and separability in the perception of complex nonspeech sounds.
     note: "Reproduced from their pitch/timbre identification experiment. Values were " +
       "transcribed manually, so check them against the original table before citing.",
   },
+  // The next three come from the mdsdt R package (CRAN archive, v1.2, data/*.rda),
+  // which stores rows and columns in the order aa, ab, ba, bb, matching
+  // STIMULUS_ORDER. The Thomas chapter has no working chapter DOI (the
+  // publisher's chapter DOIs resolve to the wrong chapters), so it links the book.
+  thomas_EN: {
+    label: "Eye separation / Nose length, Thomas (2001)",
+    matrix: [
+      [83, 112, 47, 11],
+      [38, 154, 28, 33],
+      [15, 27, 117, 94],
+      [6, 36, 75, 136],
+    ],
+    Aname: "Eye separation",
+    A: ["Eyes low", "Eyes high"],
+    Bname: "Nose length",
+    B: ["Nose low", "Nose high"],
+    citation: THOMAS_2001,
+    doi: "10.4324/9781410612328",
+    linkText: "View book",
+    note: "Real data from one observer (Observer A) identifying line drawings of faces. " +
+      "Counts are from the mdsdt R package, where Robin Thomas supplied them. Low and high " +
+      "are the two levels of each feature, as labelled in the package.",
+  },
+  thomas_EM: {
+    label: "Eye separation / Mouth width, Thomas (2001)",
+    matrix: [
+      [149, 64, 33, 7],
+      [78, 142, 10, 23],
+      [20, 15, 149, 69],
+      [7, 25, 80, 141],
+    ],
+    Aname: "Eye separation",
+    A: ["Eyes low", "Eyes high"],
+    Bname: "Mouth width",
+    B: ["Mouth low", "Mouth high"],
+    citation: THOMAS_2001,
+    doi: "10.4324/9781410612328",
+    linkText: "View book",
+    note: "Real data from one observer (Observer B) identifying line drawings of faces. " +
+      "Counts are from the mdsdt R package, where Robin Thomas supplied them. Low and high " +
+      "are the two levels of each feature, as labelled in the package.",
+  },
+  silbert12: {
+    label: "Manner / Voicing, Silbert (2012)",
+    matrix: [
+      [189, 9, 2, 0],
+      [5, 146, 1, 48],
+      [2, 0, 195, 3],
+      [0, 28, 1, 171],
+    ],
+    Aname: "Manner",
+    A: ["Stop", "Fricative"],
+    Bname: "Voicing",
+    B: ["Voiceless", "Voiced"],
+    citation: `Silbert, N. H. (2012). Syllable structure and integration of voicing
+and manner of articulation information in labial consonant identification.
+<em>Journal of the Acoustical Society of America</em>, 131(5), 4076\u20134086.`,
+    doi: "10.1121/1.3699209",
+    note: "Real data from one listener (Observer 3) identifying the consonants [p], [b], " +
+      "[f] and [v] in noise, at the start of a syllable (Experiment 1). Counts are from " +
+      "the mdsdt R package, where Noah Silbert supplied them.",
+  },
 };
 
 $("load-example").addEventListener("click", () => {
@@ -245,7 +313,7 @@ $("load-example").addEventListener("click", () => {
     },
     ex.label,
     `<div class="note"><h4>Source</h4><p>${ex.citation}
-<a href="https://doi.org/${ex.doi}" target="_blank" rel="noopener">View paper</a></p>
+<a href="https://doi.org/${ex.doi}" target="_blank" rel="noopener">${ex.linkText || "View paper"}</a></p>
 <p style="margin-bottom:0">${ex.note}</p></div>`,
   );
 });
