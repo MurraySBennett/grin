@@ -483,7 +483,7 @@ function loadParsed(result, sourceName, citationHTML = null) {
   $("file-status").innerHTML =
     `<span class="pill ok">Loaded ${escapeHTML(sourceName)}, ${nBadge}</span>` +
     (rtColumnsSeen
-      ? `<span class="pill">Response times ignored. GRIN analyses counts only.</span>`
+      ? `<span class="pill">Response-time columns are ignored.</span>`
       : "") +
     (result.warnings?.length
       ? `<br><span class="pill warn" style="margin-top:.4rem">${result.warnings.length} ${result.warnings.length === 1 ? "warning" : "warnings"}</span>`

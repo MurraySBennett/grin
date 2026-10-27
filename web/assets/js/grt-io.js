@@ -231,12 +231,9 @@ function parseLong(rows, idx) {
     }
     let rt = null;
     if (hasRT) {
+      // A blank or non-numeric time is kept as null rather than rejecting the row.
       rt = Number(r[idx.rt]);
-      if (!Number.isFinite(rt)) {
-        if (problems.length < 5)
-          problems.push(`Line ${line}: RT "${r[idx.rt]}" is not a number`);
-        return;
-      }
+      if (!Number.isFinite(rt)) rt = null;
     }
     trials.push({
       participant: hasPid ? String(r[idx.participant]).trim() : "all",
