@@ -95,6 +95,26 @@ export function modelLabel(name) {
   return `${c} · ${s} · DS`;
 }
 
+/** Plain-language label for a model class, e.g. "one shared correlation, B separable". */
+export function modelWords(name) {
+  const spec = MODEL_SPECS[name];
+  if (!spec) return String(name);
+  const c = {
+    pi: "independent",
+    rho1: "one shared correlation",
+    free: "correlation varies by stimulus",
+  }[spec.corr];
+  const s =
+    spec.psA && spec.psB
+      ? "A and B separable"
+      : spec.psA
+        ? "A separable"
+        : spec.psB
+          ? "B separable"
+          : "neither separable";
+  return `${c}, ${s}`;
+}
+
 // --------------------------------------------------------------------------- //
 // Normal distribution — double precision.
 //

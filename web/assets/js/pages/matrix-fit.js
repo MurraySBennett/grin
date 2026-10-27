@@ -55,6 +55,14 @@ let groups = null; // Map participant -> trials[]  (long format)
 let hasRT = false;
 let rtColumnsSeen = false;
 let cmModel = null;
+const DEFAULT_LABELS = {
+  aName: "Dimension A",
+  a1: "A1",
+  a2: "A2",
+  bName: "Dimension B",
+  b1: "B1",
+  b2: "B2",
+};
 let currentLabels = {
   aName: "Dimension A",
   a1: "A1",
@@ -81,6 +89,40 @@ async function getModel() {
   cmModel.setCalibrated(!!($("calib-toggle") && $("calib-toggle").checked));
   return cmModel;
 }
+
+// --------------------------------------------------------------------------- //
+// Input tabs (Choose a file, Paste text, Type a matrix, Published examples).
+// WAI-ARIA tabs pattern with automatic activation: arrow keys, Home and End move
+// between tabs, and only the selected tab is in the tab order.
+// --------------------------------------------------------------------------- //
+(function setupInputTabs() {
+  const list = document.querySelector('.input-tabs[role="tablist"]');
+  if (!list) return; // older cached markup: the panels are simply all visible
+  const tabs = [...list.querySelectorAll('[role="tab"]')];
+  const select = (tab, focus = true) => {
+    for (const t of tabs) {
+      const on = t === tab;
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      t.tabIndex = on ? 0 : -1;
+      const panel = document.getElementById(t.getAttribute("aria-controls"));
+      if (panel) panel.hidden = !on;
+    }
+    if (focus) tab.focus();
+  };
+  tabs.forEach((t, i) => {
+    t.addEventListener("click", () => select(t));
+    t.addEventListener("keydown", (e) => {
+      let j = null;
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") j = (i + 1) % tabs.length;
+      else if (e.key === "ArrowLeft" || e.key === "ArrowUp") j = (i - 1 + tabs.length) % tabs.length;
+      else if (e.key === "Home") j = 0;
+      else if (e.key === "End") j = tabs.length - 1;
+      if (j === null) return;
+      e.preventDefault();
+      select(tabs[j]);
+    });
+  });
+})();
 
 // --------------------------------------------------------------------------- //
 // Manual matrix entry
@@ -124,7 +166,8 @@ $("use-manual").addEventListener("click", () => {
 });
 
 // --------------------------------------------------------------------------- //
-// Published examples, real confusion matrices from the GRT literature. Not
+// Published examples, confusion matrices from the GRT literature (the Soto one is
+// that paper's simulated Table 1, and is labelled as such). Not
 // here to claim GRIN is faster or better; here so the GRIN-vs-MLE comparison
 // above can be run on data someone else already published, with a citation
 // attached, so "different methods land on the same answer" is checkable
@@ -146,10 +189,9 @@ const EXAMPLES = {
     citation: `Soto, F. A., Zheng, E., Fonseca, J., &amp; Ashby, F. G. (2017).
 Testing separability and independence of perceptual dimensions with general
 recognition theory: A tutorial and new R package (<em>grtools</em>).
-<em>Frontiers in Psychology</em>, 8, 696.
-<a href="https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2017.00696/full"
-   target="_blank" rel="noopener">View paper</a>
-, data reproduced from Table 1 (emotion/gender face identification).`,
+<em>Frontiers in Psychology</em>, 8, 696.`,
+    doi: "10.3389/fpsyg.2017.00696",
+    note: "Data are the simulated example in Table 1 (emotion and gender of faces).",
   },
   silbert_FD: {
     label: "Frequency / Duration, Silbert et al. (2009)",
@@ -165,11 +207,10 @@ recognition theory: A tutorial and new R package (<em>grtools</em>).
     B: ["250ms", "300ms"],
     citation: `Silbert, N. H., Townsend, J. T., &amp; Lentz, J. J. (2009).
 Independence and separability in the perception of complex nonspeech sounds.
-<em>Attention, Perception, &amp; Psychophysics</em>, 71(8), 1900\u20131915.
-<a href="https://link.springer.com/article/10.3758/APP.71.8.1900"
-   target="_blank" rel="noopener">View paper</a>
-, reproduced from their frequency/duration identification experiment. Values were
-transcribed manually, so check them against the original table before citing.`,
+<em>Attention, Perception, &amp; Psychophysics</em>, 71(8), 1900\u20131915.`,
+    doi: "10.3758/APP.71.8.1900",
+    note: "Reproduced from their frequency/duration identification experiment. Values were " +
+      "transcribed manually, so check them against the original table before citing.",
   },
   silbert_PT: {
     label: "Pitch / Timbre, Silbert et al. (2009)",
@@ -185,11 +226,10 @@ transcribed manually, so check them against the original table before citing.`,
     B: ["850Hz", "1050Hz"],
     citation: `Silbert, N. H., Townsend, J. T., &amp; Lentz, J. J. (2009).
 Independence and separability in the perception of complex nonspeech sounds.
-<em>Attention, Perception, &amp; Psychophysics</em>, 71(8), 1900\u20131915.
-<a href="https://link.springer.com/article/10.3758/APP.71.8.1900"
-   target="_blank" rel="noopener">View paper</a>
-, reproduced from their pitch/timbre identification experiment. Values were
-transcribed manually, so check them against the original table before citing.`,
+<em>Attention, Perception, &amp; Psychophysics</em>, 71(8), 1900\u20131915.`,
+    doi: "10.3758/APP.71.8.1900",
+    note: "Reproduced from their pitch/timbre identification experiment. Values were " +
+      "transcribed manually, so check them against the original table before citing.",
   },
 };
 
@@ -204,7 +244,9 @@ $("load-example").addEventListener("click", () => {
       warnings: [],
     },
     ex.label,
-    `<div class="note"><h4>Source</h4><p style="margin-bottom:0">${ex.citation}</p></div>`,
+    `<div class="note"><h4>Source</h4><p>${ex.citation}
+<a href="https://doi.org/${ex.doi}" target="_blank" rel="noopener">View paper</a></p>
+<p style="margin-bottom:0">${ex.note}</p></div>`,
   );
 });
 
@@ -311,11 +353,14 @@ if (calibToggle) {
   });
 }
 
-$("dl-template-cm").addEventListener("click", () =>
+$("dl-template-trials").addEventListener("click", () =>
   downloadText(
     IO.templateCSV({ withRT: false }),
-    "grin_template_counts.csv",
+    "grin_template_trials.csv",
   ),
+);
+$("dl-template-counts").addEventListener("click", () =>
+  downloadText(IO.templateCountsCSV(), "grin_template_counts.csv"),
 );
 
 function downloadText(text, filename) {
@@ -347,7 +392,8 @@ function loadParsed(result, sourceName, citationHTML = null) {
   parsed = result;
   rtColumnsSeen = !!result.hasRT;
   hasRT = false;   // counts-only model; see the note at the top of this file
-  if (result.levels)
+  if (!result.levels) currentLabels = { ...DEFAULT_LABELS };
+  else
     currentLabels = {
       aName: result.levels.Aname || "Dimension A",
       a1: result.levels.A[0],
@@ -362,16 +408,18 @@ function loadParsed(result, sourceName, citationHTML = null) {
       ? `${result.trials.length} trials`
       : "1 matrix";
   $("file-status").innerHTML =
-    `<span class="pill ok">Parsed ${escapeHTML(sourceName)}, ${nBadge}</span>` +
+    `<span class="pill ok">Loaded ${escapeHTML(sourceName)}, ${nBadge}</span>` +
     (rtColumnsSeen
-      ? `<span class="pill">response-time columns ignored \u2014 counts-only model</span>`
+      ? `<span class="pill">Response times ignored. GRIN analyses counts only.</span>`
       : "") +
     (result.warnings?.length
-      ? `<br><span class="pill warn" style="margin-top:.4rem">${result.warnings.length} warning(s)</span>`
+      ? `<br><span class="pill warn" style="margin-top:.4rem">${result.warnings.length} ${result.warnings.length === 1 ? "warning" : "warnings"}</span>`
       : "");
 
   if (result.format === "matrix") {
-    groups = new Map([["matrix", { __matrix: result.counts }]]);
+    // Key a single matrix by where it came from (example name, file name, "typed
+    // matrix"), since this id is shown in the status line.
+    groups = new Map([[sourceName || "matrix", { __matrix: result.counts }]]);
   } else {
     groups = IO.byParticipant(result);
   }
@@ -409,7 +457,8 @@ function renderValidationSummary(result) {
 function trustNoteHTML() {
   return `<span class="eyebrow">Before interpreting the fit</span>
     <div class="note">
-      <h4>No warnings does not mean the model is right</h4>
+      <h4>Serein: rain falling from a cloudless sky</h4>
+      <p>No warnings does not necessarily mean that the model was right.</p>
       <p>These checks catch problems with the file, and some data that look unlike GRIN's training examples. They cannot tell whether GRT is the right model. They also cannot spot lapses of attention, drift over a session, a mix of strategies, or people changing how they decide. Read GRIN's probabilities as “if the model and its training assumptions are right”. Be cautious when ranges are wide, when support for the best class is weak, or when GRIN and the MLE fit disagree.</p>
     </div>`;
 }
@@ -520,12 +569,12 @@ function renderParticipant(id) {
   renderFigure(id);
 
   // GRIN column
-  const names = grin.mean.length === 12 ? Core.PARAM_NAMES : [];
+  const names = grin.mean.length === 12 ? paramLabels(L) : [];
   $("grin-ms").textContent = `${grin.ms.toFixed(2)} ms`;
   $("grin-ests").innerHTML = names
     .map((n, i) => {
       const range = i < 8 ? [-3, 3] : [-1, 1];
-      return Plot.estRow(n, grin.mean[i], grin.std[i], range);
+      return Plot.estRow(escapeHTML(n), grin.mean[i], grin.std[i], range);
     })
     .join("");
   $("grin-constructs").innerHTML =
@@ -537,14 +586,14 @@ function renderParticipant(id) {
   const mc = grin.modelClass;
   $("grin-verdict").innerHTML =
     `<div class="note ${mc.factorizedSupport >= 0.5 ? "" : "warn"}">
-    <h4>Best-supported class: <code>${mc.name}</code> <span class="cap">(${Core.modelLabel(mc.name)})</span></h4>
-    <p>Support for this class: ${mc.factorizedSupport.toFixed(2)}.${
-mc.factorizedSupport < 0.5
-  ? " This is below 0.5, so treat the conclusion as tentative."
-  : ""
-    } (This is GRIN's three separate probabilities multiplied together. It has not been checked as a probability in its own right.)</p>
+    <h4>Best-supported model class: ${escapeHTML(Core.modelWords(mc.name))}</h4>
+    <p>Support: ${mc.factorizedSupport.toFixed(2)}. This combines the three answers above, so treat it only as a guide.${
+mc.factorizedSupport < 0.5 ? " Below 0.5, the conclusion is tentative." : ""
+    }</p>
   </div>`;
 
+  // Response-time output. Dormant: hasRT is always false on this page, so this
+  // block never renders. Kept for a future response-time model.
   if (hasRT && grin.archBest) {
     $("grin-rt-block").innerHTML = `
 <h3 style="font-size:.68rem;color:var(--steel)">Processing architecture</h3>
@@ -564,7 +613,7 @@ ${Object.entries(grin.arch)
   $("mle-ests").innerHTML = mleFull.params
     .map(
       (v, i) =>
-        `<div class="est"><div class="lbl">${Core.PARAM_NAMES[i]}</div>
+        `<div class="est"><div class="lbl">${escapeHTML(paramLabels(L)[i])}</div>
 <div class="track"></div><div class="num">${v.toFixed(3)}</div></div>`,
     )
     .join("");
@@ -574,18 +623,19 @@ ${Object.entries(grin.arch)
     .slice(0, 6)
     .map(
       (f) => `<tr>
-    <td style="text-align:left;font-family:Inter,sans-serif">${f.model}</td>
+    <td style="text-align:left;font-family:Inter,sans-serif">${Core.modelWords(f.model)}</td>
     <td>${f.k}</td><td>${f.loglik.toFixed(1)}</td>
     <td>${f.bic.toFixed(1)}</td><td>${f.weight.toFixed(3)}</td>
-    <td>${Number.isFinite(f.p) ? f.p.toFixed(3) : ", "}</td>
+    <td>${Number.isFinite(f.p) ? f.p.toFixed(3) : "n/a"}</td>
   </tr>`,
     )
     .join("");
   $("mle-table").innerHTML =
-    `<tr><th style="text-align:left">Model</th><th>k</th>
-    <th>log L</th><th>BIC</th><th>weight</th><th>G² p</th></tr>${rows}`;
+    `<tr><th style="text-align:left">Model class</th><th>Free values (k)</th>
+    <th>Log likelihood (log L)</th><th>BIC (lower is better)</th><th>Weight</th><th>Fit test p (G²)</th></tr>${rows}`;
+  // Dormant (hasRT is always false here). Kept for a future response-time model.
   $("mle-rt-note").textContent = hasRT
-    ? "MLE has no response-time model here, grtools and mdsdt do not fit RT either. This comparison is counts-only by nature."
+    ? "MLE has no response-time model here. grtools and mdsdt do not fit RT either. This comparison is counts-only by nature."
     : "";
 
   // honest agreement check: GRIN posterior mean vs the unconstrained MLE fit
@@ -600,15 +650,16 @@ ${Object.entries(grin.arch)
   });
   const nSD =
     maxDiff / Math.max(1e-6, grin.std[Core.PARAM_NAMES.indexOf(worst)]);
+  const worstLabel = paramLabels(L)[Core.PARAM_NAMES.indexOf(worst)];
   $("agree-note").innerHTML = `<div class="note ${nSD > 2 ? "warn" : ""}">
     <h4>Agreement</h4>
     <p>
 Largest gap between GRIN's posterior mean and the unconstrained MLE fit is on
-<strong>${worst}</strong>: ${maxDiff.toFixed(3)} (${nSD.toFixed(1)} GRIN posterior SDs).
+<strong>${escapeHTML(worstLabel)}</strong>: ${maxDiff.toFixed(3)} (${nSD.toFixed(1)} GRIN posterior SDs).
 ${
   nSD > 2
-    ? "That is a bigger gap than GRIN's own uncertainty would predict, worth a second look, especially if trial counts are low or this matrix is unusual."
-    : "That is well within GRIN's stated uncertainty, which is what you want to see."
+    ? "That is a bigger gap than GRIN's own uncertainty would predict, so it is worth a second look, especially if trial counts are low or this matrix is unusual."
+    : "That is within GRIN's stated range."
 }
     </p>
   </div>`;
@@ -629,9 +680,9 @@ const PALETTE_NOTES = {
   site: "",
   custom: "",
   blackOnWhite:
-    "All-black lines, stimuli are told apart by position, not colour.",
+    "All-black lines. The stimuli are told apart by position, not colour.",
   whiteOnBlack:
-    "All-white lines, stimuli are told apart by position, not colour.",
+    "All-white lines. The stimuli are told apart by position, not colour.",
   grayscalePrint:
     "Four distinguishable greys. Photocopies and prints cleanly.",
   colorblindSafe:
@@ -688,7 +739,7 @@ function checkSpursUnlock() {
   $("opt-spurs-retro").hidden = false;
   $("spurs-extra").hidden = false;
   $("spurs-unlock-note").innerHTML =
-    `<span class="pill ok">🏀 Go Spurs Go!, Spurs palettes unlocked below.</span>`;
+    `<span class="pill ok">🏀 Go Spurs Go! Spurs palettes are unlocked below.</span>`;
 }
 
 /** Read the "Style this export" panel into renderSpace-ready options. */
@@ -763,13 +814,13 @@ async function renderFigure(id) {
   const predictedLabel =
     overlay === "mle"
       ? "MLE (unconstrained)"
-      : `Best model (${grin.modelClass.name})`;
+      : `Best model class (${Core.modelWords(grin.modelClass.name)})`;
 
   $("overlay-cap").textContent = !showPredicted
-    ? "Comparison ellipses are hidden, just GRIN's own estimate below."
+    ? "Comparison ellipses are hidden. Only GRIN's own estimate is shown."
     : overlay === "mle"
       ? "How far GRIN's posterior mean sits from the classical maximum-likelihood fit on the same data."
-      : "How much GRIN's free per-stimulus estimate had to move to satisfy its own best-fitting structural model.";
+      : "How much GRIN's free per-stimulus estimate had to move to satisfy its best-supported model class.";
 
   const style = figureStyle();
   $("fig-palette-note").textContent =
@@ -1091,17 +1142,17 @@ async function analyseAll() {
 
 function renderBatch(rows, skipped) {
   const header = `<tr><th style="text-align:left">Participant</th><th>n</th><th>Acc.</th>
-    <th>GRIN class</th><th>Factorized support</th><th>GRIN ms</th>
-    <th>MLE class (BIC)</th><th>MLE weight</th><th>MLE ms</th></tr>`;
+    <th>GRIN model class</th><th>Support</th><th>GRIN ms</th>
+    <th>MLE model class (BIC)</th><th>MLE weight</th><th>MLE ms</th></tr>`;
   const body = rows
     .map(
       (r) => `<tr>
     <td style="text-align:left"><a href="#" class="batch-row-link" data-id="${escapeAttr(r.id)}"
   style="font-family:Inter,sans-serif">${escapeHTML(r.id)}</a></td>
     <td>${r.total}</td><td>${(100 * r.acc).toFixed(1)}%</td>
-    <td>${r.grin.modelClass.name}</td><td>${r.grin.modelClass.factorizedSupport.toFixed(2)}</td>
+    <td>${Core.modelWords(r.grin.modelClass.name)}</td><td>${r.grin.modelClass.factorizedSupport.toFixed(2)}</td>
     <td>${r.grin.ms.toFixed(2)}</td>
-    <td>${r.mleSel.best.model}</td><td>${r.mleSel.best.weight.toFixed(2)}</td>
+    <td>${Core.modelWords(r.mleSel.best.model)}</td><td>${r.mleSel.best.weight.toFixed(2)}</td>
     <td>${r.mleSel.ms.toFixed(1)}</td>
   </tr>`,
     )
@@ -1171,6 +1222,24 @@ $("dl-batch-csv").addEventListener("click", () => {
 // --------------------------------------------------------------------------- //
 // Small helpers
 // --------------------------------------------------------------------------- //
+// Readable labels for the 12 parameters, in Core.PARAM_NAMES order
+// (zx_0..3, zy_0..3, rho_0..3, stimuli in Core.STIMULUS_ORDER). Uses the
+// dimension and level names when the data supply them, otherwise A, B and A1B1.
+// Display only: the batch CSV keeps the machine-readable PARAM_NAMES.
+function paramLabels(L) {
+  const named =
+    L.a1 !== DEFAULT_LABELS.a1 || L.a2 !== DEFAULT_LABELS.a2 ||
+    L.b1 !== DEFAULT_LABELS.b1 || L.b2 !== DEFAULT_LABELS.b2;
+  const stim = (i) =>
+    named ? Plot.stimLabel(L, i) : Core.STIMULUS_ORDER[i];
+  const dimA = L.aName && L.aName !== DEFAULT_LABELS.aName ? L.aName : "A";
+  const dimB = L.bName && L.bName !== DEFAULT_LABELS.bName ? L.bName : "B";
+  const out = [];
+  for (let i = 0; i < 4; i++) out.push(`${dimA} sensitivity, ${stim(i)}`);
+  for (let i = 0; i < 4; i++) out.push(`${dimB} sensitivity, ${stim(i)}`);
+  for (let i = 0; i < 4; i++) out.push(`Correlation, ${stim(i)}`);
+  return out;
+}
 function escapeHTML(s) {
   return String(s).replace(
     /[&<>"']/g,

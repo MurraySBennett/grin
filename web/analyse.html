@@ -19,11 +19,11 @@
     <title>Analyse - GRIN</title>
     <meta
       name="description"
-      content="Upload identification data and get GRT parameter estimates, model comparison, and a maximum-likelihood reference fit, side by side, all in your browser."
+      content="Load identification data and get GRT estimates, the best-supported model class, and a standard maximum-likelihood fit, side by side, in your browser."
     />
     <link rel="canonical" href="https://grin.murraysbennett.com/analyse.html" />
     <meta property="og:title" content="Analyse - GRIN" />
-    <meta property="og:description" content="Upload identification data and get GRT parameter estimates, model comparison, and a maximum-likelihood reference fit, side by side, all in your browser." />
+    <meta property="og:description" content="Load identification data and get GRT estimates, the best-supported model class, and a standard maximum-likelihood fit, side by side, in your browser." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://grin.murraysbennett.com/analyse.html" />
     <meta property="og:image" content="https://grin.murraysbennett.com/assets/images/og-card.svg" />
@@ -34,7 +34,7 @@
   <body data-page="analyse">
     <header class="site">
       <h1>Analyse</h1>
-      <p class="tagline">Bring your own data. Nothing leaves your browser.</p>
+      <p class="tagline">Analyse your own identification data. Your data stay on your computer.</p>
       <div id="nav-placeholder"></div>
     </header>
 
@@ -43,95 +43,102 @@
       <div class="tool">
         <!-- ================================================================ -->
         <aside class="panel sticky">
-          <span class="eyebrow">1. Use your own data</span>
+          <span class="eyebrow">1. Choose your data</span>
 
-          <div
-            id="dropzone"
-            class="dropzone"
-            tabindex="0"
-            role="button"
-            aria-label="Upload a CSV file"
-          >
-            Drop a CSV here, or click to choose a file
-            <input
-              type="file"
-              id="file-input"
-              accept=".csv,text/csv"
-              hidden
-            />
+          <div class="input-tabs" role="tablist" aria-label="Ways to load data">
+            <button type="button" role="tab" id="tab-file" aria-controls="panel-file" aria-selected="true" tabindex="0">Choose a file</button>
+            <button type="button" role="tab" id="tab-paste" aria-controls="panel-paste" aria-selected="false" tabindex="-1">Paste text</button>
+            <button type="button" role="tab" id="tab-matrix" aria-controls="panel-matrix" aria-selected="false" tabindex="-1">Type a matrix</button>
+            <button type="button" role="tab" id="tab-examples" aria-controls="panel-examples" aria-selected="false" tabindex="-1">Published examples</button>
           </div>
 
-          <details style="margin-top: 0.9rem">
-            <summary>...or paste CSV text</summary>
-            <div class="details-body">
-              <textarea
-                id="paste-area"
-                rows="6"
-                placeholder="participant,stimulus,response,rt&#10;p01,A1B1,A1B1,0.61&#10;..."
-              ></textarea>
-              <button id="parse-paste" class="wide" style="margin-top: 0.6rem">
-                Parse pasted text
-              </button>
+          <div class="input-panel" role="tabpanel" id="panel-file" aria-labelledby="tab-file">
+            <div
+              id="dropzone"
+              class="dropzone"
+              tabindex="0"
+              role="button"
+              aria-label="Choose a CSV file"
+            >
+              Drop a CSV here, or click to choose a file
+              <input
+                type="file"
+                id="file-input"
+                accept=".csv,text/csv"
+                hidden
+              />
             </div>
-          </details>
+          </div>
 
-          <details style="margin-top: 0.6rem">
-            <summary>...or type in a 4×4 matrix</summary>
-            <div class="details-body">
+          <div class="input-panel" role="tabpanel" id="panel-paste" aria-labelledby="tab-paste" hidden>
+            <textarea
+              id="paste-area"
+              rows="6"
+              aria-label="CSV text"
+              placeholder="participant,stimulus,response&#10;p01,A1B1,A1B1&#10;..."
+            ></textarea>
+            <button id="parse-paste" class="wide" style="margin-top: 0.6rem">
+              Use pasted text
+            </button>
+          </div>
+
+          <div class="input-panel" role="tabpanel" id="panel-matrix" aria-labelledby="tab-matrix" hidden>
+            <div style="overflow-x: auto">
               <table class="cm grid" id="manual-grid"></table>
-              <button id="use-manual" class="wide" style="margin-top: 0.6rem">
-                Use this matrix
-              </button>
-              <p class="cap">
-                <em>Counts only</em>. Response times need trial-level data.
-              </p>
             </div>
-          </details>
+            <button id="use-manual" class="wide" style="margin-top: 0.6rem">
+              Use this matrix
+            </button>
+            <p class="cap">
+              <em>Counts only</em>. Response times need trial-level data.
+            </p>
+          </div>
 
-          <hr class="hr" />
-          <span class="eyebrow">Or load a published example</span>
-          <p class="cap" style="margin-top: 0">
-            A brief selection of real confusion matrices from the GRT
-            literature, so you can see and compare GRIN against a classical
-            maximum-likelihood fit on published data.
-          </p>
-          <div class="row">
-            <select id="example-select" style="flex: 1">
-              <option value="soto">Emotion / Gender, Soto et al. (2017)</option>
-              <option value="silbert_FD">
-                Frequency / Duration, Silbert et al. (2009)
-              </option>
-              <option value="silbert_PT">
-                Pitch / Timbre, Silbert et al. (2009)
-              </option>
-            </select>
-            <button id="load-example" class="ghost">Load</button>
+          <div class="input-panel" role="tabpanel" id="panel-examples" aria-labelledby="tab-examples" hidden>
+            <p class="cap" style="margin-top: 0">
+              Three confusion matrices from published GRT papers. Compare GRIN
+              with a standard maximum-likelihood fit on each.
+            </p>
+            <div class="row">
+              <select id="example-select" style="flex: 1" aria-label="Published example">
+                <option value="soto">Emotion / Gender, Soto et al. (2017)</option>
+                <option value="silbert_FD">
+                  Frequency / Duration, Silbert et al. (2009)
+                </option>
+                <option value="silbert_PT">
+                  Pitch / Timbre, Silbert et al. (2009)
+                </option>
+              </select>
+              <button id="load-example" class="ghost">Load</button>
+            </div>
           </div>
           <div id="citation-box"></div>
 
           <hr class="hr" />
           <span class="eyebrow">Format</span>
           <p class="cap" style="margin-top: 0">
-            Your file needs one row per <strong>trial</strong>, with a
-            <code>stimulus</code> column and a <code>response</code> column.
-            Codes can be <code>A1B1</code>-style, your own labels such as
-            <code>Happy/Male</code>, or the numbers 0–3. A
-            <code>participant</code> column is optional. Response times (an
-            <code>rt</code> column) are ignored for now: the response-time model
-            has been withdrawn until its replacement is validated.
+            Your file can be one row per <strong>trial</strong>, with a
+            <code>stimulus</code> column and a <code>response</code> column, or
+            a 4×4 table of counts. Codes can be <code>A1B1</code>-style, your
+            own labels such as <code>Happy/Male</code>, or the numbers 0–3 or
+            1–4. A <code>participant</code> column is optional. Response times
+            are ignored.
           </p>
           <div class="row">
-            <button class="ghost" id="dl-template-cm">Template (counts)</button>
+            <button class="ghost" id="dl-template-trials">Download a template (one row per trial)</button>
+            <button class="ghost" id="dl-template-counts">Download a template (4×4 counts)</button>
           </div>
 
           <label class="row" id="calib-row" style="margin-top: 0.9rem" hidden>
             <input type="checkbox" id="calib-toggle" />
             <span
-              >Calibrated intervals
+              >Corrected ranges
               <span class="cap"
-                >Widens correlation intervals and narrows sensitivity intervals by
-                factors fitted on held-out simulations. Point estimates are
-                unchanged. Off by default. The paper's results use the raw posterior.</span
+                >Without this correction, the ranges for correlations are too
+                narrow. In simulated data, 84.1% of the 90% ranges contained the
+                true value. The ranges for sensitivities are wider than needed
+                (94.5%). With the correction, both are close to 91%. The
+                estimates themselves do not change.</span
               ></span
             >
           </label>
@@ -177,7 +184,7 @@
           </div>
 
           <div class="card" id="figure-card" hidden>
-            <span class="eyebrow">The classic GRT figure</span>
+            <span class="eyebrow">Perceptual space</span>
             <div class="viz-2">
               <div>
                 <canvas id="space" width="460" height="460"></canvas>
@@ -370,7 +377,7 @@
           </div>
 
           <div class="card" id="compare-card" hidden>
-            <span class="eyebrow">GRIN vs. maximum likelihood</span>
+            <span class="eyebrow">GRIN vs MLE</span>
             <div class="viz-2">
               <div>
                 <h3
@@ -380,7 +387,7 @@
                 </h3>
                 <div id="grin-ests"></div>
                 <h3 style="font-size: 0.68rem; color: var(--steel)">
-                  Structural conclusions
+                  Primary conclusions
                 </h3>
                 <div id="grin-constructs"></div>
                 <div id="grin-verdict"></div>
@@ -393,7 +400,7 @@
                   MLE, full model <span class="pill neutral" id="mle-ms"></span>
                 </h3>
                 <p class="cap" style="margin-top: 0">
-                  Point estimates with GRIN's calibrated posterior.
+                  Best-fitting values only
                 </p>
                 <div id="mle-ests"></div>
                 <h3 style="font-size: 0.68rem; color: var(--steel)">

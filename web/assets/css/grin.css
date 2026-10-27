@@ -1518,3 +1518,29 @@ kbd {
   .trial-layout.with-diag { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); align-items: start; }
 }
 .trial-diag[hidden] { display: none; }
+
+/* Analyse: tabs for the ways to load data */
+.input-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin: 0.5rem 0 0.9rem;
+}
+.input-tabs button[role="tab"] {
+  min-width: 0;
+  background: var(--panel);
+  color: var(--slate-deep);
+  border-color: var(--line);
+}
+.input-tabs button[role="tab"]:hover {
+  background: var(--line-soft);
+}
+.input-tabs button[role="tab"][aria-selected="true"] {
+  background: var(--slate);
+  color: #fff;
+  border-color: var(--slate-dark);
+}
+.input-tabs button[role="tab"]:focus-visible {
+  outline: 2px solid var(--slate);
+  outline-offset: 2px;
+}
