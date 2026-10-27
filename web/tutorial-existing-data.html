@@ -58,7 +58,9 @@
             <p>
               One row per trial. The only columns that matter are
               <code>stimulus</code> and <code>response</code>. A
-              <code>participant</code> column lets you split a sample.
+              <code>participant</code> column lets you split a sample. To follow
+              along, download the example file,
+              <a href="./assets/my_experiment.csv" download>my_experiment.csv</a>.
             </p>
             <div class="output">
               <span class="output-label">my_experiment.csv</span>
@@ -170,19 +172,20 @@ print(fit)
 <pre data-lang="Python"><code>for k, dk in (("p_PI", "decision_PI"),
               ("p_sep_A", "decision_sep_A"),
               ("p_sep_B", "decision_sep_B")):
-    print(k, con[k], con[dk])
+    print(f"{k:9s} {con[k]:.3f}  decision: {con[dk]}")
 </code></pre>
 <pre data-lang="R" hidden><code>con &lt;- fit$constructs
-con$p_PI;    con$decision_PI
-con$p_sep_A; con$decision_sep_A
-con$p_sep_B; con$decision_sep_B
+for (k in c("PI", "sep_A", "sep_B")) {
+  cat(sprintf("%-9s %.3f  decision: %s\n", paste0("p_", k),
+              con[[paste0("p_", k)]], con[[paste0("decision_", k)]]))
+}
 </code></pre>
               </div>
               <div class="output">
                 <span class="output-label">console</span>
-                <pre>p_PI      0.019    decision: against
-p_sep_A   0.184    decision: against
-p_sep_B   0.646    decision: undecided</pre>
+                <pre>p_PI      0.019  decision: against
+p_sep_A   0.184  decision: against
+p_sep_B   0.646  decision: undecided</pre>
               </div>
             </div>
             <p>
@@ -271,18 +274,19 @@ grin_plot_space(res)
             <div class="io side">
               <div class="codeblock" data-codeblock>
 <pre data-lang="Python"><code>for pid, sub in trials.groupby("participant"):
-    c = gt.to_confusion(sub, long=True,
-                        factor_a=("a1", "a2"),
-                        factor_b=("b1", "b2"), sep="/")
-    _, cc = gt.infer(c.counts)
-    print(pid, cc["p_PI"], cc["p_sep_A"])
+    cm = gt.to_confusion(sub, long=True,
+                         factor_a=("a1", "a2"),
+                         factor_b=("b1", "b2"), sep="/")
+    _, cc = gt.infer(cm.counts)
+    print(f"{pid}   p_PI = {cc['p_PI']:.3f}   p_sep_A = {cc['p_sep_A']:.3f}")
 </code></pre>
 <pre data-lang="R" hidden><code>for (pid in unique(trials$participant)) {
   sub &lt;- trials[trials$participant == pid, ]
-  c &lt;- grin_to_confusion(sub, factor_a = c("a1","a2"),
-                         factor_b = c("b1","b2"), sep = "/")
-  f &lt;- grin_infer(c$counts)
-  cat(pid, f$constructs$p_PI, f$constructs$p_sep_A, "\n")
+  cm &lt;- grin_to_confusion(sub, factor_a = c("a1","a2"),
+                          factor_b = c("b1","b2"), sep = "/")
+  f &lt;- grin_infer(cm$counts)
+  cat(sprintf("%s   p_PI = %.3f   p_sep_A = %.3f\n", pid,
+              f$constructs$p_PI, f$constructs$p_sep_A))
 }
 </code></pre>
               </div>
@@ -303,7 +307,8 @@ p03   p_PI = 0.080   p_sep_A = 0.879</pre>
           <li>
             <h3 class="card-subhead">Know what the intervals mean</h3>
             <p>
-              The interval on a marginal sensitivity means what it says. The interval
+              The interval on a marginal sensitivity is close to its stated level, if
+              slightly too wide. The interval
               on a within-stimulus correlation is narrower than nominal. Across
               large held-out sets a 90% interval covers about 84% of the time. Both
               packages ship an optional correction, off by default:

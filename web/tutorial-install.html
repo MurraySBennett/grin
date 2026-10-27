@@ -19,11 +19,11 @@
     <title>Installing GRIN - GRIN</title>
     <meta
       name="description"
-      content="How to install the GRIN packages in Python and R, verify they work, and get past the two failure modes people actually hit."
+      content="How to install the GRIN packages in Python and R, verify they work, and get past the two most common problems."
     />
     <link rel="canonical" href="https://grin.murraysbennett.com/tutorial-install.html" />
     <meta property="og:title" content="Installing GRIN - GRIN" />
-    <meta property="og:description" content="How to install the GRIN packages in Python and R, verify they work, and get past the two failure modes people actually hit." />
+    <meta property="og:description" content="How to install the GRIN packages in Python and R, verify they work, and get past the two most common problems." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://grin.murraysbennett.com/tutorial-install.html" />
     <meta property="og:image" content="https://grin.murraysbennett.com/assets/images/og-card.svg" />
@@ -76,7 +76,8 @@
             </p>
             <div class="codeblock" data-codeblock>
 <pre data-lang="Shell"><code>git clone https://github.com/MurraySBennett/grin.git
-pip install ./grin/packages/grintools
+pip install "./grin/packages/grintools[plot]"
+# [plot] adds matplotlib, pandas and scipy, which the plots and tutorials use
 
 # check it worked
 python -c "import grintools as gt; \
@@ -98,6 +99,7 @@ print(gt.infer([[83,112,47,11],[38,154,28,33],[15,27,117,94],[6,36,75,136]])[1][
             </p>
             <div class="codeblock" data-codeblock>
 <pre data-lang="R"><code>install.packages(c("torch", "remotes", "jsonlite"))
+install.packages("patchwork")   # optional: combines the plot panels
 
 # libtorch is a SEPARATE ~2 GB download, and this is the slow step
 torch::install_torch()
@@ -112,11 +114,6 @@ cm &lt;- matrix(c(83,112,47,11, 38,154,28,33,
 grin_infer(cm)$constructs$p_PI
 </code></pre>
             </div>
-            <p>
-              <code>jsonlite</code> is optional. Without it everything works except the
-              calibrated-interval flag, which falls back to the network's own intervals
-              with a warning rather than failing.
-            </p>
           </li>
 
           <li>
@@ -141,7 +138,7 @@ grin_infer(cm)$constructs$p_PI
             <div class="codeblock" data-codeblock>
 <pre data-lang="R"><code># built in WSL with:  R CMD build --no-build-vignettes packages/grin
 install.packages(
-  "//wsl.localhost/Ubuntu/home/USER/projects/grin/dist/grin_0.1.0.tar.gz",
+  "//wsl.localhost/Ubuntu/home/USER/projects/grin/dist/grin_0.1.1.tar.gz",
   repos = NULL, type = "source"
 )
 </code></pre>

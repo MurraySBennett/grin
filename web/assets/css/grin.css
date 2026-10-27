@@ -873,6 +873,9 @@ summary:hover {
   gap: 1.25rem;
   margin: 1.5rem 0;
 }
+/* Inside a .stack the stack gap already spaces the doors. */
+.stack > .doors { margin: 0; }
+.stack > .card:has(+ .doors) { margin-bottom: 0; }
 .door {
   display: block;
   text-decoration: none;

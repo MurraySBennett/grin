@@ -54,7 +54,7 @@
             </thead>
             <tbody>
               <tr><td>60&ndash;65%</td><td>~39%</td><td><strong>83%</strong></td><td>58%</td></tr>
-              <tr><td>70&ndash;75%</td><td>~52%</td><td>80%</td><td>73%</td></tr>
+              <tr><td>70&ndash;75%</td><td>~52%</td><td>80%</td><td>74%</td></tr>
               <tr><td>75&ndash;80%</td><td>~60%</td><td>78%</td><td>79%</td></tr>
               <tr><td>80&ndash;85%</td><td>~68%</td><td>75%</td><td><strong>82%</strong></td></tr>
               <tr><td>95&ndash;100%</td><td>~94%</td><td>68%</td><td>74%</td></tr>
@@ -62,15 +62,16 @@
           </table>
           <p class="cap">
             Classification accuracy for each construct, measured on 72,000 simulated
-            observers. Independence is best identified around 60&ndash;65% per
-            dimension, and separability around 80&ndash;85%. At the accuracy that best
+            observers. Separability is the mean over the two factors. Independence is
+            best identified around 60&ndash;65% per dimension, and separability around
+            80&ndash;90%, where it is 82% in both bins. At the accuracy that best
             serves independence, separability is recovered barely above chance.
           </p>
           <p>
             So there is no single right difficulty. If you need both, the crossing
             point, at about 75&ndash;80% per dimension or 60% overall, is
-            the compromise, and it is where the familiar advice to run near 60% correct
-            comes from. Note which scale that number is on: 60% <em>overall</em> is
+            the compromise, and this matches the familiar advice to run near 60%
+            correct. Note which scale that number is on: 60% <em>overall</em> is
             about 77% per dimension, and running at 60% <em>per dimension</em> would be
             a poor design for separability.
           </p>
@@ -107,7 +108,7 @@ def per_dimension_accuracy(counts):
     b = sum(c[s, r] for s in range(4) for r in range(4) if s % 2 == r % 2)
     return 0.5 * (a / n + b / n)
 
-acc = per_dimension_accuracy(startup_counts)
+acc = per_dimension_accuracy(startup_counts)   # your start-up block's 4x4 counts
 print(f"landed at {acc:.0%} per dimension")
 </code></pre>
 <pre data-lang="R" hidden><code># Mean of the two marginal accuracies.
@@ -121,7 +122,7 @@ per_dimension_accuracy &lt;- function(counts) {
   0.5 * (a / n + b / n)
 }
 
-acc &lt;- per_dimension_accuracy(startup_counts)
+acc &lt;- per_dimension_accuracy(startup_counts)   # your start-up block's 4x4 counts
 message(sprintf("landed at %.0f%% per dimension", 100 * acc))
 </code></pre>
             </div>
@@ -135,10 +136,11 @@ message(sprintf("landed at %.0f%% per dimension", 100 * acc))
             </p>
             <div class="codeblock" data-codeblock>
 <pre data-lang="Python"><code>TARGET, TOL, GAIN = 0.77, 0.03, 0.6      # aim at the crossing point
-separation = initial_separation
+separation = initial_separation                 # your experiment
 
 for block in range(6):
-    counts = run_block(separation, n_trials=48)
+    # your experiment: 50 trials per stimulus, 200 in all
+    counts = run_block(separation, trials_per_stimulus=50)
     acc = per_dimension_accuracy(counts)
 
     if abs(acc - TARGET) &lt;= TOL:
@@ -147,10 +149,11 @@ for block in range(6):
     separation *= 1 - GAIN * (acc - TARGET) / TARGET
 </code></pre>
 <pre data-lang="R" hidden><code>TARGET &lt;- 0.77; TOL &lt;- 0.03; GAIN &lt;- 0.6   # aim at the crossing point
-separation &lt;- initial_separation
+separation &lt;- initial_separation            # your experiment
 
 for (block in 1:6) {
-  counts &lt;- run_block(separation, n_trials = 48)
+  # your experiment: 50 trials per stimulus, 200 in all
+  counts &lt;- run_block(separation, trials_per_stimulus = 50)
   acc &lt;- per_dimension_accuracy(counts)
 
   if (abs(acc - TARGET) &lt;= TOL) break
@@ -166,13 +169,14 @@ for (block in 1:6) {
             <p>
               Accuracy measured from a short block is noisy, and steering on noise is
               worse than not steering. At 5&ndash;20 trials per stimulus the standard
-              deviation of an accuracy estimate is about 0.047, roughly a third
-              of the width of the band you are aiming at. At 50&ndash;200 it falls to
-              0.015.
+              deviation of an accuracy estimate is about 0.047, about as wide as the
+              band you are aiming at. At 50&ndash;200 trials per stimulus it falls to
+              0.015, half the example's tolerance of 0.03.
             </p>
             <p class="cap">
-              Blocks of 40&ndash;50 trials are a reasonable floor. Below that, expect
-              to chase sampling error rather than the participant.
+              Blocks of at least 50 trials per stimulus, 200 in all, are a reasonable
+              floor. Below that, expect to chase sampling error rather than the
+              participant.
             </p>
           </li>
         </ol>
@@ -196,8 +200,8 @@ for (block in 1:6) {
         <section class="card">
           <p>
             Back to <a href="./tutorials.html">all tutorials</a>, or see the
-            <a href="./live.html">live task</a>, where the accuracy readout tells you
-            in real time which side of the band you are on.
+            <a href="./live.html">live task</a>, where the accuracy readout shows your
+            per-dimension accuracy as you go.
           </p>
         </section>
       </div>

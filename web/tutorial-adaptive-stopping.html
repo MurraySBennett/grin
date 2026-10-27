@@ -19,11 +19,11 @@
     <title>Tutorial: adaptive stopping - GRIN</title>
     <meta
       name="description"
-      content="Refit between trials and stop testing when the estimate reaches a stated precision, rather than at a trial count fixed in advance."
+      content="Refit after every trial and stop testing when the estimate reaches a stated precision, rather than at a trial count fixed in advance."
     />
     <link rel="canonical" href="https://grin.murraysbennett.com/tutorial-adaptive-stopping.html" />
     <meta property="og:title" content="Tutorial: adaptive stopping - GRIN" />
-    <meta property="og:description" content="Refit between trials and stop testing when the estimate reaches a stated precision, rather than at a trial count fixed in advance." />
+    <meta property="og:description" content="Refit after every trial and stop testing when the estimate reaches a stated precision, rather than at a trial count fixed in advance." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://grin.murraysbennett.com/tutorial-adaptive-stopping.html" />
     <meta property="og:image" content="https://grin.murraysbennett.com/assets/images/og-card.svg" />
@@ -47,18 +47,12 @@
             A fixed trial budget has to be set in advance, and set for the least
             precise participant you can imagine, so everyone else is
             over-tested. If inference costs a fraction of a millisecond you can
-            instead refit between trials and stop each participant when their own
+            instead refit after every trial and stop each participant when their own
             estimate is precise enough.
-          </p>
-          <p class="cap">
-            In simulation this saves about 74% of trials at a target of 0.35 on the
-            posterior SD, and the saving grows as the target tightens. Nobody is
-            measured less precisely. The saving comes entirely from the participants
-            who never needed the full budget.
           </p>
           <p>
             You can try this without writing anything: the
-            <a href="./live.html">live task</a> runs exactly this loop in your browser.
+            <a href="./live.html">live task</a> runs a similar loop in your browser.
           </p>
         </section>
 
@@ -73,55 +67,67 @@
             <div class="codeblock" data-codeblock>
 <pre data-lang="Python"><code>import grintools as gt
 
-# stop when the correlations are known to within an SD of 0.35
+# p01 from the example data in "Analyse data you already have"
+counts = [[29, 2, 3, 6], [1, 32, 0, 2], [2, 3, 36, 4], [2, 6, 3, 29]]
+fit, con = gt.infer(counts)
+
+# stop when every correlation is known to within an SD of 0.35
 decision = gt.stop_on_precision(fit, sd_max=0.35, params=["rho"])
 decision.stop           # True / False
 print(decision.summary())
-#   stop = True  (combine='all')
-#       sd:rho_0         0.171 vs 0.350  [met]
+#   stop = False  (combine='all')
+#       sd:rho_1         0.582 vs 0.350  [not met]
 
 decision.checks         # one dict per target: value, threshold, met, reachable
-decision.blocked_by     # the checks that are not met yet
+decision.blocked_by     # targets the data may never be able to meet
 </code></pre>
 <pre data-lang="R" hidden><code>library(grin)
 
-# stop when the correlations are known to within an SD of 0.35
+# p01 from the example data in "Analyse data you already have"
+counts &lt;- matrix(c(29, 2, 3, 6,  1, 32, 0, 2,  2, 3, 36, 4,  2, 6, 3, 29),
+                 nrow = 4, byrow = TRUE)
+fit &lt;- grin_infer(counts)
+
+# stop when every correlation is known to within an SD of 0.35
 decision &lt;- grin_stop_on_precision(fit$result, sd_max = 0.35,
                                    params = c("rho"))
 decision$stop          # TRUE / FALSE
-decision$checks        # one row per target: value, threshold, met, reachable
-decision$blocked_by    # the targets not met yet
+decision$checks        # one entry per target: value, threshold, met, reachable
+decision$blocked_by    # targets the data may never be able to meet
 </code></pre>
-<pre data-lang="JavaScript" hidden><code>// In a browser task, the same rule is three lines: refit, average the
-// posterior SDs you care about, compare to your target.
+<pre data-lang="JavaScript" hidden><code>// In a browser task, the same rule is three lines: refit, take the largest
+// posterior SD you care about, compare to your target.
 const out = await model.predict({ counts, trials });
 const rhoSD = out.std.slice(8, 12);
-const stop = rhoSD.reduce((a, b) => a + b, 0) / 4 &lt;= 0.35;
+const stop = Math.max(...rhoSD) &lt;= 0.35;
 </code></pre>
             </div>
+            <p class="cap">
+              The summary names the worst of the four correlations, the one furthest
+              from the target. Here that is <code>rho_1</code>. The rule is met only
+              when that one is within the target too.
+            </p>
           </li>
 
           <li>
             <h3 class="card-subhead">Put it in the trial loop</h3>
             <p>
-              Accrue in blocks rather than single trials. The posterior barely moves
-              on one response, and every stimulus needs a few observations before the
-              fit means anything.
+              GRIN is fast enough to check after every trial. Wait until each stimulus
+              has been shown at least 3 times, because the fit needs a few observations
+              of every stimulus before it means anything.
             </p>
             <div class="codeblock" data-codeblock>
 <pre data-lang="Python"><code>import numpy as np, grintools as gt
 
 counts = np.zeros((4, 4), dtype=int)
-BLOCK, MIN_TRIALS, MAX_TRIALS = 16, 40, 400
+MIN_PER_STIMULUS, MAX_TRIALS = 3, 400
 
-for block in range(MAX_TRIALS // BLOCK):
-    for _ in range(BLOCK):
-        s = present_random_stimulus()      # your experiment
-        r = collect_response()             # your experiment
-        counts[s, r] += 1
+for n in range(1, MAX_TRIALS + 1):
+    s = present_random_stimulus()          # your experiment
+    r = collect_response()                 # your experiment
+    counts[s, r] += 1
 
-    n = counts.sum()
-    if n &lt; MIN_TRIALS:
+    if counts.sum(axis=1).min() &lt; MIN_PER_STIMULUS:
         continue                           # too early to ask
 
     fit, con = gt.infer(counts)
@@ -132,17 +138,14 @@ for block in range(MAX_TRIALS // BLOCK):
 <pre data-lang="R" hidden><code>library(grin)
 
 counts &lt;- matrix(0L, 4, 4)
-BLOCK &lt;- 16; MIN_TRIALS &lt;- 40; MAX_TRIALS &lt;- 400
+MIN_PER_STIMULUS &lt;- 3; MAX_TRIALS &lt;- 400
 
-for (block in seq_len(MAX_TRIALS %/% BLOCK)) {
-  for (i in seq_len(BLOCK)) {
-    s &lt;- present_random_stimulus()   # your experiment
-    r &lt;- collect_response()          # your experiment
-    counts[s, r] &lt;- counts[s, r] + 1L
-  }
+for (n in seq_len(MAX_TRIALS)) {
+  s &lt;- present_random_stimulus()     # your experiment
+  r &lt;- collect_response()            # your experiment
+  counts[s, r] &lt;- counts[s, r] + 1L
 
-  n &lt;- sum(counts)
-  if (n &lt; MIN_TRIALS) next
+  if (min(rowSums(counts)) &lt; MIN_PER_STIMULUS) next   # too early to ask
 
   fit &lt;- grin_infer(counts)
   d &lt;- grin_stop_on_precision(fit$result, sd_max = 0.35, params = c("rho"))
@@ -156,25 +159,27 @@ for (block in seq_len(MAX_TRIALS %/% BLOCK)) {
 
 const model = await loadModelCached("./assets/models/cm");
 const counts = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
-const BLOCK = 16, MIN_TRIALS = 40, MAX_TRIALS = 400;
-let n = 0;
+const MIN_PER_STIMULUS = 3, MAX_TRIALS = 400;
 
-while (n &lt; MAX_TRIALS) {
-  for (let i = 0; i &lt; BLOCK; i++) {
-    const s = presentRandomStimulus();     // your experiment
-    const r = await collectResponse();     // your experiment
-    counts[s][r] += 1;
-    n += 1;
-  }
-  if (n &lt; MIN_TRIALS) continue;
+for (let n = 1; n &lt;= MAX_TRIALS; n++) {
+  const s = presentRandomStimulus();       // your experiment
+  const r = await collectResponse();       // your experiment
+  counts[s][r] += 1;
 
   const trials = counts.map((row) => row.reduce((a, b) => a + b, 0));
+  if (Math.min(...trials) &lt; MIN_PER_STIMULUS) continue;   // too early to ask
+
   const out = await model.predict({ counts, trials });
   const rhoSD = out.std.slice(8, 12);
-  if (rhoSD.reduce((a, b) => a + b, 0) / 4 &lt;= 0.35) break;
+  if (Math.max(...rhoSD) &lt;= 0.35) break;   // every correlation within 0.35
 }
 </code></pre>
             </div>
+            <p class="cap">
+              The JavaScript runs inside a <code>&lt;script type="module"&gt;</code> on
+              a page served from the GRIN <code>web</code> folder, which holds the model
+              and the ONNX runtime it loads.
+            </p>
           </li>
 
           <li>
@@ -186,8 +191,11 @@ while (n &lt; MAX_TRIALS) {
               are running an experiment with no defined end.
             </p>
             <p>
-              Report the ceiling and how many participants hit it. A saving computed
-              over a cohort where the slowest were quietly dropped is not a saving.
+              The example ceiling of 400 trials is 100 per stimulus. With a target as
+              tight as 0.35 on the correlations, expect many participants to reach the
+              ceiling before the target. Report the ceiling and how many participants
+              hit it. A saving computed over a cohort where the slowest were quietly
+              dropped is not a saving.
             </p>
           </li>
         </ol>
@@ -197,7 +205,7 @@ while (n &lt; MAX_TRIALS) {
           <p>
             <strong>Targets on correlations inherit a calibration issue.</strong> The
             correlation intervals run narrower than nominal, so a target on
-            <code>rho</code> is met slightly sooner than it should be. Either pass
+            <code>rho</code> is met sooner than it should be. Either pass
             <code>calibrated=True</code> / <code>calibrated = TRUE</code>, or set the
             target a little tighter than you actually want.
           </p>
