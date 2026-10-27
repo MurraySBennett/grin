@@ -19,13 +19,13 @@
     <title>Explore - GRIN</title>
     <meta
       name="description"
-      content="Interactive tools for seeing General Recognition Theory: build a perceptual space and probe independence."
+      content="Build a GRT perceptual space, see why independence can be difficult to detect, and complete your own identification task inside the browser."
     />
     <link rel="canonical" href="https://grin.murraysbennett.com/explore.html" />
     <meta property="og:title" content="Explore - GRIN" />
     <meta
       property="og:description"
-      content="Build a perceptual space and probe independence, all in your browser."
+      content="Build a GRT perceptual space, see why independence can be difficult to detect, and complete your own identification task inside the browser."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://grin.murraysbennett.com/explore.html" />
@@ -40,52 +40,47 @@
   <body data-page="explore">
     <header class="site">
       <h1>Explore</h1>
-      <p class="tagline">
-        See GRT by building spaces, stressing independence, and trying what
-        speed makes possible.
-      </p>
+      <p class="tagline">DIY GRT</p>
       <div id="nav-placeholder"></div>
     </header>
 
     <main class="container">
       <div class="plain plain-lead">
-        <span class="eyebrow">Where to start</span>
         <p>
-          These pages share the same in-browser model as Analyse. Use them to
-          build intuition before you bring your own data, or to stress-test
-          what a confusion matrix can and cannot tell you.
+          Use these pages to build intuition before you bring your own data, or
+          to see the limits of a confusion matrix.
         </p>
       </div>
 
-      <div class="section-label">
-        <span class="eyebrow">Core</span>
-      </div>
       <div class="doors">
         <a class="door" href="./space-builder.html">
           <h3>Space Builder</h3>
           <p>
-            Build an underlying perceptual space, break separability or
-            independence, watch the confusion matrix change, then run a virtual
-            experiment and see whether GRIN recovers what you built.
+            Set up four stimuli in a perceptual space, make the features
+            interact, and see the answers it produces. Then simulate an
+            experiment and see how closely GRIN recovers what you set.
           </p>
           <span class="kicker">Start here →</span>
         </a>
+
+        <a class="door" href="./independence.html">
+          <h3>The imprecision in identifying independence</h3>
+          <p>
+            It is difficult to determine whether two features are independent
+            from identification data alone. We explore why and how to adjust
+            study design to minimise this challenge.
+          </p>
+          <span class="kicker">Be wary of the correlation</span>
+        </a>
+
         <a class="door" href="./live.html">
           <h3>Live task</h3>
           <p>
-            Do a short identification task yourself and watch the model refit after
-            every response, including the stopping rule.
+            Do a short identification task yourself. GRIN refits at each break
+            between blocks and stops when its estimate is precise enough. You
+            can also watch the fit update during trials.
           </p>
-        </a>
-
-        <a class="door" href="./independence.html">
-          <h3>An independence problem</h3>
-          <p>
-            One question, whether the two features are independent, is much
-            harder to answer from this kind of data than the others. This page
-            shows why, and what you can do about it when you design a study.
-          </p>
-          <span class="kicker">Where to be careful →</span>
+          <span class="kicker">Try it →</span>
         </a>
       </div>
 
