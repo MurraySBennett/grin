@@ -18,6 +18,7 @@ import {
   aggregate,
   checkInputs,
   templateCSV,
+  templateCountsCSV,
 } from "../web/assets/js/grt-io.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -78,16 +79,41 @@ test("buildLevelMap rejects a token that doesn't split into two levels", () => {
 });
 
 test("parseCSV reads templateCSV's header + example rows (long format, with RT)", () => {
-  // templateCSV() appends trailing human-readable instructions after the header
-  // + example rows, for a person editing the file in a spreadsheet -- not meant
-  // to be machine-parsed as-is. Feed it just the data portion, as a filled-in
-  // template would look after the instructions are deleted.
+  // The data rows alone, as a filled-in template would look with its # comment
+  // lines deleted. The full template, comments included, is checked below.
   const lines = templateCSV({ withRT: true }).split("\n").slice(0, 5).join("\n");
   const parsed = parseCSV(lines);
   assert.equal(parsed.error, undefined);
   assert.equal(parsed.format, "long");
   assert.equal(parsed.hasRT, true);
   assert.equal(parsed.trials.length, 4);
+});
+
+test("parseCSV reads the full downloadable trials template, comment lines included", () => {
+  for (const withRT of [false, true]) {
+    const parsed = parseCSV(templateCSV({ withRT }));
+    assert.equal(parsed.error, undefined);
+    assert.equal(parsed.format, "long");
+    assert.equal(parsed.trials.length, 4);
+    assert.deepEqual(parsed.warnings, []);
+  }
+});
+
+test("parseCSV reads the full downloadable counts template, comment lines included", () => {
+  const parsed = parseCSV(templateCountsCSV());
+  assert.equal(parsed.error, undefined);
+  assert.equal(parsed.format, "matrix");
+  assert.deepEqual(parsed.counts, [
+    [40, 5, 4, 1], [5, 40, 1, 4], [4, 1, 40, 5], [1, 4, 5, 40],
+  ]);
+});
+
+test("parseCSV skips lines whose trimmed text starts with #", () => {
+  const csv = "# a note, with a comma\n71,17,9,5\n  # indented note\n20,67,5,9\n13,6,63,20\n5,10,15,71\n#end";
+  const parsed = parseCSV(csv);
+  assert.equal(parsed.error, undefined);
+  assert.equal(parsed.format, "matrix");
+  assert.deepEqual(parsed.counts[0], [71, 17, 9, 5]);
 });
 
 test("parseCSV reads a bare 4x4 matrix", () => {

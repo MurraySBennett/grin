@@ -157,6 +157,8 @@ function splitCSV(text) {
     .trim()
     .split(/\r?\n/)
     .filter((r) => r.trim().length)
+    // Lines starting with # are comments (the downloadable templates use them).
+    .filter((r) => !r.trim().startsWith("#"))
     .map((r) => r.split(/[,\t;]/).map((v) => v.trim()));
 }
 
@@ -223,7 +225,7 @@ function parseLong(rows, idx) {
     if (s === undefined || q === undefined) {
       if (problems.length < 5)
         problems.push(
-          `line ${line}: unrecognised stimulus/response "${r[idx.stimulus]}"/"${r[idx.response]}"`,
+          `Line ${line}: unrecognised stimulus/response "${r[idx.stimulus]}"/"${r[idx.response]}"`,
         );
       return;
     }
@@ -232,7 +234,7 @@ function parseLong(rows, idx) {
       rt = Number(r[idx.rt]);
       if (!Number.isFinite(rt)) {
         if (problems.length < 5)
-          problems.push(`line ${line}: RT "${r[idx.rt]}" is not a number`);
+          problems.push(`Line ${line}: RT "${r[idx.rt]}" is not a number`);
         return;
       }
     }
@@ -245,7 +247,7 @@ function parseLong(rows, idx) {
   });
 
   if (!trials.length)
-    return { error: "No usable rows. " + problems.join("; ") };
+    return { error: "No usable rows. " + problems.join(". ") + "." };
 
   return {
     format: "long",
@@ -254,7 +256,7 @@ function parseLong(rows, idx) {
     hasParticipant: hasPid,
     levels: lm.levels,
     warnings: problems.length
-      ? [`${problems.length}+ rows were skipped: ${problems.join("; ")}`]
+      ? [`${problems.length}+ rows were skipped. ${problems.join(". ")}.`]
       : [],
   };
 }
@@ -291,9 +293,8 @@ function parseMatrix(rows) {
   } else {
     return {
       error:
-        "Could not read this file. Expected either a long/tidy file with " +
-        "`stimulus`,`response` (and optionally `rt`,`participant`) columns, " +
-        "or a plain 4x4 matrix of counts.",
+        "Could not read this file. Expected one row per trial with stimulus " +
+        "and response columns, or a 4×4 table of counts.",
     };
   }
 
@@ -410,15 +411,15 @@ export function checkInputs(agg, { hasRT = false, rawRTs = [] } = {}) {
       );
     else if (n < vMin)
       warnings.push(
-        `Stimulus ${STIMULUS_ORDER[s]} has only ${n} trial(s). That is within the ` +
-          `training range but below the ${vMin}-${vMax} range the published ` +
-          `validation covered, so the stated uncertainty has not been checked this ` +
-          `low. Expect wide intervals and treat the structural conclusions as weak.`,
+        `Stimulus ${STIMULUS_ORDER[s]} has only ${n} ${n === 1 ? "trial" : "trials"}. ` +
+          `That is within the training range but below the ${vMin}-${vMax} range ` +
+          `GRIN was tested on, so the stated uncertainty has not been checked this ` +
+          `low. Expect wide intervals and treat the primary conclusions as weak.`,
       );
     else if (n > vMax)
       warnings.push(
         `Stimulus ${STIMULUS_ORDER[s]} has ${n} trials, above the ${vMin}-${vMax} ` +
-          `range the published validation covered. The estimate should be sound, ` +
+          `range GRIN was tested on. The estimate should be sound, ` +
           `but its interval width has not been checked this high.`,
       );
   });
@@ -430,13 +431,15 @@ export function checkInputs(agg, { hasRT = false, rawRTs = [] } = {}) {
     const acc = correct / total;
     if (acc < 0.25)
       warnings.push(
-        `Overall accuracy is ${(100 * acc).toFixed(0)}%, below chance (25%). GRIN's prior ` +
-          `assumes correctly-signed levels, so check that your stimulus and response ` +
-          `columns are not swapped or mislabelled.`,
+        `Overall accuracy is ${(100 * acc).toFixed(0)}%, below chance (25%). GRIN ` +
+          `assumes level 1 and level 2 are in the same order in the stimulus and ` +
+          `response columns, so check that they are not swapped or mislabelled.`,
       );
     notes.push(`${total} trials, ${(100 * acc).toFixed(1)}% correct.`);
   }
 
+  // Response-time checks. Dormant: Analyse always passes hasRT false, so these
+  // warnings never display. Kept for a future response-time model.
   if (hasRT) {
     const [rMin, rMax] = TRAIN_BOUNDS.rtSeconds;
     const finite = rawRTs.filter(Number.isFinite);
@@ -484,15 +487,24 @@ export function templateCSV({ withRT = true } = {}) {
   const rows = [head];
   for (const s of STIMULUS_ORDER)
     rows.push(withRT ? `p01,${s},${s},0.650` : `p01,${s},${s}`);
-  rows.push(
-    "# one row per TRIAL. stimulus/response: A1B1|A1B2|A2B1|A2B2, your own",
-  );
-  rows.push(
-    "# labels like Happy/Male, or integers 0-3. If using, rt are in SECONDS.",
-  );
-  rows.push(
-    "# participant and rt are optional. Drop rt to use the counts-only model.",
-  );
+  rows.push("# One row per trial. Stimulus and response codes can be A1B1 to A2B2,");
+  rows.push("# your own labels such as Happy/Male, or the numbers 0-3 or 1-4.");
+  rows.push("# The participant column is optional. Lines starting with # are ignored.");
+  return rows.join("\n") + "\n";
+}
+
+/** A 4×4 counts template: rows are the stimulus shown, columns the response. */
+export function templateCountsCSV() {
+  const rows = [["", ...STIMULUS_ORDER].join(",")];
+  const example = [
+    [40, 5, 4, 1],
+    [5, 40, 1, 4],
+    [4, 1, 40, 5],
+    [1, 4, 5, 40],
+  ];
+  example.forEach((r, i) => rows.push([STIMULUS_ORDER[i], ...r].join(",")));
+  rows.push("# Rows are the stimulus shown. Columns are the response given.");
+  rows.push("# Replace the numbers with your counts. Lines starting with # are ignored.");
   return rows.join("\n") + "\n";
 }
 
